@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/**/*.ts", "prisma/**/*.ts", "test/**/*.ts", "scripts/**/*.ts", "prisma.config.ts"],
+  "exclude": ["node_modules"]
+}

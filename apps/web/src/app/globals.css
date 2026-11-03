@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/*
+ * Design system.
+ * Raw colour/font values come from config/brand.ts → injected as CSS variables
+ * (--primary-color, --bg-color, --font-family …) in app/layout.tsx.
+ * Here we map them to Tailwind tokens so components never hard-code colours.
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-primary: var(--primary-color);
+  --color-on-primary: var(--primary-contrast);
+  --color-secondary: var(--secondary-color);
+  --color-on-secondary: var(--secondary-contrast);
+  --color-bg: var(--bg-color);
+  --color-surface: var(--surface-color);
+  --color-muted: var(--surface-muted-color);
+  --color-fg: var(--text-color);
+  --color-fg-muted: var(--text-muted-color);
+  --color-line: var(--border-color);
+  --color-success: var(--success-color);
+  --color-warning: var(--warning-color);
+  --color-danger: var(--danger-color);
+  --color-chart: var(--chart-color);
+
+  --font-sans: var(--font-family);
+  --font-display: var(--font-display-family);
+
+  --radius-card: var(--radius);
+  --radius-sheet: calc(var(--radius) + 0.5rem);
+}
+
+@theme {
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px -6px rgb(0 0 0 / 0.1);
+  --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.06), 0 18px 40px -12px rgb(0 0 0 / 0.28);
+  --shadow-glow: 0 10px 30px -8px color-mix(in oklab, var(--primary-color) 55%, transparent);
+
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+
+  @keyframes shimmer {
+    0% { background-position: 150% 0; }
+    100% { background-position: -50% 0; }
+  }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary-color) 45%, transparent); }
+    80%, 100% { box-shadow: 0 0 0 12px transparent; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+    background: var(--bg-color);
+  }
+  body {
+    @apply bg-bg text-fg font-sans antialiased;
+    min-height: 100svh;
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary-color) 25%, transparent);
+  }
+  :focus-visible {
+    outline: 2.5px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+  button, [role="button"], a {
+    touch-action: manipulation;
+  }
+  input, textarea {
+    font-size: max(16px, 1em); /* stops iOS zooming on focus */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+/* Frosted glass, used sparingly: bars, hero pills. */
+@utility glass {
+  background: color-mix(in oklab, var(--surface-color) 94%, transparent);
+  backdrop-filter: saturate(1.6) blur(18px);
+  -webkit-backdrop-filter: saturate(1.6) blur(18px);
+}
+
+/* Glass on top of photos: always light text. */
+@utility glass-dark {
+  background: rgb(20 16 12 / 0.32);
+  color: #fff;
+  backdrop-filter: saturate(1.4) blur(14px);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  border: 1px solid rgb(255 255 255 / 0.18);
+}
+
+@utility skeleton {
+  background-color: var(--surface-muted-color);
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in oklab, var(--surface-color) 70%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,28 @@
+# HTTPS front door. Caddy gets and renews the TLS certificate automatically
+# (the DOMAIN's DNS must point at this server, ports 80 + 443 open).
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# API, realtime and uploaded photos go straight to the API
+	# (the web server could forward them too, but this is one hop shorter).
+	@api path /api/* /socket.io/* /uploads/*
+	handle @api {
+		reverse_proxy api:4000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	# Don't advertise the server software.
+	header -Server
+}
+
+# Redirect www → bare domain (remove if you don't use www).
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}

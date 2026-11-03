@@ -1,0 +1,25 @@
+node_modules
+.next
+out
+dist
+coverage
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+!.env.docker.example
+next-env.d.ts
+playwright-report
+test-results
+.DS_Store
+apps/api/src/generated
+uploads/
+
+# Playwright end-to-end runs
+e2e/.auth/
+e2e/.results/
+e2e/.report/
+e2e/.uploads/
+
+# Local tool caches
+.brud/

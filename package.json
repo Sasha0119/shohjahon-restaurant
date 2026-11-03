@@ -1,0 +1,37 @@
+{
+  "name": "restaurant-ordering",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Neutral, rebrandable restaurant ordering web app",
+  "workspaces": [
+    "config",
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @app/web",
+    "build": "npm run build -w @app/web",
+    "start": "npm run start -w @app/web",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test -c e2e/playwright.config.ts",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "docs:api": "tsx scripts/gen-api-docs.ts",
+    "db:generate": "npm run db:generate -w @app/api",
+    "db:migrate": "npm run db:migrate -w @app/api",
+    "db:deploy": "npm run db:deploy -w @app/api",
+    "db:seed": "npm run db:seed -w @app/api",
+    "postinstall": "npm run db:generate",
+    "dev:api": "npm run dev -w @app/api"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "tsx": "^4.23.15",
+    "typescript": "5.9",
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,18 @@
+# Keep secrets, local state and build output out of Docker build contexts.
+**/node_modules
+**/.next
+**/.env
+**/.env.*
+!**/.env.example
+**/uploads
+**/coverage
+**/*.tsbuildinfo
+apps/api/src/generated
+e2e/.auth
+e2e/.results
+e2e/.report
+e2e/.uploads
+.git
+.github
+docs
+*.md

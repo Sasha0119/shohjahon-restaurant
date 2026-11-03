@@ -1,0 +1,673 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  Restaurant ordering — database schema (PostgreSQL)
+//
+//  Conventions
+//  • Money is always an integer number of minor units (cents): *Cents fields.
+//  • Prices on orders are SNAPSHOTS: editing the menu never changes past orders.
+//  • IDs are cuid strings; nothing in a URL is guessable from an ID alone.
+//  • Tables are snake_case in the database, models are PascalCase in code.
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ═══════════════════════════════ Staff & auth ════════════════════════════════
+
+/// Manager = full control (email + password). Waiter & Kitchen use a PIN.
+enum StaffRole {
+  MANAGER
+  WAITER
+  KITCHEN
+}
+
+model Staff {
+  id             String    @id @default(cuid())
+  name           String
+  role           StaffRole
+  /// Required for managers (email + password login).
+  email          String?   @unique
+  passwordHash   String?   @map("password_hash")
+  /// Required for waiters and kitchen staff (PIN login). Argon2id hash.
+  pinHash        String?   @map("pin_hash")
+  active         Boolean   @default(true)
+  /// Brute-force protection for PIN/password login.
+  failedLogins   Int       @default(0) @map("failed_logins")
+  lockedUntil    DateTime? @map("locked_until")
+  lastLoginAt    DateTime? @map("last_login_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  sessions        StaffSession[]
+  handledCalls    WaiterCall[]       @relation("CallHandledBy")
+  closedSessions  TableSession[]     @relation("SessionClosedBy")
+  handledFeedback Review[]           @relation("ReviewHandledBy")
+  discountCodes   DiscountCode[]
+  auditLogs       AuditLog[]
+  cashPayments    Payment[]          @relation("CashConfirmedBy")
+
+  @@map("staff")
+}
+
+/// Server-side login session (httpOnly cookie holds the raw token; only the hash is stored).
+/// Revoked on logout and on PIN/password reset.
+model StaffSession {
+  id         String    @id @default(cuid())
+  staffId    String    @map("staff_id")
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  userAgent  String?   @map("user_agent")
+  ip         String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at")
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([staffId])
+  @@map("staff_sessions")
+}
+
+// ═══════════════════════════════════ Menu ════════════════════════════════════
+
+enum Station {
+  KITCHEN
+  BAR
+}
+
+enum DietaryTag {
+  VEGAN       @map("vegan")
+  VEGETARIAN  @map("vegetarian")
+  GLUTEN_FREE @map("gluten-free")
+  HALAL       @map("halal")
+  SPICY       @map("spicy")
+}
+
+enum Allergen {
+  GLUTEN      @map("gluten")
+  CRUSTACEANS @map("crustaceans")
+  EGGS        @map("eggs")
+  FISH        @map("fish")
+  PEANUTS     @map("peanuts")
+  SOY         @map("soy")
+  MILK        @map("milk")
+  TREE_NUTS   @map("tree-nuts")
+  CELERY      @map("celery")
+  MUSTARD     @map("mustard")
+  SESAME      @map("sesame")
+  SULPHITES   @map("sulphites")
+  LUPIN       @map("lupin")
+  MOLLUSCS    @map("molluscs")
+}
+
+enum Weekday {
+  MON @map("mon")
+  TUE @map("tue")
+  WED @map("wed")
+  THU @map("thu")
+  FRI @map("fri")
+  SAT @map("sat")
+  SUN @map("sun")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  /// Where this category's items are prepared (KDS station filter).
+  station     Station  @default(KITCHEN)
+  sortOrder   Int      @default(0) @map("sort_order")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  items        MenuItem[]
+  availability CategoryAvailability[]
+
+  @@index([sortOrder])
+  @@map("categories")
+}
+
+/// Optional time-based menus. No rows = always available.
+model CategoryAvailability {
+  id         String    @id @default(cuid())
+  categoryId String    @map("category_id")
+  /// Empty = every day.
+  days       Weekday[]
+  /// Minutes after local midnight, [from, to).
+  fromMinute Int       @map("from_minute")
+  toMinute   Int       @map("to_minute")
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@map("category_availability")
+}
+
+model MenuItem {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  categoryId  String       @map("category_id")
+  name        String
+  description String       @default("")
+  priceCents  Int          @map("price_cents")
+  imageUrl    String       @map("image_url")
+  imageAlt    String       @default("") @map("image_alt")
+  tags        DietaryTag[]
+  allergens   Allergen[]
+  calories    Int?
+  /// Live stock flag — toggled by kitchen or manager, broadcast to all guests.
+  inStock     Boolean      @default(true) @map("in_stock")
+  featured    Boolean      @default(false)
+  /// Archived items stay in the DB so old orders and reports still resolve.
+  archived    Boolean      @default(false)
+  sortOrder   Int          @default(0) @map("sort_order")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  category        Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  modifierGroups  ModifierGroup[]
+  suggestions     UpsellSuggestion[]  @relation("SuggestFrom")
+  suggestedBy     UpsellSuggestion[]  @relation("SuggestTo")
+  comboItems      ComboDealItem[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+
+  @@index([categoryId, sortOrder])
+  @@map("menu_items")
+}
+
+model ModifierGroup {
+  id        String @id @default(cuid())
+  itemId    String @map("item_id")
+  name      String
+  /// minSelect >= 1 → required.
+  minSelect Int    @default(0) @map("min_select")
+  /// 1 → single choice, > 1 → multi choice.
+  maxSelect Int    @default(1) @map("max_select")
+  sortOrder Int    @default(0) @map("sort_order")
+
+  item    MenuItem         @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  options ModifierOption[]
+
+  @@index([itemId, sortOrder])
+  @@map("modifier_groups")
+}
+
+model ModifierOption {
+  id              String  @id @default(cuid())
+  groupId         String  @map("group_id")
+  name            String
+  priceDeltaCents Int     @default(0) @map("price_delta_cents")
+  isDefault       Boolean @default(false) @map("is_default")
+  active          Boolean @default(true)
+  sortOrder       Int     @default(0) @map("sort_order")
+
+  group ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, sortOrder])
+  @@map("modifier_options")
+}
+
+/// "Item X suggests item Y" — shown on the item sheet and before checkout.
+model UpsellSuggestion {
+  id            String @id @default(cuid())
+  itemId        String @map("item_id")
+  suggestItemId String @map("suggest_item_id")
+  sortOrder     Int    @default(0) @map("sort_order")
+
+  item        MenuItem @relation("SuggestFrom", fields: [itemId], references: [id], onDelete: Cascade)
+  suggestItem MenuItem @relation("SuggestTo", fields: [suggestItemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, suggestItemId])
+  @@map("upsell_suggestions")
+}
+
+/// "Order A + B + C together and save $X."
+model ComboDeal {
+  id            String   @id @default(cuid())
+  name          String
+  discountCents Int      @map("discount_cents")
+  active        Boolean  @default(true)
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  items ComboDealItem[]
+
+  @@map("combo_deals")
+}
+
+model ComboDealItem {
+  comboId String @map("combo_id")
+  itemId  String @map("item_id")
+
+  combo ComboDeal @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  item  MenuItem  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([comboId, itemId])
+  @@map("combo_deal_items")
+}
+
+// ═════════════════════════════ Tables & sessions ═════════════════════════════
+
+model DiningTable {
+  id        String   @id @default(cuid())
+  /// Number printed on the table and shown to guests.
+  number    Int      @unique
+  label     String?
+  seats     Int      @default(4)
+  active    Boolean  @default(true)
+  /// Part of the signed QR token. Bump it to invalidate printed QR codes.
+  qrVersion Int      @default(1) @map("qr_version")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sessions TableSession[]
+  calls    WaiterCall[]
+
+  @@map("dining_tables")
+}
+
+enum SessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum SessionCloseReason {
+  PAID
+  STAFF
+  EXPIRED
+}
+
+/// One visit at one table. Guests who scan the same table share it.
+/// At most one OPEN session per table (partial unique index in the migration).
+model TableSession {
+  id             String              @id @default(cuid())
+  tableId        String              @map("table_id")
+  status         SessionStatus       @default(OPEN)
+  /// Incremented on every change; clients use it to detect missed realtime events.
+  version        Int                 @default(0)
+  discountCodeId String?             @map("discount_code_id")
+  openedAt       DateTime            @default(now()) @map("opened_at")
+  lastActivityAt DateTime            @default(now()) @map("last_activity_at")
+  closedAt       DateTime?           @map("closed_at")
+  closeReason    SessionCloseReason? @map("close_reason")
+  closedById     String?             @map("closed_by_id")
+
+  table        DiningTable   @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  closedBy     Staff?        @relation("SessionClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+  discountCode DiscountCode? @relation(fields: [discountCodeId], references: [id], onDelete: SetNull)
+  guests       SessionGuest[]
+  cartItems    CartItem[]
+  orders       Order[]
+  calls        WaiterCall[]
+  payments     Payment[]
+  reviews      Review[]
+
+  @@index([tableId, status])
+  @@index([status, lastActivityAt])
+  @@index([openedAt])
+  @@map("table_sessions")
+}
+
+/// A phone that joined a session. The browser keeps a random token; we store its hash.
+model SessionGuest {
+  id         String   @id @default(cuid())
+  sessionId  String   @map("session_id")
+  tokenHash  String   @unique @map("token_hash")
+  nickname   String   @default("")
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+
+  session    TableSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  orders     Order[]
+  payments   Payment[]
+  reviews    Review[]
+
+  @@index([sessionId])
+  @@map("session_guests")
+}
+
+// ══════════════════════════════ Cart & orders ════════════════════════════════
+
+/// Shared, server-side cart for a session.
+model CartItem {
+  id        String   @id @default(cuid())
+  sessionId String   @map("session_id")
+  itemId    String   @map("item_id")
+  guestId   String   @map("guest_id")
+  quantity  Int
+  /// { [modifierGroupId]: optionId[] } — validated against the menu on write and on submit.
+  selection Json     @default("{}")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  session TableSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  item    MenuItem     @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  guest   SessionGuest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("cart_items")
+}
+
+enum OrderStatus {
+  RECEIVED
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+}
+
+/// A kitchen ticket. Sending the cart creates one "round"; a round is split
+/// into one Order per station (kitchen, bar) so each KDS can work independently.
+model Order {
+  id              String      @id @default(cuid())
+  sessionId       String      @map("session_id")
+  round           Int
+  station         Station
+  status          OrderStatus @default(RECEIVED)
+  placedByGuestId String?     @map("placed_by_guest_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  statusChangedAt DateTime    @default(now()) @map("status_changed_at")
+  preparingAt     DateTime?   @map("preparing_at")
+  readyAt         DateTime?   @map("ready_at")
+  servedAt        DateTime?   @map("served_at")
+  cancelledAt     DateTime?   @map("cancelled_at")
+
+  session  TableSession  @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  placedBy SessionGuest? @relation(fields: [placedByGuestId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+
+  @@unique([sessionId, round, station])
+  @@index([station, status, createdAt])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+/// Snapshot of what was ordered and at what price.
+model OrderItem {
+  id             String   @id @default(cuid())
+  orderId        String   @map("order_id")
+  itemId         String   @map("item_id")
+  name           String
+  /// Base price + modifiers, per unit, at the time of ordering.
+  unitPriceCents Int      @map("unit_price_cents")
+  quantity       Int
+  note           String?
+  addedByGuestId String?  @map("added_by_guest_id")
+  /// Nickname at the time of ordering ("" = anonymous).
+  addedByName    String   @default("") @map("added_by_name")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  order       Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  item        MenuItem             @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  addedBy     SessionGuest?        @relation(fields: [addedByGuestId], references: [id], onDelete: SetNull)
+  modifiers   OrderItemModifier[]
+  paidVia     PaymentItem[]
+
+  @@index([orderId])
+  @@index([itemId])
+  @@map("order_items")
+}
+
+model OrderItemModifier {
+  id              String  @id @default(cuid())
+  orderItemId     String  @map("order_item_id")
+  /// Kept for reference; may point to a deleted option.
+  optionId        String? @map("option_id")
+  groupName       String  @map("group_name")
+  optionName      String  @map("option_name")
+  priceDeltaCents Int     @map("price_delta_cents")
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@index([orderItemId])
+  @@map("order_item_modifiers")
+}
+
+// ════════════════════════════════ Call server ════════════════════════════════
+
+enum CallType {
+  WATER
+  ASSISTANCE
+  BILL
+  /// Raised automatically when a guest chooses "Pay with cash".
+  CASH_PAYMENT
+}
+
+enum CallStatus {
+  OPEN
+  HANDLED
+}
+
+model WaiterCall {
+  id          String     @id @default(cuid())
+  sessionId   String     @map("session_id")
+  tableId     String     @map("table_id")
+  type        CallType
+  status      CallStatus @default(OPEN)
+  /// For CASH_PAYMENT: the amount the guest wants to pay.
+  amountCents Int?       @map("amount_cents")
+  /// For CASH_PAYMENT: the pending payment the waiter confirms.
+  paymentId   String?    @unique @map("payment_id")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  handledAt   DateTime?  @map("handled_at")
+  handledById String?    @map("handled_by_id")
+
+  session   TableSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  table     DiningTable  @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  handledBy Staff?       @relation("CallHandledBy", fields: [handledById], references: [id], onDelete: SetNull)
+  payment   Payment?     @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  /// Cooldown check: latest call per table + type.
+  @@index([tableId, type, createdAt])
+  @@index([status, createdAt])
+  @@map("waiter_calls")
+}
+
+// ═══════════════════════════ Discounts & payments ════════════════════════════
+
+enum DiscountKind {
+  /// value = basis points (1000 = 10 %)
+  PERCENT
+  /// value = cents
+  FIXED
+}
+
+model DiscountCode {
+  id                String       @id @default(cuid())
+  /// Stored upper-case; matched case-insensitively.
+  code              String       @unique
+  kind              DiscountKind
+  value             Int
+  active            Boolean      @default(true)
+  startsAt          DateTime?    @map("starts_at")
+  endsAt            DateTime?    @map("ends_at")
+  maxRedemptions    Int?         @map("max_redemptions")
+  redemptionCount   Int          @default(0) @map("redemption_count")
+  minSubtotalCents  Int?         @map("min_subtotal_cents")
+  createdById       String?      @map("created_by_id")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  createdBy Staff?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  sessions  TableSession[]
+
+  @@map("discount_codes")
+}
+
+enum PaymentMethod {
+  CARD
+  APPLE_PAY
+  GOOGLE_PAY
+  CASH
+}
+
+enum PaymentStatus {
+  /// Created, waiting for the provider (or for a waiter to confirm cash).
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum SplitMode {
+  FULL
+  EVEN
+  ITEMS
+  CUSTOM
+}
+
+/// One guest paying part or all of a session's bill.
+/// The session closes only when the balance reaches exactly zero.
+model Payment {
+  id             String        @id @default(cuid())
+  sessionId      String        @map("session_id")
+  guestId        String?       @map("guest_id")
+  /// Amount that reduces the balance (excludes tip).
+  amountCents    Int           @map("amount_cents")
+  tipCents       Int           @default(0) @map("tip_cents")
+  method         PaymentMethod
+  splitMode      SplitMode     @map("split_mode")
+  status         PaymentStatus @default(PENDING)
+  /// "mock" | "stripe" …
+  provider       String
+  providerRef    String?       @unique @map("provider_ref")
+  /// Client-generated key: retrying the same request never charges twice.
+  idempotencyKey String        @unique @map("idempotency_key")
+  failureReason  String?       @map("failure_reason")
+  cashConfirmedById String?    @map("cash_confirmed_by_id")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  completedAt    DateTime?     @map("completed_at")
+
+  session       TableSession  @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  guest         SessionGuest? @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  cashConfirmedBy Staff?      @relation("CashConfirmedBy", fields: [cashConfirmedById], references: [id], onDelete: SetNull)
+  items         PaymentItem[]
+  receipt       Receipt?
+  cashCall      WaiterCall?
+
+  @@index([sessionId, status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+/// For "split by item": which order lines this payment covered, so they
+/// can't be paid twice.
+model PaymentItem {
+  paymentId   String @map("payment_id")
+  orderItemId String @map("order_item_id")
+
+  payment   Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+
+  @@id([paymentId, orderItemId])
+  @@index([orderItemId])
+  @@map("payment_items")
+}
+
+/// Digital receipt for a successful payment. Viewable at /receipt/<publicToken>.
+model Receipt {
+  id          String    @id @default(cuid())
+  /// Human-friendly sequential number printed on the receipt.
+  number      Int       @unique @default(autoincrement())
+  paymentId   String    @unique @map("payment_id")
+  /// Long random token for the shareable receipt link.
+  publicToken String    @unique @map("public_token")
+  /// Frozen copy of items and totals at payment time.
+  snapshot    Json
+  emailedTo   String?   @map("emailed_to")
+  emailedAt   DateTime? @map("emailed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@map("receipts")
+}
+
+/// Generic idempotency store for unsafe guest requests (send order, pay).
+model IdempotencyRecord {
+  key         String   @id
+  /// e.g. "order.submit", "payment.create"
+  scope       String
+  /// Hash of the request body: same key + different body = 422.
+  requestHash String   @map("request_hash")
+  statusCode  Int      @map("status_code")
+  response    Json
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("idempotency_records")
+}
+
+// ══════════════════════════════ Reviews / feedback ═══════════════════════════
+
+enum FeedbackStatus {
+  NEW
+  HANDLED
+}
+
+/// 4–5 stars → guest is shown external review links.
+/// 1–3 stars → stays private in the manager's feedback log.
+model Review {
+  id          String          @id @default(cuid())
+  sessionId   String          @map("session_id")
+  guestId     String?         @map("guest_id")
+  rating      Int
+  comment     String          @default("")
+  /// Only used for private (1–3 star) feedback.
+  status      FeedbackStatus  @default(NEW)
+  handledAt   DateTime?       @map("handled_at")
+  handledById String?         @map("handled_by_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  session   TableSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  guest     SessionGuest? @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  handledBy Staff?        @relation("ReviewHandledBy", fields: [handledById], references: [id], onDelete: SetNull)
+
+  /// One review per guest per visit.
+  @@unique([sessionId, guestId])
+  @@index([rating, status, createdAt])
+  @@map("reviews")
+}
+
+// ═════════════════════════════════ Audit log ═════════════════════════════════
+
+enum ActorType {
+  STAFF
+  GUEST
+  SYSTEM
+}
+
+/// Append-only record of status changes, payments and admin actions.
+model AuditLog {
+  id           String    @id @default(cuid())
+  actorType    ActorType @map("actor_type")
+  actorStaffId String?   @map("actor_staff_id")
+  actorGuestId String?   @map("actor_guest_id")
+  /// e.g. "order.status_changed", "payment.succeeded", "menu_item.updated"
+  action       String
+  entityType   String    @map("entity_type")
+  entityId     String    @map("entity_id")
+  data         Json?
+  ip           String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  actorStaff Staff? @relation(fields: [actorStaffId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
