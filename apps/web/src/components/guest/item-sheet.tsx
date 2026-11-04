@@ -139,6 +139,7 @@ export function ItemSheet({ itemId, onClose }: ItemSheetProps) {
       title={shown?.name ?? ""}
       hideTitle
       scrollKey={shown?.id}
+      layout="split"
       media={shown && <ItemMedia item={shown} />}
       footer={footer}
     >
@@ -149,7 +150,8 @@ export function ItemSheet({ itemId, onClose }: ItemSheetProps) {
 
 function ItemMedia({ item }: { item: MenuItem }) {
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted sm:aspect-[16/10]">
+    // Phones/tablets: a 4:3 / 16:10 photo above the details. Desktop (split sheet): fills the left half.
+    <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted sm:aspect-[16/10] lg:aspect-auto lg:h-full">
       <motion.div
         key={item.id}
         initial={{ scale: 1.08, opacity: 0.6 }}
@@ -161,13 +163,13 @@ function ItemMedia({ item }: { item: MenuItem }) {
           src={item.image}
           alt={item.imageAlt}
           fill
-          sizes="(min-width: 640px) 576px, 100vw"
+          sizes="(min-width: 1024px) 512px, (min-width: 768px) 672px, (min-width: 640px) 576px, 100vw"
           className={cn("object-cover", !item.inStock && "grayscale")}
           priority
         />
       </motion.div>
       <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-transparent" />
-      <div aria-hidden className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface to-transparent" />
+      <div aria-hidden className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface to-transparent lg:hidden" />
     </div>
   );
 }
@@ -364,7 +366,7 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
           <h3 id={`pair-${item.id}`} className="font-display text-[1.15rem] font-semibold">
             {t("item.goesWellWith")}
           </h3>
-          <div className="no-scrollbar -mx-5 mt-3 flex snap-x gap-3 overflow-x-auto px-5 pb-1">
+          <div className="no-scrollbar -mx-5 mt-3 flex snap-x gap-3 overflow-x-auto px-5 pb-1 md:-mx-7 md:px-7">
             {suggestions.map((s) => (
               <MiniItemCard key={s.id} item={s} />
             ))}

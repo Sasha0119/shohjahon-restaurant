@@ -6,10 +6,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useT } from "@/i18n";
+import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/format";
 import { useCartSummary, useGuest } from "./guest-context";
 
-/** Pill above the bottom nav: item count + total. Bumps when something is added. */
+/**
+ * Pill above the bottom nav: item count + total. Bumps when something is added.
+ * md+: floats at the bottom beside the nav rail. xl+ on the menu: hidden — the
+ * cart panel beside the menu shows the cart instead.
+ */
 export function FloatingCartBar() {
   const t = useT();
   const pathname = usePathname();
@@ -29,6 +34,7 @@ export function FloatingCartBar() {
   }, [count, controls]);
 
   const hidden = pathname?.startsWith(`${base}/cart`) || pathname?.startsWith(`${base}/bill`);
+  const onMenu = pathname?.startsWith(`${base}/menu`);
   const visible = count > 0 && !hidden;
   const total = formatPrice(subtotal);
 
@@ -40,13 +46,17 @@ export function FloatingCartBar() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 90, opacity: 0 }}
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
-          className="fixed inset-x-0 z-30 px-4 bottom-[calc(env(safe-area-inset-bottom)+4.75rem)]"
+          className={cn(
+            "fixed inset-x-0 z-30 px-4 bottom-[calc(env(safe-area-inset-bottom)+4.75rem)]",
+            "md:bottom-[calc(env(safe-area-inset-bottom)+1.25rem)] md:left-[calc(6rem+env(safe-area-inset-left))]",
+            onMenu && "xl:hidden",
+          )}
         >
           <motion.div animate={controls} className="mx-auto max-w-xl">
             <Link
               href={`${base}/cart`}
               aria-label={t("cart.barLabel", { count, total })}
-              className="pressable flex h-[3.75rem] items-center gap-3 rounded-full bg-primary pl-2 pr-5 text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.3),var(--shadow-glow)]"
+              className="glass-accent pressable flex h-[3.75rem] items-center gap-3 rounded-full pl-2 pr-5"
             >
               <span className="relative grid size-11 place-items-center rounded-full bg-on-primary/12 ring-1 ring-on-primary/20">
                 <ShoppingBag className="size-5" aria-hidden />

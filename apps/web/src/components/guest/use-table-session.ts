@@ -85,6 +85,8 @@ export function useTableSession(token: string) {
     socket.on("connect", () => {
       s().setConnected(true);
       void sync();
+      // Catch up on stock changes missed while offline (a cheap 304 if nothing changed).
+      void useMenuStore.getState().load();
     });
     socket.on("disconnect", () => s().setConnected(false));
     socket.on("connect_error", (err) => {
@@ -118,9 +120,10 @@ export function useTableSession(token: string) {
     });
     socket.on("call:created", ({ call }) => s().applyCall(call));
     socket.on("call:updated", ({ call }) => s().applyCall(call));
-    // Menu edits and stock changes: revalidate the menu (a cheap 304 if nothing changed for us).
+    // Menu edits: revalidate the menu (a cheap 304 if nothing changed for us).
     socket.on("menu:updated", () => void useMenuStore.getState().load());
-    socket.on("menu:stock", () => void useMenuStore.getState().load());
+    // Stock changes: update just that item, no reload.
+    socket.on("menu:stock", ({ itemId, inStock, stockVersion }) => useMenuStore.getState().applyStock(itemId, inStock, stockVersion));
     socket.on("session:closed", ({ reason }) => {
       s().closed(reason);
       socket.disconnect();

@@ -16,7 +16,7 @@ import { needsChoices, useQuickAdd } from "./use-quick-add";
 function SoldOutSeal({ label }: { label: string }) {
   return (
     <div className="absolute inset-0 grid place-items-center bg-black/45">
-      <span className="rounded-full border border-white/50 bg-black/60 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-white backdrop-blur-sm">
+      <span className="glass-photo rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em]">
         {label}
       </span>
     </div>
@@ -33,7 +33,7 @@ export function FoodCard({ item, priority }: { item: MenuItem; priority?: boolea
   return (
     <motion.article
       layout="position"
-      className="group relative overflow-hidden rounded-card bg-surface shadow-soft ring-1 ring-line transition-[box-shadow] duration-300 hover:shadow-lift hover:ring-gold-line"
+      className="glass-card lift group relative overflow-hidden rounded-card"
     >
       <motion.button
         type="button"
@@ -48,7 +48,7 @@ export function FoodCard({ item, priority }: { item: MenuItem; priority?: boolea
             alt={item.imageAlt}
             fill
             priority={priority}
-            sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+            sizes="(min-width: 1536px) 360px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             className={cn(
               "object-cover transition-transform duration-[900ms] ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.05]",
               soldOut && "grayscale",
@@ -57,7 +57,7 @@ export function FoodCard({ item, priority }: { item: MenuItem; priority?: boolea
           <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/15" />
           <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
             {item.featured && !soldOut ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#E7D6AE] ring-1 ring-[#C9A45C]/60 backdrop-blur-sm">
+              <span className="glass-photo inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] !text-[#E7D6AE]">
                 <Sparkles className="size-3.5" aria-hidden />
                 {t("menu.chefsPick")}
               </span>
@@ -93,9 +93,9 @@ export function FoodCard({ item, priority }: { item: MenuItem; priority?: boolea
   );
 }
 
-export function FoodCardSkeleton() {
+export function FoodCardSkeleton({ className }: { className?: string }) {
   return (
-    <div className="overflow-hidden rounded-card bg-surface shadow-soft ring-1 ring-line" aria-hidden>
+    <div className={cn("glass-card overflow-hidden rounded-card", className)} aria-hidden>
       <Skeleton className="aspect-[4/3] rounded-none" />
       <div className="space-y-2.5 p-4">
         <Skeleton className="h-5 w-2/3" />
@@ -145,7 +145,7 @@ export function MiniItemCard({ item }: { item: MenuItem }) {
   const { openItem } = useGuest();
   const quickAdd = useQuickAdd();
   return (
-    <div className="relative flex w-[16rem] shrink-0 snap-start items-center gap-3 rounded-2xl bg-surface p-2.5 pr-14 shadow-soft ring-1 ring-line">
+    <div className="glass-card relative flex w-[16rem] shrink-0 snap-start items-center gap-3 rounded-2xl p-2.5 pr-14">
       <button type="button" onClick={() => openItem(item.id)} className="pressable flex min-w-0 items-center gap-3 text-left">
         <span className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted">
           <Image src={item.image} alt="" fill sizes="64px" className="object-cover" />

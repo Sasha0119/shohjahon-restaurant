@@ -104,8 +104,8 @@ export function ToggleChip({ on, onClick, children }: { on: boolean; onClick: ()
       aria-pressed={on}
       onClick={onClick}
       className={cn(
-        "inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-semibold ring-1 transition-colors",
-        on ? "bg-primary text-on-primary ring-primary" : "bg-surface text-fg-muted ring-line hover:text-fg",
+        "inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-semibold transition-colors",
+        on ? "bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]" : "glass-chip text-fg-muted hover:text-fg",
       )}
     >
       {children}

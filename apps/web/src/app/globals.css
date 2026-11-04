@@ -65,6 +65,80 @@
   --shadow-lift: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 28px 60px -18px rgb(0 0 0 / 0.85);
 }
 
+/*
+ * -- Liquid glass: change the whole look here --------------------------------
+ * Tints are "how much of the surface colour the glass keeps" (100% = solid).
+ * Text contrast on every tint is checked by apps/web/test/glass-contrast.test.ts,
+ * which reads these exact values: lower a tint and that test tells you if text
+ * stops being readable.
+ *
+ * Performance: only the "chrome" is truly blurred (headers, navigation, the
+ * floating cart pill, sheets/modals, the pay bar), at most 4 blurred layers on
+ * any screen. Cards and chips get the same look (tint, inner edge, top
+ * highlight, shadow) without backdrop-filter, so long menus stay smooth on
+ * budget phones.
+ */
+:root {
+  --glass-blur: 24px;
+  --glass-saturate: 170%;
+  --glass-brightness: 1.04;       /* light: lift what shows through */
+  --glass-tint: 72%;              /* bars: header, nav */
+  --glass-tint-sheet: 88%;        /* sheets/modals (they sit on a dark scrim) */
+  --glass-tint-accent: 92%;       /* the gold cart pill */
+  --glass-tint-card: 78%;         /* cards (no blur, on the page glow) */
+  --glass-tint-chip: 62%;         /* chips, segmented controls, secondary buttons */
+  --glass-edge: rgb(255 255 255 / 0.7);       /* soft white inner border */
+  --glass-highlight: rgb(255 255 255 / 0.95); /* bright line along the top edge */
+  --glass-outline: rgb(60 40 10 / 0.07);      /* hairline so light glass doesn't melt into the page */
+  --glass-shadow: 0 1px 2px rgb(60 40 10 / 0.06), 0 12px 32px -14px rgb(60 40 10 / 0.28);
+  --glass-shadow-lift: 0 2px 6px rgb(60 40 10 / 0.08), 0 24px 48px -18px rgb(60 40 10 / 0.36);
+  /* Soft colour glows behind the glass (so there is something to see through it). */
+  --glow-primary: 24%;
+  --glow-secondary: 70%;
+}
+:root[data-theme="dark"] {
+  --glass-brightness: 0.72;       /* dark: dim what shows through, keeps ivory text crisp */
+  --glass-tint: 72%;
+  --glass-tint-sheet: 84%;
+  --glass-tint-accent: 86%;
+  --glass-tint-card: 74%;
+  --glass-tint-chip: 55%;
+  --glass-edge: rgb(255 255 255 / 0.09);
+  --glass-highlight: rgb(255 255 255 / 0.16);
+  --glass-outline: rgb(0 0 0 / 0.35);
+  --glass-shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 14px 36px -14px rgb(0 0 0 / 0.8);
+  --glass-shadow-lift: 0 2px 8px rgb(0 0 0 / 0.4), 0 28px 56px -18px rgb(0 0 0 / 0.9);
+  --glow-primary: 20%;
+  --glow-secondary: 9%;
+}
+/* Phones: a smaller blur radius is much cheaper to draw and looks the same at arm's length. */
+@media (max-width: 767px) {
+  :root {
+    --glass-blur: 16px;
+  }
+}
+/* No backdrop-filter (older browsers): near-solid glass so text stays readable. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  :root[data-theme] {
+    --glass-tint: 95%;
+    --glass-tint-sheet: 97%;
+    --glass-tint-accent: 100%;
+  }
+}
+/* The device asks for less transparency: solid surfaces, no blur. */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  :root[data-theme] {
+    --glass-blur: 0px;
+    --glass-tint: 100%;
+    --glass-tint-sheet: 100%;
+    --glass-tint-accent: 100%;
+    --glass-tint-card: 100%;
+    --glass-tint-chip: 100%;
+  }
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
@@ -81,6 +155,8 @@
     text-rendering: optimizeLegibility;
     /* Long Uzbek/Russian words wrap instead of overflowing narrow screens. */
     overflow-wrap: break-word;
+    /* Last line of defence against sideways scrolling (unlike `hidden`, `clip` keeps sticky headers working). */
+    overflow-x: clip;
   }
   /*
    * Film-grain texture: a small pre-rendered PNG tile behind the content
@@ -92,6 +168,24 @@
   body {
     background-image: url("/images/grain-dark.png");
     background-size: 160px 160px;
+    /* Own stacking context, so the glow layer below paints above the page colour and under everything else. */
+    isolation: isolate;
+  }
+  /*
+   * The colour glows behind the glass: one fixed, GPU-composited layer of
+   * plain radial gradients (no filter: blur), so scrolling never repaints it.
+   */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    transform: translateZ(0);
+    background:
+      radial-gradient(42rem 32rem at 8% -6%, color-mix(in oklab, var(--primary-color) var(--glow-primary), transparent), transparent 70%),
+      radial-gradient(38rem 30rem at 100% 38%, color-mix(in oklab, var(--secondary-color) var(--glow-secondary), transparent), transparent 70%),
+      radial-gradient(36rem 28rem at 30% 108%, color-mix(in oklab, var(--primary-color) calc(var(--glow-primary) * 0.7), transparent), transparent 70%);
   }
   :root[data-theme="light"] body {
     background-image: url("/images/grain-light.png");
@@ -130,6 +224,7 @@
   }
   @media print {
     body { background-image: none; }
+    body::before { display: none; }
   }
 }
 
@@ -138,27 +233,81 @@
   &::-webkit-scrollbar { display: none; }
 }
 
-/* Frosted glass, used sparingly: bars, sticky headers. */
+/* Blurred glass for bars: sticky headers, navigation, save bars. */
 @utility glass {
-  background: color-mix(in oklab, var(--surface-color) 86%, transparent);
-  backdrop-filter: saturate(1.4) blur(20px);
-  -webkit-backdrop-filter: saturate(1.4) blur(20px);
+  background: color-mix(in oklab, var(--surface-color) var(--glass-tint), transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
 }
 
-/* Glass on top of photos: always light text. */
-@utility glass-dark {
-  background: rgb(12 10 7 / 0.38);
+/* Blurred glass for floating panels: sheets, modals, the pay bar. */
+@utility glass-panel {
+  background: color-mix(in oklab, var(--surface-color) var(--glass-tint-sheet), transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-outline), var(--glass-shadow-lift);
+}
+
+/* Gold glass for the floating cart pill (the one blurred element in brand colour). */
+@utility glass-accent {
+  background: color-mix(in oklab, var(--primary-color) var(--glass-tint-accent), transparent);
+  color: var(--primary-contrast);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), inset 0 0 0 1px rgb(255 255 255 / 0.18), var(--shadow-glow);
+}
+
+/* Glass look without blur: cards and list groups (cheap, safe to use many times). */
+@utility glass-card {
+  background: color-mix(in oklab, var(--surface-color) var(--glass-tint-card), transparent);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-outline), var(--glass-shadow);
+}
+
+/* Small glass controls: chips, segmented controls, secondary buttons. */
+@utility glass-chip {
+  background: color-mix(in oklab, var(--surface-color) var(--glass-tint-chip), transparent);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-outline), 0 1px 2px rgb(0 0 0 / 0.06);
+}
+
+/* Smoked glass for chips on top of photos, without blur (there can be dozens on a menu). */
+@utility glass-photo {
+  background: rgb(12 10 7 / 0.55);
   color: #fff;
-  backdrop-filter: saturate(1.3) blur(16px);
-  -webkit-backdrop-filter: saturate(1.3) blur(16px);
-  border: 1px solid rgb(255 255 255 / 0.14);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 0 0 1px rgb(255 255 255 / 0.16);
 }
 
-/* The standard raised surface: cards, panels, list groups. */
+/* Hover lift for cards (mouse/trackpad only; off under "reduce motion"). */
+@utility lift {
+  transition: translate 280ms var(--ease-spring), box-shadow 280ms ease;
+  @media (hover: hover) {
+    &:hover {
+      translate: 0 -3px;
+      box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-outline), var(--glass-shadow-lift);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &:hover { translate: none; }
+  }
+}
+
+/* Blurred glass on top of photos (hero controls, sheet close button): always light text. */
+@utility glass-dark {
+  background: rgb(12 10 7 / 0.42);
+  color: #fff;
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), inset 0 0 0 1px rgb(255 255 255 / 0.16);
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background: rgb(12 10 7 / 0.7);
+  }
+}
+
+/* The standard raised surface: cards, panels, list groups. Glass without blur. */
 @utility card {
-  background: var(--surface-color);
+  background: color-mix(in oklab, var(--surface-color) var(--glass-tint-card), transparent);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-soft), 0 0 0 1px color-mix(in oklab, var(--border-color) 85%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-outline), var(--glass-shadow);
 }
 
 /* A thin gold rule that fades out at both ends (section dividers). */

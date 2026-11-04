@@ -156,7 +156,17 @@ export default function OrdersPage() {
         ) : (
           <div className={cn("transition-opacity", loading && "opacity-60")} aria-busy={loading}>
             <p className="mb-3 text-sm text-fg-muted">{t("admin.orders.count", { count: data.total })}</p>
-            <ul className="space-y-3">
+            {/* lg+: column headings; each card below lines up with them like a table row. */}
+            <div aria-hidden className="mb-2 hidden items-center gap-x-4 px-5 text-xs font-semibold uppercase tracking-wider text-fg-muted lg:flex">
+              <span className="min-w-0 flex-1">{t("admin.orders.table")}</span>
+              <span className="w-44">{t("admin.overview.table.date")}</span>
+              <span className="w-28">{t("admin.orders.station")}</span>
+              <span className="w-24">{t("admin.menu.tabs.items")}</span>
+              <span className="w-32">{t("admin.orders.status")}</span>
+              <span className="w-28 text-right">{t("bill.total")}</span>
+              <span className="w-5" />
+            </div>
+            <ul className="space-y-3 lg:space-y-2">
               {data.orders.map((o) => {
                 const expanded = open.has(o.id);
                 return (
@@ -166,19 +176,24 @@ export default function OrdersPage() {
                       onClick={() => toggle(o.id)}
                       aria-expanded={expanded}
                       aria-controls={`lines-${o.id}`}
-                      className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 p-4 text-left sm:flex-nowrap sm:p-5"
+                      className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 rounded-card p-4 text-left transition-colors hover:bg-muted/40 sm:flex-nowrap sm:p-5 lg:py-3.5"
                     >
                       <div className="min-w-0 basis-full sm:flex-1 sm:basis-auto">
                         <p className="font-semibold">
                           {t("admin.orders.tableNumber", { number: o.tableNumber })}
                           <span className="font-normal text-fg-muted"> · {t("admin.orders.round", { round: o.round })}</span>
                         </p>
-                        <p className="text-sm text-fg-muted">
+                        <p className="text-sm text-fg-muted lg:hidden">
                           {formatStamp(o.createdAt)} · {t(`kitchen.stations.${o.station}`)} · {t("admin.orders.items", { count: o.itemCount })}
                         </p>
                       </div>
-                      <Badge tone={statusTone(o.status)}>{t(`status.${o.status}`)}</Badge>
-                      <p className={cn("ml-auto min-w-24 whitespace-nowrap text-right font-semibold tabular sm:ml-0", o.status === "cancelled" && "text-fg-muted line-through")}>
+                      <span className="hidden w-44 text-sm tabular text-fg-muted lg:block">{formatStamp(o.createdAt)}</span>
+                      <span className="hidden w-28 truncate text-sm lg:block">{t(`kitchen.stations.${o.station}`)}</span>
+                      <span className="hidden w-24 text-sm tabular text-fg-muted lg:block">{t("admin.orders.items", { count: o.itemCount })}</span>
+                      <span className="lg:w-32">
+                        <Badge tone={statusTone(o.status)}>{t(`status.${o.status}`)}</Badge>
+                      </span>
+                      <p className={cn("ml-auto min-w-24 whitespace-nowrap text-right font-semibold tabular sm:ml-0 lg:w-28 lg:min-w-0", o.status === "cancelled" && "text-fg-muted line-through")}>
                         {formatPrice(o.totalCents)}
                       </p>
                       <ChevronDown className={cn("size-5 shrink-0 text-fg-muted transition-transform", expanded && "rotate-180")} aria-hidden />

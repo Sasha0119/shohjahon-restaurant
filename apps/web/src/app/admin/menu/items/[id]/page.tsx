@@ -469,8 +469,9 @@ export default function ItemEditorPage() {
       </div>
 
       {/* Sticky save bar */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line glass md:left-64">
-        <div className="mx-auto flex max-w-5xl items-center justify-end gap-3 px-4 py-3 md:px-10">
+      {/* Starts where the admin sidebar ends: 5rem rail on tablets, 17rem sidebar on desktops. */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line glass md:left-20 lg:left-[17rem]">
+        <div className="mx-auto flex max-w-7xl items-center justify-end gap-3 px-4 py-3 md:px-8 xl:px-10">
           <LinkButton href="/admin/menu" variant="ghost">
             {t("admin.tables.cancel")}
           </LinkButton>

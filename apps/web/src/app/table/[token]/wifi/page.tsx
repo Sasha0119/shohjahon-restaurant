@@ -24,7 +24,8 @@ export default function WifiPage() {
     <main>
       <PageHeader title={t("wifi.title")} subtitle={t("wifi.subtitle")} />
 
-      <div className="space-y-4 px-4 pt-5">
+      {/* A single short card: keep it at a readable width on big screens. */}
+      <div className="mx-auto max-w-2xl space-y-4 px-4 pt-5 lg:pt-8">
         <section className="card relative overflow-hidden p-6 ring-1 ring-gold-line">
           <div aria-hidden className="absolute -right-12 -top-14 size-52 rounded-full border border-gold-line" />
           <div aria-hidden className="absolute -right-4 -top-6 size-36 rounded-full border border-gold-line/60" />

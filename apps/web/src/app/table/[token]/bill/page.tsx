@@ -93,10 +93,16 @@ export default function BillPage() {
   return (
     <main>
       <PageHeader title={t("bill.title")} subtitle={t("bill.subtitle", { table: tableLabel })} />
-      <div className="space-y-5 px-4 pt-5">
-        <Receipt bill={snapshot.bill} />
-        <DiscountCode bill={snapshot.bill} />
-        <PayPanel bill={snapshot.bill} />
+      {/* Phones/tablets: receipt, code, then the payment steps.
+          Desktop (lg+): payment steps on the left, the receipt as a sticky side panel. */}
+      <div className="px-4 pt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-8 lg:px-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
+        <aside className="space-y-5 lg:sticky lg:top-20 lg:order-2 lg:-m-1 lg:max-h-[calc(100svh-6rem)] lg:overflow-y-auto lg:overscroll-contain lg:p-1 no-scrollbar">
+          <Receipt bill={snapshot.bill} />
+          <DiscountCode bill={snapshot.bill} />
+        </aside>
+        <div className="mt-5 min-w-0 space-y-5 lg:order-1 lg:mt-0">
+          <PayPanel bill={snapshot.bill} />
+        </div>
       </div>
     </main>
   );
@@ -558,7 +564,7 @@ function PayPanel({ bill }: { bill: BillDTO }) {
                 aria-checked={active}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setMethod(id)}
-                className={cn("relative flex min-h-16 items-center gap-3 rounded-2xl px-4 pr-10 text-left ring-1 transition-colors", active ? "bg-primary/10 ring-2 ring-primary" : "bg-muted/50 ring-line hover:bg-muted")}
+                className={cn("relative flex min-h-16 items-center gap-3 rounded-2xl px-4 pr-10 text-left transition-colors", active ? "bg-primary/10 ring-2 ring-primary" : "glass-chip hover:text-primary")}
               >
                 <Icon className={cn("size-5", active ? "text-primary" : "text-fg-muted")} aria-hidden />
                 <span className="text-[15px] font-semibold">{t(`bill.${id}`)}</span>
@@ -574,8 +580,8 @@ function PayPanel({ bill }: { bill: BillDTO }) {
         {method === "cash" && <p className="mt-3 text-sm text-fg-muted">{t("bill.cashHint")}</p>}
       </section>
 
-      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] z-20 -mx-4 px-4 pt-2 pb-3">
-        <div className="rounded-card bg-surface/95 p-3 shadow-lift ring-1 ring-gold-line backdrop-blur">
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] z-20 -mx-4 px-4 pt-2 pb-3 md:bottom-[calc(env(safe-area-inset-bottom)+1rem)] lg:mx-0 lg:px-0">
+        <div className="glass-panel rounded-card p-3">
           <div className="flex items-center justify-between gap-4 px-2 pb-2.5">
             <span className="text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">{t("bill.youPay")}</span>
             <span className="font-display text-2xl font-semibold tabular text-primary">
@@ -653,7 +659,7 @@ function TipChip({ active, onClick, title, sub }: { active: boolean; onClick: ()
       aria-checked={active}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={cn("flex min-h-16 flex-col items-center justify-center rounded-2xl px-2 py-2 text-center leading-tight ring-1 transition-colors", active ? "bg-primary text-on-primary ring-primary shadow-glow" : "bg-muted/60 ring-line hover:bg-muted")}
+      className={cn("flex min-h-16 flex-col items-center justify-center rounded-2xl px-2 py-2 text-center leading-tight transition-colors", active ? "bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.35),var(--shadow-glow)]" : "glass-chip hover:text-primary")}
     >
       <span className="max-w-full text-[14px] font-semibold [overflow-wrap:anywhere]">{title}</span>
       {sub && <span className={cn("max-w-full truncate text-xs tabular", active ? "opacity-85" : "text-fg-muted")}>{sub}</span>}

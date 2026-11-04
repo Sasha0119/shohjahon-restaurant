@@ -204,7 +204,7 @@ Typed contract: `packages/shared/src/api/realtime.ts`.
 | `payment:updated` | server → client | session | `{ version, payment }` |
 | `session:closed` | server → client | session | `{ version, reason: paid\|staff\|expired }` |
 | `call:created` / `call:updated` | server → client | session + waiters | `{ call }` |
-| `menu:stock` | server → client | everyone | `{ itemId, inStock }` |
+| `menu:stock` | server → client | everyone | `{ itemId, inStock, stockVersion }` (keep the highest stockVersion) |
 | `menu:updated` | server → client | everyone | `{ menuVersion }` → refetch `GET /api/menu` |
 | `kds:order` | server → client | kds:&lt;station&gt; + managers | `{ ticket }` |
 | `table:status` | server → client | waiters + managers | `{ tableId, number, status }` |

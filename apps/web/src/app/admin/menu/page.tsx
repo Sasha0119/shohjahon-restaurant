@@ -26,7 +26,6 @@ import { toast } from "@/components/ui/toast";
 import { useT } from "@/i18n";
 import {
   categoryToInput,
-  itemToInput,
   moved,
   useAdminMenu,
   type AdminCategory,
@@ -37,6 +36,7 @@ import {
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/format";
+import { setInStock, useInStock, useStockErrorToast } from "@/lib/stock";
 
 type Tab = "items" | "categories" | "combos";
 
@@ -94,7 +94,7 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
   const [cat, setCat] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [archived, setArchived] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null);
+  useStockErrorToast();
 
   const catName = useMemo(() => new Map(categories.map((c) => [c.id, nameIn(c)])), [categories, nameIn]);
   const visible = items.filter(
@@ -104,19 +104,6 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
       (!query.trim() || nameIn(i).toLowerCase().includes(query.trim().toLowerCase()) || i.name.toLowerCase().includes(query.trim().toLowerCase())),
   );
   const canReorder = cat !== "all" && !query.trim() && !archived;
-
-  const toggleStock = async (item: AdminItem) => {
-    setBusy(item.id);
-    try {
-      await api("PUT", `/api/admin/items/${item.id}`, { ...itemToInput(item), inStock: !item.inStock });
-      toast.success(t("admin.menu.stockChanged", { name: item.name, state: !item.inStock ? t("admin.menu.inStock") : t("admin.menu.soldOut") }));
-      await reload();
-    } catch (e) {
-      toast.error(apiMessage(e, t));
-    } finally {
-      setBusy(null);
-    }
-  };
 
   const move = async (index: number, delta: number) => {
     const ids = moved(visible, index, delta);
@@ -159,61 +146,106 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
       {visible.length === 0 ? (
         <EmptyState icon={UtensilsCrossed} title={t("admin.menu.empty")} />
       ) : (
-        <ul className="mt-4 overflow-hidden card">
+        <div className="mt-4 overflow-hidden card">
+          {/* lg+: column headings, so the list reads as a table. */}
+          <div aria-hidden className="hidden items-center gap-3 border-b border-line px-4 py-3 text-xs font-semibold uppercase tracking-wider text-fg-muted lg:flex">
+            <span className="w-14 shrink-0" />
+            <span className="min-w-0 flex-1">{t("admin.menu.item.name")}</span>
+            <span className="w-44 shrink-0">{t("admin.menu.item.category")}</span>
+            <span className="w-28 shrink-0 text-right">{t("admin.menu.item.price")}</span>
+            {canReorder && <span className="w-8 shrink-0" />}
+            <span className="w-44 shrink-0 text-right">{t("kitchen.stock")}</span>
+            <span className="w-11 shrink-0" />
+          </div>
+        <ul>
           {visible.map((item, i) => (
-            <motion.li layout key={item.id} className={cn("flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0", item.archived && "opacity-55")}>
-              <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
-                <Image src={item.imageUrl} alt="" fill sizes="64px" className={cn("object-cover", !item.inStock && "grayscale")} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 font-semibold">
-                  <span className="truncate">{nameIn(item)}</span>
-                  {item.featured && (
-                    <Badge tone="secondary">
-                      <Sparkles className="size-3" aria-hidden />
-                      {t("admin.menu.featured")}
-                    </Badge>
-                  )}
-                  {item.archived && <Badge>{t("admin.menu.archived")}</Badge>}
-                </p>
-                <p className="truncate text-sm text-fg-muted">
-                  {catName.get(item.categoryId)} · <span className="tabular">{formatPrice(item.priceCents)}</span>
-                </p>
-              </div>
-              {canReorder && (
-                <div className="hidden flex-col sm:flex">
-                  <button type="button" disabled={i === 0} onClick={() => void move(i, -1)} aria-label={t("admin.menu.moveUp", { name: item.name })} className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30">
-                    <ArrowUp className="size-4" aria-hidden />
-                  </button>
-                  <button type="button" disabled={i === visible.length - 1} onClick={() => void move(i, 1)} aria-label={t("admin.menu.moveDown", { name: item.name })} className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30">
-                    <ArrowDown className="size-4" aria-hidden />
-                  </button>
-                </div>
-              )}
-              {!item.archived && (
-                <div className="flex items-center gap-2">
-                  <span className={cn("hidden text-xs font-semibold sm:inline", item.inStock ? "text-success" : "text-danger")}>
-                    {item.inStock ? t("admin.menu.inStock") : t("admin.menu.soldOut")}
-                  </span>
-                  {busy === item.id ? (
-                    <Loader2 className="size-5 animate-spin text-fg-muted" aria-hidden />
-                  ) : (
-                    <Switch compact checked={item.inStock} onChange={() => void toggleStock(item)} label={`${item.name}: ${t("admin.menu.inStock")}`} />
-                  )}
-                </div>
-              )}
-              <Link
-                href={`/admin/menu/items/${item.id}`}
-                aria-label={t("admin.menu.edit", { name: item.name })}
-                className="grid size-11 shrink-0 place-items-center rounded-full text-fg-muted hover:bg-muted hover:text-fg"
-              >
-                <Pencil className="size-5" aria-hidden />
-              </Link>
-            </motion.li>
+            <ItemRow
+              key={item.id}
+              item={item}
+              categoryName={catName.get(item.categoryId)}
+              canMoveUp={canReorder && i > 0}
+              canMoveDown={canReorder && i < visible.length - 1}
+              showMove={canReorder}
+              onMove={(delta) => void move(i, delta)}
+            />
           ))}
         </ul>
+        </div>
       )}
     </div>
+  );
+}
+
+function ItemRow({
+  item,
+  categoryName,
+  showMove,
+  canMoveUp,
+  canMoveDown,
+  onMove,
+}: {
+  item: AdminItem;
+  categoryName: string | undefined;
+  showMove: boolean;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMove: (delta: number) => void;
+}) {
+  const t = useT();
+  const nameIn = useNameIn();
+  // Only this row re-renders when its stock changes (here, in the kitchen, or on another manager's screen).
+  const inStock = useInStock(item.id, item.inStock);
+
+  return (
+    <motion.li layout className={cn("flex items-center gap-3 border-b border-line px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/30", item.archived && "opacity-55")}>
+      <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
+        <Image src={item.imageUrl} alt="" fill sizes="64px" className={cn("object-cover", !inStock && "grayscale")} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="flex flex-wrap items-center gap-2 font-semibold">
+          <span className="truncate">{nameIn(item)}</span>
+          {item.featured && (
+            <Badge tone="secondary">
+              <Sparkles className="size-3" aria-hidden />
+              {t("admin.menu.featured")}
+            </Badge>
+          )}
+          {item.archived && <Badge>{t("admin.menu.archived")}</Badge>}
+        </p>
+        <p className="truncate text-sm text-fg-muted lg:hidden">
+          {categoryName} · <span className="tabular">{formatPrice(item.priceCents)}</span>
+        </p>
+      </div>
+      <span className="hidden w-44 shrink-0 truncate text-sm text-fg-muted lg:block">{categoryName}</span>
+      <span className="hidden w-28 shrink-0 text-right font-semibold tabular lg:block">{formatPrice(item.priceCents)}</span>
+      {showMove && (
+        <div className="hidden w-8 shrink-0 flex-col sm:flex">
+          <button type="button" disabled={!canMoveUp} onClick={() => onMove(-1)} aria-label={t("admin.menu.moveUp", { name: item.name })} className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30">
+            <ArrowUp className="size-4" aria-hidden />
+          </button>
+          <button type="button" disabled={!canMoveDown} onClick={() => onMove(1)} aria-label={t("admin.menu.moveDown", { name: item.name })} className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30">
+            <ArrowDown className="size-4" aria-hidden />
+          </button>
+        </div>
+      )}
+      {item.archived ? (
+        <span className="hidden w-44 shrink-0 lg:block" />
+      ) : (
+        <div className="flex shrink-0 items-center justify-end gap-2 lg:w-44">
+          <span className={cn("hidden text-xs font-semibold sm:inline", inStock ? "text-success" : "text-danger")}>
+            {inStock ? t("admin.menu.inStock") : t("admin.menu.soldOut")}
+          </span>
+          <Switch compact checked={inStock} onChange={(v) => setInStock(item.id, v)} label={`${item.name}: ${t("admin.menu.inStock")}`} />
+        </div>
+      )}
+      <Link
+        href={`/admin/menu/items/${item.id}`}
+        aria-label={t("admin.menu.edit", { name: item.name })}
+        className="grid size-11 shrink-0 place-items-center rounded-full text-fg-muted hover:bg-muted hover:text-fg"
+      >
+        <Pencil className="size-5" aria-hidden />
+      </Link>
+    </motion.li>
   );
 }
 
@@ -477,7 +509,7 @@ function CombosTab({ combos, items, reload }: { combos: AdminCombo[]; items: Adm
         <ul className="mt-4 grid gap-4 sm:grid-cols-2">
           {combos.map((c) => (
             <li key={c.id}>
-              <button type="button" onClick={() => setEditing(c)} className={cn("w-full rounded-card bg-surface p-5 text-left shadow-soft ring-1 ring-line transition-shadow hover:shadow-lift", !c.active && "opacity-55")}>
+              <button type="button" onClick={() => setEditing(c)} className={cn("glass-card lift w-full rounded-card p-5 text-left", !c.active && "opacity-55")}>
                 <p className="flex items-center justify-between gap-2">
                   <span className="font-display text-xl font-semibold">{nameIn(c)}</span>
                   <Badge tone={c.active ? "success" : "muted"}>{t("admin.menu.combo.saves", { amount: formatPrice(c.discountCents) })}</Badge>

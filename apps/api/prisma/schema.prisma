@@ -169,6 +169,8 @@ model MenuItem {
   calories    Int?
   /// Live stock flag — toggled by kitchen or manager, broadcast to all guests.
   inStock     Boolean      @default(true) @map("in_stock")
+  /// Goes up by one on every stock change (atomic, in commit order): clients keep the highest.
+  stockVersion Int         @default(0) @map("stock_version")
   featured    Boolean      @default(false)
   /// Archived items stay in the DB so old orders and reports still resolve.
   archived    Boolean      @default(false)

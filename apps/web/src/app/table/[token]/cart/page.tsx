@@ -1,23 +1,20 @@
 "use client";
 
 import { roundStatus, statusIndex, suggestionsForCart, type OrderStatus } from "@app/shared";
-import type { CartLineDTO, OrderTicketDTO } from "@app/shared/api";
+import type { OrderTicketDTO } from "@app/shared/api";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChefHat, Loader2, ShoppingBag } from "lucide-react";
-import Image from "next/image";
+import { Loader2, ShoppingBag } from "lucide-react";
 import { useMemo, useState } from "react";
+import { CartRow } from "@/components/guest/cart-row";
+import { CartSummaryCard } from "@/components/guest/cart-summary";
 import { MiniItemCard } from "@/components/guest/food-card";
-import { GuestAvatar } from "@/components/guest/guest-avatar";
 import { useLineText } from "@/components/guest/line-text";
 import { useCartSummary, useGuest } from "@/components/guest/guest-context";
 import { PageHeader } from "@/components/guest/page-header";
 import { StatusSteps } from "@/components/guest/status-steps";
 import { useGuestActions } from "@/components/guest/use-guest-actions";
-import { haptic } from "@/components/guest/use-quick-add";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Badge, EmptyState, SectionTitle, Skeleton } from "@/components/ui/misc";
-import { QuantityStepper } from "@/components/ui/quantity-stepper";
-import { celebrate } from "@/components/ui/success-burst";
 import { toast } from "@/components/ui/toast";
 import { useT } from "@/i18n";
 import { formatPrice, formatTime } from "@/lib/format";
@@ -49,9 +46,7 @@ export default function CartPage() {
   const { base, table, menuState } = useGuest();
   const cart = useSessionStore((s) => s.snapshot?.cart ?? []);
   const orders = useSessionStore((s) => s.snapshot?.orders ?? []);
-  const { sendToKitchen } = useGuestActions();
-  const { count, subtotal } = useCartSummary();
-  const [sending, setSending] = useState(false);
+  const { count } = useCartSummary();
   const tableLabel = t("common.table", { number: table.number });
 
   const suggestions = useMemo(
@@ -60,16 +55,8 @@ export default function CartPage() {
   );
   const rounds = useMemo(() => groupRounds(orders), [orders]);
 
-  const send = async () => {
-    setSending(true);
-    haptic(25);
-    const ok = await sendToKitchen();
-    setSending(false);
-    if (ok) {
-      celebrate(t("cart.sent"), t("cart.sentBody"));
-      requestAnimationFrame(() => document.getElementById("orders")?.scrollIntoView({ behavior: "smooth", block: "start" }));
-    }
-  };
+  const scrollToOrders = () =>
+    requestAnimationFrame(() => document.getElementById("orders")?.scrollIntoView({ behavior: "smooth", block: "start" }));
 
   if (!menuState.menu) {
     return (
@@ -100,113 +87,54 @@ export default function CartPage() {
         />
       )}
 
-      {cart.length > 0 && (
-        <section className="px-4 pt-5" aria-labelledby="cart-items">
-          <h2 id="cart-items" className="sr-only">
-            {t("cart.items", { count })}
-          </h2>
-          <ul className="card overflow-hidden">
-            <AnimatePresence initial={false}>
-              {cart.map((line) => (
-                <CartRow key={line.id} line={line} />
-              ))}
-            </AnimatePresence>
-          </ul>
-
-          {suggestions.length > 0 && (
-            <div className="mt-8">
-              <SectionTitle eyebrow title={t("cart.completeMeal")} />
-              <div className="no-scrollbar -mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
-                {suggestions.map((s) => (
-                  <MiniItemCard key={s.id} item={s} />
+      {/* Phones/tablets: one column (items, suggestions, total, orders).
+          Desktop (lg+): the total + "Send" sits in a sticky side panel. */}
+      <div className="px-4 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-x-8 lg:px-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        {cart.length > 0 && (
+          <section className="pt-5 lg:col-start-1" aria-labelledby="cart-items">
+            <h2 id="cart-items" className="sr-only">
+              {t("cart.items", { count })}
+            </h2>
+            <ul className="card overflow-hidden">
+              <AnimatePresence initial={false}>
+                {cart.map((line) => (
+                  <CartRow key={line.id} line={line} />
                 ))}
+              </AnimatePresence>
+            </ul>
+
+            {suggestions.length > 0 && (
+              <div className="mt-8">
+                <SectionTitle eyebrow title={t("cart.completeMeal")} />
+                <div className="no-scrollbar -mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:px-0">
+                  {suggestions.map((s) => (
+                    <MiniItemCard key={s.id} item={s} />
+                  ))}
+                </div>
               </div>
+            )}
+          </section>
+        )}
+
+        {cart.length > 0 && (
+          <CartSummaryCard
+            onSent={scrollToOrders}
+            className="mt-8 lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-5"
+          />
+        )}
+
+        {rounds.length > 0 && (
+          <section id="orders" className="scroll-mt-20 pt-10 lg:col-start-1" aria-labelledby="orders-title">
+            <SectionTitle id="orders-title" eyebrow title={t("orders.title")} />
+            <div className="mt-4 space-y-4 2xl:grid 2xl:grid-cols-2 2xl:items-start 2xl:gap-4 2xl:space-y-0">
+              {rounds.map((r) => (
+                <RoundCard key={r.round} round={r} />
+              ))}
             </div>
-          )}
-
-          <div className="card mt-8 p-5">
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="font-display text-lg font-semibold">{t("cart.subtotal")}</span>
-              <span className="text-xl font-semibold tabular text-primary">{formatPrice(subtotal)}</span>
-            </div>
-            <span aria-hidden className="gold-rule mt-3 block w-full opacity-60" />
-            <p className="mt-1 text-sm text-fg-muted">{t("cart.extrasNote")}</p>
-            <Button size="lg" className="mt-5 w-full" onClick={() => void send()} disabled={sending} aria-busy={sending}>
-              {sending ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <ChefHat className="size-5" aria-hidden />}
-              {t("cart.send")} · {formatPrice(subtotal)}
-            </Button>
-          </div>
-        </section>
-      )}
-
-      {rounds.length > 0 && (
-        <section id="orders" className="scroll-mt-20 px-4 pt-10" aria-labelledby="orders-title">
-          <SectionTitle id="orders-title" eyebrow title={t("orders.title")} />
-          <div className="mt-4 space-y-4">
-            {rounds.map((r) => (
-              <RoundCard key={r.round} round={r} />
-            ))}
-          </div>
-        </section>
-      )}
-    </main>
-  );
-}
-
-function CartRow({ line }: { line: CartLineDTO }) {
-  const t = useT();
-  const { menuState, openItem } = useGuest();
-  const meId = useSessionStore((s) => s.snapshot?.me.id);
-  const { setQuantity } = useGuestActions();
-  const item = menuState.itemsById.get(line.itemId);
-  const by = line.guestId === meId ? t("common.you") : line.addedBy || t("common.guest");
-  const options = item
-    ? item.modifierGroups.flatMap((g) => (line.selection[g.id] ?? []).map((id) => g.options.find((o) => o.id === id)?.name).filter(Boolean))
-    : [];
-  const name = item?.name ?? t("cart.unavailableItem");
-
-  return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0, transition: { duration: 0.22 } }}
-      className="border-b border-line last:border-b-0"
-    >
-      <div className="flex gap-3.5 p-4">
-        <button
-          type="button"
-          onClick={() => item && openItem(item.id)}
-          className="pressable relative size-[4.75rem] shrink-0 overflow-hidden rounded-2xl bg-muted ring-1 ring-line"
-          aria-label={name}
-        >
-          {item && <Image src={item.image} alt="" fill sizes="80px" className={item.inStock ? "object-cover" : "object-cover grayscale"} />}
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <p className="font-display text-[1.05rem] font-semibold leading-snug">{name}</p>
-            <p className="shrink-0 font-semibold tabular text-primary">{formatPrice(line.unitPriceCents * line.quantity)}</p>
-          </div>
-          {item && !item.inStock && <Badge tone="danger" className="mt-1">{t("menu.soldOut")}</Badge>}
-          {options.length > 0 && <p className="mt-0.5 text-sm text-fg-muted">{options.join(" · ")}</p>}
-          {line.note && <p className="mt-0.5 text-sm italic text-fg-muted">“{line.note}”</p>}
-          <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-fg-muted">
-            <GuestAvatar name={line.addedBy || t("common.guest")} me={line.guestId === meId} size={22} />
-            <span className="truncate">{t("cart.addedBy", { name: by })}</span>
-          </p>
-          <div className="mt-2 flex justify-end">
-            <QuantityStepper
-              size="sm"
-              removable
-              min={0}
-              value={line.quantity}
-              onChange={(q) => void setQuantity(line.id, q)}
-              removeLabel={t("cart.remove", { name })}
-            />
-          </div>
-        </div>
+          </section>
+        )}
       </div>
-    </motion.li>
+    </main>
   );
 }
 

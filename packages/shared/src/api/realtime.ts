@@ -67,8 +67,12 @@ export interface ServerToClientEvents {
   /** Session ended (paid, closed by staff, expired). → session room */
   "session:closed": (p: Versioned & { reason: SessionCloseReasonDTO }) => void;
 
-  /** Item stock changed. → everyone (guests + staff) */
-  "menu:stock": (p: { itemId: string; inStock: boolean }) => void;
+  /**
+   * Item stock changed. → everyone (guests + staff)
+   * `stockVersion` goes up with every change: apply an event only if it is
+   * newer than what you have (events can arrive out of order).
+   */
+  "menu:stock": (p: { itemId: string; inStock: boolean; stockVersion: number }) => void;
   /** Menu edited by a manager: clients refetch GET /api/menu. → everyone */
   "menu:updated": (p: { menuVersion: string }) => void;
 

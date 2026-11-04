@@ -129,11 +129,12 @@ function Floor() {
   };
 
   return (
-    <div className="min-h-svh bg-bg">
+    <div className="min-h-svh">
       <StaffHeader title={t("waiter.title")} connected={connected} sound={sound} />
-      <div className="mx-auto max-w-5xl px-4 py-5">
+      {/* Phones/tablet portrait: tabs. lg+: calls in a sidebar beside the floor plan, both always visible. */}
+      <div className="mx-auto max-w-[110rem] px-4 py-5 lg:grid lg:grid-cols-[minmax(20rem,26rem)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:px-6">
         <Segmented
-          className="max-w-sm"
+          className="max-w-sm lg:hidden"
           label={t("waiter.title")}
           value={tab}
           onChange={setTab}
@@ -143,65 +144,85 @@ function Floor() {
           ]}
         />
 
-        {tab === "calls" ? (
-          !calls ? (
-            <div className="mt-5 space-y-3">
+        <section
+          aria-labelledby="calls-title"
+          className={cn(
+            tab === "calls" ? "block" : "hidden",
+            "lg:sticky lg:top-24 lg:block lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto lg:overscroll-contain no-scrollbar",
+          )}
+        >
+          <h2 id="calls-title" className="sr-only lg:not-sr-only lg:mb-3 lg:flex lg:items-center lg:gap-3 lg:px-1 lg:font-sans lg:text-[13px] lg:font-semibold lg:uppercase lg:tracking-[0.2em] lg:text-primary">
+            {t("waiter.tabs.calls")}
+            {!!calls?.length && (
+              <span className="grid h-6 min-w-6 place-items-center rounded-full px-2 text-xs tabular text-fg ring-1 ring-gold-line">{calls.length}</span>
+            )}
+          </h2>
+          {!calls ? (
+            <div className="mt-5 space-y-3 lg:mt-0">
               <Skeleton className="h-24 rounded-card" />
               <Skeleton className="h-24 rounded-card" />
             </div>
           ) : calls.length === 0 ? (
             <EmptyState icon={BellRing} title={t("waiter.noCalls")} body={t("waiter.noCallsBody")} />
           ) : (
-            <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+            <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:mt-0 lg:grid-cols-1">
               <AnimatePresence initial={false}>
                 {calls.map((c) => (
                   <CallCard key={c.id} call={c} fresh={fresh.has(c.id)} onHandle={() => void handle(c)} />
                 ))}
               </AnimatePresence>
             </ul>
-          )
-        ) : !tables ? (
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {Array.from({ length: 8 }, (_, i) => (
-              <Skeleton key={i} className="h-32 rounded-card" />
-            ))}
-          </div>
-        ) : (
-          <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {tables.map((tb) => (
-              <li key={tb.id}>
-                <motion.button
-                  type="button"
-                  layout
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => tb.session && setOpenTable(tb)}
-                  className={cn(
-                    "pressable flex h-full min-h-36 w-full flex-col rounded-card bg-surface p-4 text-left shadow-soft ring-1",
-                    tb.status === "billRequested" ? "ring-2 ring-danger/60" : tb.status === "ordered" ? "ring-2 ring-warning/50" : tb.status === "seated" ? "ring-gold-line" : "ring-line",
-                    !tb.session && "cursor-default opacity-75",
-                  )}
-                >
-                  <span className="flex items-start justify-between gap-2">
-                    <span className="font-display text-[2.6rem] font-semibold leading-none tabular">{tb.number}</span>
-                    <Badge tone={STATUS_TONE[tb.status]}>{t(`admin.tables.status.${tb.status}`)}</Badge>
-                  </span>
-                  {tb.label && <span className="mt-1 truncate text-xs text-fg-muted">{tb.label}</span>}
-                  {tb.session && (
-                    <span className="mt-auto pt-3 text-sm">
-                      <span className="flex items-center gap-1.5 font-semibold">
-                        <Users className="size-4 text-fg-muted" aria-hidden />
-                        {t("admin.tables.guests", { count: tb.session.guestCount })}
-                      </span>
-                      {tb.session.openCalls > 0 && (
-                        <span className="mt-0.5 block font-semibold text-danger">{t("waiter.openCalls", { count: tb.session.openCalls })}</span>
-                      )}
+          )}
+        </section>
+
+        <section aria-labelledby="tables-title" className={cn(tab === "tables" ? "block" : "hidden", "lg:block")}>
+          <h2 id="tables-title" className="sr-only lg:not-sr-only lg:mb-3 lg:flex lg:items-center lg:gap-3 lg:px-1 lg:font-sans lg:text-[13px] lg:font-semibold lg:uppercase lg:tracking-[0.2em] lg:text-primary">
+            {t("waiter.tabs.tables")}
+          </h2>
+          {!tables ? (
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:mt-0">
+              {Array.from({ length: 8 }, (_, i) => (
+                <Skeleton key={i} className="h-32 rounded-card" />
+              ))}
+            </div>
+          ) : (
+            <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:mt-0 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+              {tables.map((tb) => (
+                <li key={tb.id}>
+                  <motion.button
+                    type="button"
+                    layout
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => tb.session && setOpenTable(tb)}
+                    className={cn(
+                      "glass-card pressable flex h-full min-h-36 w-full flex-col rounded-card p-4 text-left -outline-offset-2",
+                      tb.session && "lift",
+                      tb.status === "billRequested" ? "outline-2 outline-danger/60" : tb.status === "ordered" ? "outline-2 outline-warning/50" : tb.status === "seated" ? "outline-1 outline-gold-line" : "outline-0",
+                      !tb.session && "cursor-default opacity-75",
+                    )}
+                  >
+                    <span className="flex flex-wrap items-start justify-between gap-2">
+                      <span className="font-display text-[2.6rem] font-semibold leading-none tabular">{tb.number}</span>
+                      <Badge tone={STATUS_TONE[tb.status]}>{t(`admin.tables.status.${tb.status}`)}</Badge>
                     </span>
-                  )}
-                </motion.button>
-              </li>
-            ))}
-          </ul>
-        )}
+                    {tb.label && <span className="mt-1 truncate text-xs text-fg-muted">{tb.label}</span>}
+                    {tb.session && (
+                      <span className="mt-auto pt-3 text-sm">
+                        <span className="flex items-center gap-1.5 font-semibold">
+                          <Users className="size-4 text-fg-muted" aria-hidden />
+                          {t("admin.tables.guests", { count: tb.session.guestCount })}
+                        </span>
+                        {tb.session.openCalls > 0 && (
+                          <span className="mt-0.5 block font-semibold text-danger">{t("waiter.openCalls", { count: tb.session.openCalls })}</span>
+                        )}
+                      </span>
+                    )}
+                  </motion.button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
       <CloseTableSheet table={openTable} onClose={() => setOpenTable(null)} onClosed={() => void loadTables()} />
     </div>
@@ -220,8 +241,8 @@ function CallCard({ call, fresh, onHandle }: { call: CallDTO; fresh: boolean; on
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 40 }}
       className={cn(
-        "flex flex-wrap items-center gap-4 rounded-card bg-surface p-4 shadow-soft ring-1",
-        urgent ? "ring-danger/50" : "ring-gold-line",
+        "glass-card flex flex-wrap items-center gap-4 rounded-card p-4 outline-1 -outline-offset-1",
+        urgent ? "outline-danger/50" : "outline-gold-line",
         fresh && "animate-pulse-ring",
       )}
     >
@@ -244,7 +265,7 @@ function CallCard({ call, fresh, onHandle }: { call: CallDTO; fresh: boolean; on
       </div>
       <Button
         size="lg"
-        className="min-h-14 w-full text-base sm:w-auto"
+        className="min-h-14 w-full text-base sm:w-auto lg:w-full"
         onClick={onHandle}
         aria-label={`${call.type === "cashPayment" ? t("waiter.cashReceived") : t("waiter.handle")}: ${t("kitchen.table", { number: call.tableNumber })}`}
       >

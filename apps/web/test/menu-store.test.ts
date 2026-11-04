@@ -23,6 +23,7 @@ const dto: MenuDTO = {
       allergens: ["milk"],
       calories: null,
       inStock: true,
+      stockVersion: 0,
       featured: true,
       modifierGroups: [
         {
@@ -52,6 +53,7 @@ const dto: MenuDTO = {
       allergens: [],
       calories: 400,
       inStock: true,
+      stockVersion: 0,
       featured: false,
       modifierGroups: [],
     },

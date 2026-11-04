@@ -61,7 +61,10 @@ export async function saveItem(tx: Tx, id: string | null, input: ItemInput): Pro
     archived: input.archived,
     sortOrder: input.sortOrder,
   };
-  const item = id ? await tx.menuItem.update({ where: { id }, data }) : await tx.menuItem.create({ data });
+  // Saving from the editor can change stock too: bump the version so live screens order it correctly.
+  const item = id
+    ? await tx.menuItem.update({ where: { id }, data: { ...data, stockVersion: { increment: 1 } } })
+    : await tx.menuItem.create({ data });
 
   const existingGroups = await tx.modifierGroup.findMany({
     where: { itemId: item.id },

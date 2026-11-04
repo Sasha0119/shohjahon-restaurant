@@ -67,8 +67,9 @@ export function GuestShell({ token, children }: { token: string; children: React
   return (
     <GuestContext.Provider value={value}>
       <OfflineBanner />
-      <div className="mx-auto min-h-svh w-full max-w-3xl pb-[calc(env(safe-area-inset-bottom)+10rem)]">
-        {children}
+      {/* Phones: room for the bottom nav + cart bar. md+: the nav is a left rail instead. */}
+      <div className="min-h-svh pb-[calc(env(safe-area-inset-bottom)+10rem)] md:pb-28 md:pl-[calc(6rem+env(safe-area-inset-left))]">
+        <div className="mx-auto w-full max-w-3xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[96rem]">{children}</div>
       </div>
       <FloatingCartBar />
       <BottomNav />

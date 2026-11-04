@@ -107,7 +107,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Below the fold ───────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-3xl pb-6">
+      <div className="mx-auto max-w-3xl pb-6 lg:max-w-6xl lg:px-4">
         <p className="px-6 text-center text-[15px] leading-relaxed text-fg-muted">
           {localize(brand.welcomeLine, locale, brand.defaultLanguage)}
         </p>
@@ -118,7 +118,7 @@ export default function HomePage() {
 
         <section className="mt-12 scroll-mt-6" id="picks" aria-labelledby="picks-title">
           <SectionTitle id="picks-title" eyebrow title={t("home.chefsPicks")} subtitle={t("home.chefsPicksSub")} className="px-5" />
-          <div className="no-scrollbar mt-5 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2">
+          <div className="no-scrollbar mt-5 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 lg:gap-5">
             {menu
               ? featured.map((item, i) => <FeatureCard key={item.id} item={item} priority={i < 2} />)
               : Array.from({ length: 3 }, (_, i) => (
@@ -129,7 +129,7 @@ export default function HomePage() {
 
         <section className="mt-12 px-4" aria-labelledby="explore">
           <SectionTitle id="explore" eyebrow title={t("home.explore")} className="px-1" />
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 lg:gap-4">
             {menu
               ? menu.categories.map((cat, i) => {
                   const items = menu.items.filter((it) => it.categoryId === cat.id);
@@ -148,7 +148,7 @@ export default function HomePage() {
                           src={cover.image}
                           alt=""
                           fill
-                          sizes={i === 0 ? "(min-width: 768px) 740px, 100vw" : "(min-width: 768px) 370px, 50vw"}
+                          sizes={i === 0 ? "(min-width: 1024px) 560px, (min-width: 768px) 440px, 100vw" : "(min-width: 1024px) 280px, (min-width: 768px) 220px, 50vw"}
                           className="-z-10 object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
                         />
                       )}
@@ -172,7 +172,7 @@ export default function HomePage() {
           <h2 id="info" className="sr-only">
             {t("home.hours")}
           </h2>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:gap-4">
             <OpeningHoursCard />
             <ContactCard />
           </div>

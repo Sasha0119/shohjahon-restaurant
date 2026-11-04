@@ -30,7 +30,7 @@ export function DietaryTags({ tags, variant = "pills", className }: DietaryTagsP
         {tags.map((tag) => {
           const Icon = tagIcons[tag];
           return (
-            <li key={tag} className="grid size-8 place-items-center rounded-full glass-dark" title={t(`tags.${tag}`)}>
+            <li key={tag} className="grid size-8 place-items-center rounded-full glass-photo" title={t(`tags.${tag}`)}>
               <Icon className="size-[15px]" strokeWidth={1.8} aria-hidden />
             </li>
           );

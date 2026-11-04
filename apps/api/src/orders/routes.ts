@@ -13,7 +13,7 @@ import { audit } from "../audit.ts";
 import { createCall, handleCall, toCallDTO } from "../calls/service.ts";
 import type { Db } from "../db.ts";
 import type { Env } from "../env.ts";
-import type { Prisma } from "../generated/prisma/client.ts";
+import { Prisma } from "../generated/prisma/client.ts";
 import { errors, parse } from "../http/errors.ts";
 import { idempotent } from "../http/idempotency.ts";
 import type { createRegistrar } from "../http/registrar.ts";
@@ -100,9 +100,16 @@ export function registerOrderRoutes(on: On, db: Db, env: Env, realtime: Realtime
   on("PATCH", "/api/menu/items/:itemId/stock", async (req, res) => {
     const id = parse(zId, req.params.itemId);
     const { inStock } = parse(updateStockBody, req.body);
-    const item = await db.menuItem.findUnique({ where: { id }, select: { id: true, name: true } });
-    if (!item) throw errors.notFound("Item");
-    await db.menuItem.update({ where: { id }, data: { inStock } });
+    // One atomic UPDATE … RETURNING: the row lock orders concurrent toggles, and the
+    // version it returns tells every client which change is the newest.
+    const item = await db.menuItem
+      .update({ where: { id }, data: { inStock, stockVersion: { increment: 1 } }, select: { name: true, stockVersion: true } })
+      .catch((e: unknown) => {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") throw errors.notFound("Item");
+        throw e;
+      });
+    // Push first (guests and other screens update right away), then write the audit row.
+    realtime.emit(rooms.everyone, "menu:stock", { itemId: id, inStock, stockVersion: item.stockVersion });
     await audit(db, {
       actor: { type: "staff", staffId: req.staff!.id },
       action: "menu_item.stock_changed",
@@ -111,8 +118,7 @@ export function registerOrderRoutes(on: On, db: Db, env: Env, realtime: Realtime
       data: { inStock },
       ip: req.ip,
     });
-    realtime.emit(rooms.everyone, "menu:stock", { itemId: id, inStock });
-    res.json({ itemId: id, name: item.name, inStock });
+    res.json({ itemId: id, name: item.name, inStock, stockVersion: item.stockVersion });
   });
 
   // ── waiter ────────────────────────────────────────────────────────────────

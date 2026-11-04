@@ -55,7 +55,7 @@ export function Segmented<T extends string>({ value, onChange, options, label, c
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn("flex rounded-full bg-muted p-1 ring-1 ring-inset ring-line/80", className)}
+      className={cn("glass-chip flex rounded-full p-1", className)}
       onKeyDown={(e) => {
         if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
         e.preventDefault();

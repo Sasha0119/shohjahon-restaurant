@@ -33,7 +33,7 @@ export function QuantityStepper({
 
   return (
     <div
-      className={cn("inline-flex items-center rounded-full bg-muted p-1 ring-1 ring-inset ring-line", className)}
+      className={cn("glass-chip inline-flex items-center rounded-full p-1", className)}
       role="group"
       aria-label={t("item.quantity")}
     >

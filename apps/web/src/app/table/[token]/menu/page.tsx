@@ -6,9 +6,11 @@ import { CloudOff, Search, SearchX, X } from "lucide-react";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { FoodCard, FoodCardSkeleton } from "@/components/guest/food-card";
 import { useGuest } from "@/components/guest/guest-context";
+import { CartPanel } from "@/components/guest/cart-summary";
 import { PageHeader } from "@/components/guest/page-header";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
+import { useMinWidth } from "@/hooks/use-media-query";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/cn";
 
@@ -23,12 +25,19 @@ const normalize = (s: string) =>
     .replace(/\p{Diacritic}/gu, "")
     .replace(/[ʻʼ'‘’`´]/g, "");
 
+/**
+ * Menu cards: 1 column on phones, 2 from 640px, 3 from 1024px and 4 on very
+ * wide screens (2xl). On xl the cart panel takes the right side, so it stays 3.
+ */
+const MENU_GRID = "mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4";
+
 export default function MenuPage() {
   const { t } = useI18n();
   const { menuState, table } = useGuest();
   const { menu, error, retry } = menuState;
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
+  const wide = useMinWidth("xl");
 
   // Time-based menus: hide categories outside their window.
   const categories = useMemo(() => {
@@ -55,23 +64,33 @@ export default function MenuPage() {
     <main>
       <PageHeader title={t("menu.title")} subtitle={t("common.table", { number: table.number })} />
 
-      <div className="px-4 pt-4">
-        <SearchField value={query} onChange={setQuery} />
-      </div>
+      {/* xl+: the cart sits beside the menu (no floating cart bar). */}
+      <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-8 xl:pr-8 2xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="min-w-0">
+          <div className="px-4 pt-4 lg:px-8 xl:pr-0">
+            <SearchField value={query} onChange={setQuery} />
+          </div>
 
-      {error ? (
-        <EmptyState
-          icon={CloudOff}
-          title={t("menu.loadError")}
-          action={<Button onClick={retry}>{t("common.retry")}</Button>}
-        />
-      ) : !menu ? (
-        <MenuSkeleton />
-      ) : results ? (
-        <SearchResults items={results} query={deferredQuery.trim()} />
-      ) : (
-        <CategorizedMenu categories={categories} items={menu.items} />
-      )}
+          {error ? (
+            <EmptyState
+              icon={CloudOff}
+              title={t("menu.loadError")}
+              action={<Button onClick={retry}>{t("common.retry")}</Button>}
+            />
+          ) : !menu ? (
+            <MenuSkeleton />
+          ) : results ? (
+            <SearchResults items={results} query={deferredQuery.trim()} />
+          ) : (
+            <CategorizedMenu categories={categories} items={menu.items} />
+          )}
+        </div>
+        {wide && (
+          <div className="pt-4">
+            <CartPanel />
+          </div>
+        )}
+      </div>
     </main>
   );
 }
@@ -174,7 +193,7 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
         aria-label={t("menu.categories")}
         className="sticky top-16 z-20 mt-3 border-b border-gold-line/50 glass"
       >
-        <div ref={chipsRef} className="no-scrollbar flex gap-1 overflow-x-auto px-2">
+        <div ref={chipsRef} className="no-scrollbar flex gap-1 overflow-x-auto px-2 lg:px-6">
           {categories.map((c) => {
             const isActive = c.slug === active;
             return (
@@ -204,7 +223,7 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
         </div>
       </nav>
 
-      <div className="space-y-12 px-4 pt-6">
+      <div className="space-y-12 px-4 pt-6 lg:px-8 xl:pr-0">
         {categories.map((c) => {
           const catItems = items.filter((i) => i.categoryId === c.id);
           return (
@@ -219,7 +238,7 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
                 {c.name}
               </h2>
               {c.description && <p className="mt-1.5 text-[15px] italic text-fg-muted">{c.description}</p>}
-              <div className="mt-5 grid gap-5 md:grid-cols-2">
+              <div className={MENU_GRID}>
                 {catItems.map((item) => (
                   <FoodCard key={item.id} item={item} priority={cardIndex++ < 2} />
                 ))}
@@ -238,9 +257,9 @@ function SearchResults({ items, query }: { items: MenuItem[]; query: string }) {
     return <EmptyState icon={SearchX} title={t("menu.noResults", { query })} body={t("menu.noResultsHint")} />;
   }
   return (
-    <section className="px-4 pt-5" aria-live="polite">
+    <section className="px-4 pt-5 lg:px-8 xl:pr-0" aria-live="polite">
       <p className="text-sm font-semibold text-fg-muted">{t("menu.results", { count: items.length })}</p>
-      <div className="mt-4 grid gap-5 md:grid-cols-2">
+      <div className={MENU_GRID}>
         {items.map((item) => (
           <FoodCard key={item.id} item={item} />
         ))}
@@ -257,13 +276,14 @@ function MenuSkeleton() {
           <Skeleton key={i} className={cn("h-4 shrink-0 rounded-full", w)} />
         ))}
       </div>
-      <div className="space-y-5 px-4 pt-6">
+      <div className="space-y-5 px-4 pt-6 lg:px-8 xl:pr-0">
         <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-4 w-64" />
-        <div className="grid gap-5 md:grid-cols-2">
+        <Skeleton className="h-4 w-64 max-w-full" />
+        <div className={MENU_GRID}>
           <FoodCardSkeleton />
           <FoodCardSkeleton />
           <FoodCardSkeleton />
+          <FoodCardSkeleton className="hidden lg:block" />
         </div>
       </div>
     </div>

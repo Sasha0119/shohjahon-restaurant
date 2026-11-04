@@ -40,7 +40,7 @@ export function StaffAuthLayout({ title, subtitle, children, footer }: {
           <h1 className="mt-2 text-3xl font-semibold">{title}</h1>
           {subtitle && <p className="mt-2 max-w-sm text-[15px] text-fg-muted">{subtitle}</p>}
         </div>
-        <div className="rounded-sheet bg-surface p-5 shadow-lift ring-1 ring-gold-line sm:p-7">{children}</div>
+        <div className="glass-panel rounded-sheet p-5 sm:p-7">{children}</div>
         {footer && <div className="mt-6 text-center">{footer}</div>}
       </motion.div>
     </main>

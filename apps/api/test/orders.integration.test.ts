@@ -7,7 +7,7 @@ import type { Db } from "../src/db.ts";
 import { parseEnv } from "../src/env.ts";
 import { createRecordingRealtime } from "../src/realtime/types.ts";
 import { createQrToken } from "../src/tables/qr-token.ts";
-import { TEST_DATABASE_URL, TEST_PIN_STAFF, createTestDb, type TestDb } from "./helpers/test-db.ts";
+import { TEST_DATABASE_URL, TEST_MANAGER, TEST_PIN_STAFF, createTestDb, type TestDb } from "./helpers/test-db.ts";
 
 const ORIGIN = "http://localhost:3000";
 const QR = "q".repeat(40);
@@ -299,6 +299,72 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
       expect(menu.items.find((i: { id: string }) => i.id === "item-classic-tiramisu").inStock).toBe(false);
       expect((await as(g).post("/api/session/cart", { itemId: "item-classic-tiramisu", quantity: 1 })).body.error.code).toBe("OUT_OF_STOCK");
       await as(kitchen).patch("/api/menu/items/item-classic-tiramisu/stock", { inStock: true });
+    });
+
+    // ── stock toggle: ordering, races, live updates ─────────────────────────
+    const stockOf = (id: string) => db.menuItem.findUniqueOrThrow({ where: { id }, select: { inStock: true, stockVersion: true } });
+
+    it("stock toggle returns and broadcasts a version that goes up with every change", async () => {
+      const id = "item-classic-tiramisu";
+      const before = await stockOf(id);
+      const off = await as(kitchen).patch(`/api/menu/items/${id}/stock`, { inStock: false });
+      const on = await as(kitchen).patch(`/api/menu/items/${id}/stock`, { inStock: true });
+      expect(off.body).toMatchObject({ itemId: id, inStock: false, stockVersion: before.stockVersion + 1 });
+      expect(on.body).toMatchObject({ itemId: id, inStock: true, stockVersion: before.stockVersion + 2 });
+      // Only the changed item is pushed — no full "menu:updated" reload for anyone.
+      expect(events("menu:stock").map((e) => e.payload)).toEqual([
+        { itemId: id, inStock: false, stockVersion: before.stockVersion + 1 },
+        { itemId: id, inStock: true, stockVersion: before.stockVersion + 2 },
+      ]);
+      expect(events("menu:updated")).toHaveLength(0);
+      // Guests' menu carries the same version, so a reload and the live feed agree.
+      const menu = (await request(app).get("/api/menu")).body;
+      expect(menu.items.find((i: { id: string }) => i.id === id)).toMatchObject({ inStock: true, stockVersion: before.stockVersion + 2 });
+    });
+
+    it("rapid toggles: the database ends on the last value sent, and the newest event says so", async () => {
+      const id = "item-house-iced-tea";
+      for (const inStock of [false, true, false, true, false]) {
+        expect((await as(kitchen).patch(`/api/menu/items/${id}/stock`, { inStock })).status).toBe(200);
+      }
+      const row = await stockOf(id);
+      expect(row.inStock).toBe(false);
+      const newest = events("menu:stock").reduce((a, b) =>
+        (b.payload as { stockVersion: number }).stockVersion > (a.payload as { stockVersion: number }).stockVersion ? b : a,
+      );
+      expect(newest.payload).toMatchObject({ itemId: id, inStock: row.inStock, stockVersion: row.stockVersion });
+      await as(kitchen).patch(`/api/menu/items/${id}/stock`, { inStock: true });
+    });
+
+    it("two users toggling at once: versions are unique and the highest one matches the database", async () => {
+      const id = "item-margherita-pizza";
+      const manager = cookie(await request(app).post("/api/auth/login").set("Origin", ORIGIN).send(TEST_MANAGER));
+      const results = await Promise.all([
+        as(kitchen).patch(`/api/menu/items/${id}/stock`, { inStock: false }),
+        as(manager).patch(`/api/menu/items/${id}/stock`, { inStock: true }),
+        as(kitchen).patch(`/api/menu/items/${id}/stock`, { inStock: false }),
+        as(manager).patch(`/api/menu/items/${id}/stock`, { inStock: true }),
+      ]);
+      expect(results.map((r) => r.status)).toEqual([200, 200, 200, 200]);
+      const versions = results.map((r) => r.body.stockVersion as number);
+      expect(new Set(versions).size).toBe(4); // the row lock serialised them
+
+      const row = await stockOf(id);
+      const latest = results.find((r) => r.body.stockVersion === Math.max(...versions))!;
+      expect(latest.body.inStock).toBe(row.inStock);
+      expect(row.stockVersion).toBe(Math.max(...versions));
+      // A client keeping the highest-version event ends up exactly where the server is.
+      const kept = events("menu:stock")
+        .map((e) => e.payload as { inStock: boolean; stockVersion: number })
+        .sort((a, b) => b.stockVersion - a.stockVersion)[0]!;
+      expect(kept).toMatchObject({ inStock: row.inStock, stockVersion: row.stockVersion });
+      await as(kitchen).patch(`/api/menu/items/${id}/stock`, { inStock: true });
+    });
+
+    it("stock toggle on an unknown item is a 404 and broadcasts nothing", async () => {
+      const res = await as(kitchen).patch("/api/menu/items/item-does-not-exist/stock", { inStock: false });
+      expect(res.status).toBe(404);
+      expect(events("menu:stock")).toHaveLength(0);
     });
   });
 

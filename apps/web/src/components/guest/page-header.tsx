@@ -39,7 +39,7 @@ export function TablePill({ onImage, className }: { onImage?: boolean; className
     <span
       className={cn(
         "inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold",
-        onImage ? "glass-dark" : "bg-muted text-fg",
+        onImage ? "glass-dark" : "glass-chip text-fg",
         className,
       )}
     >

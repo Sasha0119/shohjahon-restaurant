@@ -31,10 +31,10 @@ import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
 
 const STATUS_STYLE: Record<TableStatusDTO, { dot: string; ring: string; tone: "muted" | "primary" | "warning" | "danger" }> = {
-  free: { dot: "bg-fg/25", ring: "ring-line", tone: "muted" },
-  seated: { dot: "bg-primary", ring: "ring-primary/40", tone: "primary" },
-  ordered: { dot: "bg-warning", ring: "ring-warning/50", tone: "warning" },
-  billRequested: { dot: "bg-danger", ring: "ring-danger/50", tone: "danger" },
+  free: { dot: "bg-fg/25", ring: "outline-transparent", tone: "muted" },
+  seated: { dot: "bg-primary", ring: "outline-primary/40", tone: "primary" },
+  ordered: { dot: "bg-warning", ring: "outline-warning/50", tone: "warning" },
+  billRequested: { dot: "bg-danger", ring: "outline-danger/50", tone: "danger" },
 };
 
 const field =
@@ -150,7 +150,7 @@ function TableCard({ table, onOpen }: { table: AdminTableDTO; onOpen: () => void
         whileTap={{ scale: 0.97 }}
         onClick={onOpen}
         className={cn(
-          "flex h-full min-h-40 w-full flex-col rounded-card bg-surface p-4 text-left shadow-soft ring-2 transition-shadow hover:shadow-lift",
+          "glass-card lift flex h-full min-h-40 w-full flex-col rounded-card p-4 text-left outline-2 -outline-offset-2",
           style.ring,
           !table.active && "opacity-55",
         )}

@@ -64,7 +64,7 @@ export function LanguageSwitcher({
         onClick={() => setOpen((o) => !o)}
         className={cn(
           "pressable inline-flex h-11 items-center gap-1.5 rounded-full px-3 text-xs font-semibold tracking-[0.12em]",
-          onImage ? "glass-dark" : "text-fg ring-1 ring-inset ring-line hover:bg-muted",
+          onImage ? "glass-dark" : "glass-chip text-fg hover:text-primary",
         )}
       >
         <Globe className="size-4" aria-hidden />
@@ -81,7 +81,7 @@ export function LanguageSwitcher({
             exit={{ opacity: 0, y: placement === "below" ? -6 : 6, scale: 0.97 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-              "absolute z-50 w-48 overflow-hidden rounded-2xl bg-surface p-1.5 text-fg shadow-lift ring-1 ring-gold-line",
+              "glass-panel absolute z-50 w-48 overflow-hidden rounded-2xl p-1.5 text-fg",
               placement === "below" ? "right-0 top-[calc(100%+0.5rem)] origin-top-right" : "bottom-[calc(100%+0.5rem)] left-0 origin-bottom-left",
             )}
           >

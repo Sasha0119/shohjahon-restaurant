@@ -76,6 +76,7 @@ export async function buildPublicMenu(db: Db, now = new Date(), timeZone = brand
         allergens: i.allergens.map(enums.allergen.fromDb),
         calories: i.calories,
         inStock: i.inStock,
+        stockVersion: i.stockVersion,
         featured: i.featured,
         modifierGroups: i.modifierGroups
           .map((g) => ({
@@ -153,6 +154,7 @@ export async function buildAdminMenu(db: Db): Promise<AdminMenuDTO> {
         allergens: i.allergens.map(enums.allergen.fromDb),
         calories: i.calories,
         inStock: i.inStock,
+        stockVersion: i.stockVersion,
         featured: i.featured,
         archived: i.archived,
         sortOrder: i.sortOrder,

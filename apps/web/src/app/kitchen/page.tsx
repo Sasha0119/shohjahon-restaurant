@@ -22,6 +22,7 @@ import { translateError } from "@/i18n/errors";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatCountdown } from "@/lib/format";
+import { setInStock, stockStore, useInStock, useStockErrorToast } from "@/lib/stock";
 
 const ROLES = ["kitchen", "manager"] as const;
 const COLUMNS = ["received", "preparing", "ready"] as const;
@@ -111,16 +112,19 @@ function KitchenDisplay() {
           return [...others, ticket].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
         });
       },
-      "menu:stock": () => setStockVersion((v) => v + 1),
+      // Stock: update just that item (no menu reload). Menu edits: reload the stock list.
+      "menu:stock": ({ itemId, inStock, stockVersion }) => stockStore.getState().applyServer(itemId, inStock, stockVersion),
       "menu:updated": () => setStockVersion((v) => v + 1),
     },
     {
       // Subscribe first, then refetch: nothing can slip between the snapshot and the live feed.
-      onConnect: (s) =>
+      onConnect: (s) => {
+        setStockVersion((v) => v + 1); // catch up on stock changes missed while offline
         void s
           .emitWithAck("kds:subscribe", { stations: stationsRef.current })
           .catch(() => {})
-          .finally(() => void load()),
+          .finally(() => void load());
+      },
     },
   );
   // Re-subscribe when the station filter changes.
@@ -160,10 +164,11 @@ function KitchenDisplay() {
   );
 
   return (
-    <div className="min-h-svh bg-bg">
+    // lg+ (landscape tablets, desktops): the board fills the screen and each column scrolls on its own.
+    <div className="flex min-h-svh flex-col lg:h-svh">
       <StaffHeader title={t("kitchen.title")} connected={connected} sound={sound}>
         <Segmented
-          className="min-w-64"
+          className="w-full min-w-0 sm:w-auto sm:min-w-64"
           label={t("kitchen.title")}
           value={filter}
           onChange={setFilter}
@@ -175,15 +180,16 @@ function KitchenDisplay() {
         </Button>
       </StaffHeader>
 
-      <main className="grid gap-4 p-4 lg:grid-cols-3">
+      {/* Phones: columns stacked. md+ (tablet portrait and up): three columns side by side. */}
+      <main className="grid gap-4 p-4 md:grid-cols-3 md:gap-3 md:p-3 lg:min-h-0 lg:flex-1 lg:gap-4 lg:p-4">
         {columns.map((col) => (
-          <section key={col.status} aria-labelledby={`col-${col.status}`} className="min-w-0">
-            <h2 id={`col-${col.status}`} className="mb-3 flex items-center gap-3 px-1 font-sans text-[13px] font-semibold uppercase tracking-[0.2em] text-primary">
+          <section key={col.status} aria-labelledby={`col-${col.status}`} className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
+            <h2 id={`col-${col.status}`} className="mb-3 flex shrink-0 items-center gap-3 px-1 font-sans text-[13px] font-semibold uppercase tracking-[0.2em] text-primary">
               <span aria-hidden className="h-px w-6 bg-primary" />
               {t(`kitchen.columns.${col.status}`)}
               <span className="grid h-6 min-w-6 place-items-center rounded-full px-2 text-xs tabular text-fg ring-1 ring-gold-line">{col.items.length}</span>
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-3 lg:-mx-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:px-1 lg:pb-4 min-[1800px]:grid min-[1800px]:auto-rows-min min-[1800px]:grid-cols-2 min-[1800px]:gap-3 min-[1800px]:space-y-0">
               {!tickets ? (
                 <Skeleton className="h-48 rounded-card" />
               ) : col.items.length === 0 ? (
@@ -224,18 +230,18 @@ function TicketCard({ ticket, fresh, busy, onAdvance }: { ticket: OrderTicketDTO
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.96 }}
       className={cn(
-        "overflow-hidden rounded-card bg-surface shadow-soft ring-2 transition-shadow",
-        urgency === "late" ? "ring-danger" : urgency === "warn" ? "ring-warning" : fresh ? "ring-primary" : "ring-line",
+        "glass-card overflow-hidden rounded-card outline-2 -outline-offset-2",
+        urgency === "late" ? "outline-danger" : urgency === "warn" ? "outline-warning" : fresh ? "outline-primary" : "outline-transparent",
         fresh && "animate-pulse-ring",
       )}
     >
       <header
         className={cn(
-          "flex items-center justify-between gap-3 px-4 py-3",
+          "flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3",
           urgency === "late" ? "bg-danger text-white" : urgency === "warn" ? "bg-warning/20" : "bg-muted/60 border-b border-line",
         )}
       >
-        <div>
+        <div className="min-w-0">
           <p className="font-display text-[1.75rem] font-semibold leading-none">{t("kitchen.table", { number: ticket.tableNumber })}</p>
           <p className={cn("mt-1 text-xs font-semibold uppercase tracking-wider", urgency === "late" ? "text-white/85" : "text-fg-muted")}>
             {t("kitchen.round", { number: ticket.round })} · {t(`kitchen.stations.${ticket.station}`)}
@@ -252,9 +258,9 @@ function TicketCard({ ticket, fresh, busy, onAdvance }: { ticket: OrderTicketDTO
           const text = lineText(l);
           return (
           <li key={l.id}>
-            <p className="flex gap-2 text-[19px] font-semibold leading-snug">
+            <p className="flex gap-2 text-[19px] font-semibold leading-snug md:text-[17px] lg:text-[19px]">
               <span className="min-w-8 tabular text-primary">{l.quantity}×</span>
-              <span>{text.name}</span>
+              <span className="min-w-0">{text.name}</span>
             </p>
             {text.modifiers.length > 0 && (
               <p className="ml-10 text-[15px] text-fg-muted">{text.modifiers.join(" · ")}</p>
@@ -284,28 +290,24 @@ function StockSheet({ open, onClose, version }: { open: boolean; onClose: () => 
   const nameOf = (x: { name: string; translations?: Partial<Record<string, { name?: string }>> }) =>
     x.translations?.[locale]?.name?.trim() || x.name;
   const [menu, setMenu] = useState<MenuDTO | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
+  useStockErrorToast();
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/menu", { cache: "no-cache" });
-    if (res.ok) setMenu(await res.json());
+    try {
+      const res = await fetch("/api/menu", { cache: "no-cache" });
+      if (!res.ok) return;
+      const next = (await res.json()) as MenuDTO;
+      stockStore.getState().seed(next.items);
+      setMenu(next);
+    } catch {
+      /* offline: keep the list we have; the next reconnect reloads */
+    }
   }, []);
-  // Reload when opened, and when anyone changes stock while it is open.
+  // Load when opened, after a menu edit, and after a reconnect. Stock changes
+  // themselves arrive live through the stock store, without reloading.
   useEffect(() => {
     if (open) void load();
   }, [open, load, version]);
-
-  const toggle = async (id: string, inStock: boolean) => {
-    setBusy(id);
-    try {
-      await api("PATCH", `/api/menu/items/${id}/stock`, { inStock });
-      setMenu((m) => (m ? { ...m, items: m.items.map((i) => (i.id === id ? { ...i, inStock } : i)) } : m));
-    } catch (e) {
-      toast.error(translateError(e, t));
-    } finally {
-      setBusy(null);
-    }
-  };
 
   return (
     <Sheet open={open} onClose={onClose} title={t("kitchen.stockTitle")} description={t("kitchen.stockHint")}>
@@ -322,19 +324,23 @@ function StockSheet({ open, onClose, version }: { open: boolean; onClose: () => 
               {menu.items
                 .filter((i) => i.categoryId === c.id)
                 .map((i) => (
-                  <li key={i.id} className="flex min-h-14 items-center gap-3 px-4 py-2">
-                    <span className={cn("flex-1 font-semibold", !i.inStock && "text-fg-muted line-through")}>{nameOf(i)}</span>
-                    {busy === i.id ? (
-                      <Loader2 className="size-5 animate-spin text-fg-muted" aria-hidden />
-                    ) : (
-                      <Switch compact checked={i.inStock} onChange={(v) => void toggle(i.id, v)} label={nameOf(i)} />
-                    )}
-                  </li>
+                  <StockRow key={i.id} id={i.id} fallback={i.inStock} name={nameOf(i)} />
                 ))}
             </ul>
           </section>
         ))
       )}
     </Sheet>
+  );
+}
+
+function StockRow({ id, fallback, name }: { id: string; fallback: boolean; name: string }) {
+  // Only this row re-renders when its stock changes.
+  const inStock = useInStock(id, fallback);
+  return (
+    <li className="flex min-h-14 items-center gap-3 px-4 py-2">
+      <span className={cn("flex-1 font-semibold", !inStock && "text-fg-muted line-through")}>{name}</span>
+      <Switch compact checked={inStock} onChange={(v) => setInStock(id, v)} label={name} />
+    </li>
   );
 }

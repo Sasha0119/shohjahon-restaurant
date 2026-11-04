@@ -161,6 +161,8 @@ export interface MenuDTO {
     allergens: Allergen[];
     calories: number | null;
     inStock: boolean;
+    /** Bumped on every stock change; the higher one is the newer state (see "menu:stock"). */
+    stockVersion: number;
     featured: boolean;
     modifierGroups: {
       id: string;

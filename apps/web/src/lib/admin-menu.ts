@@ -5,19 +5,25 @@ import { useI18n } from "@/i18n";
 import { useCallback, useEffect, useState } from "react";
 import { useStaffSocket } from "@/hooks/use-staff-socket";
 import { api } from "@/lib/api";
+import { stockStore } from "@/lib/stock";
 
 export type AdminItem = AdminMenuDTO["items"][number];
 export type AdminCategory = AdminMenuDTO["categories"][number];
 export type AdminCombo = AdminMenuDTO["combos"][number];
 
-/** The full menu for editors; reloads when anyone changes it (other managers, kitchen stock). */
+/**
+ * The full menu for editors; reloads when a manager edits it. Stock changes
+ * (kitchen or another manager) update only that one item, no reload.
+ */
 export function useAdminMenu() {
   const [menu, setMenu] = useState<AdminMenuDTO | null>(null);
   const [failed, setFailed] = useState(false);
 
   const reload = useCallback(async () => {
     try {
-      setMenu(await api<AdminMenuDTO>("GET", "/api/admin/menu"));
+      const next = await api<AdminMenuDTO>("GET", "/api/admin/menu");
+      stockStore.getState().seed(next.items);
+      setMenu(next);
       setFailed(false);
     } catch {
       setFailed(true);
@@ -27,7 +33,22 @@ export function useAdminMenu() {
   useEffect(() => {
     void reload();
   }, [reload]);
-  useStaffSocket({ "menu:updated": () => void reload(), "menu:stock": () => void reload() }, () => void reload());
+  useStaffSocket(
+    {
+      "menu:updated": () => void reload(),
+      "menu:stock": ({ itemId, inStock, stockVersion }) => {
+        stockStore.getState().applyServer(itemId, inStock, stockVersion);
+        setMenu((m) => {
+          const i = m?.items.findIndex((x) => x.id === itemId) ?? -1;
+          if (!m || i < 0 || m.items[i]!.stockVersion >= stockVersion) return m;
+          const items = m.items.slice();
+          items[i] = { ...items[i]!, inStock, stockVersion };
+          return { ...m, items };
+        });
+      },
+    },
+    () => void reload(),
+  );
 
   return { menu, failed, reload, setMenu };
 }

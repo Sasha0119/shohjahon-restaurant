@@ -154,8 +154,8 @@ function FeedbackCard({ f, fresh, busy, onSet }: { f: FeedbackDTO; fresh: boolea
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 30 }}
       className={cn(
-        "rounded-card bg-surface p-5 shadow-soft ring-1",
-        handled ? "ring-line" : "ring-danger/30",
+        "glass-card rounded-card p-5 outline-1 -outline-offset-1",
+        handled ? "outline-transparent" : "outline-danger/30",
         fresh && "animate-pulse-ring",
       )}
     >

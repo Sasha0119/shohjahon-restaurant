@@ -13,13 +13,13 @@ type Size = "md" | "lg" | "sm";
  * Uzbek/Russian labels wrap onto two lines instead of spilling out.
  */
 const base =
-  "relative inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-[0.01em] select-none text-center leading-tight text-balance transition-[background-color,box-shadow,opacity,color,filter] duration-200 disabled:opacity-40 disabled:pointer-events-none";
+  "relative inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-[0.01em] select-none text-center leading-tight text-balance transition-[background-color,box-shadow,opacity,color,filter,translate] duration-200 disabled:opacity-40 disabled:pointer-events-none";
 
 const variants: Record<Variant, string> = {
+  // Glossy gold: a bright top edge and a faint sheen over the fill.
   primary:
-    "bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.28),var(--shadow-glow)] hover:brightness-[1.07]",
-  secondary:
-    "bg-muted text-fg ring-1 ring-inset ring-line hover:bg-[color-mix(in_oklab,var(--surface-muted-color)_82%,var(--text-color))]",
+    "bg-primary bg-[linear-gradient(180deg,rgb(255_255_255/0.18),transparent_55%)] text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.4),inset_0_0_0_1px_rgb(255_255_255/0.12),var(--shadow-glow)] hover:-translate-y-px hover:brightness-[1.07] motion-reduce:hover:translate-y-0",
+  secondary: "glass-chip text-fg hover:-translate-y-px hover:text-primary motion-reduce:hover:translate-y-0",
   outline: "text-primary ring-1 ring-inset ring-gold-line hover:bg-primary/8",
   ghost: "text-fg hover:bg-muted",
   glass: "glass-dark hover:bg-black/45",
@@ -88,8 +88,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       className={cn(
         "inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40",
         variant === "plain" && "text-fg hover:bg-muted",
-        variant === "muted" && "bg-muted text-fg ring-1 ring-inset ring-line",
-        variant === "surface" && "bg-surface text-fg shadow-soft ring-1 ring-inset ring-line",
+        variant === "muted" && "glass-chip text-fg",
+        variant === "surface" && "glass-card text-fg",
         variant === "glass" && "glass-dark",
         className,
       )}

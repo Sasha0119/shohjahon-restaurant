@@ -102,9 +102,13 @@ export function localizeMenu(menu: Menu, lang: string): Menu {
 interface MenuState {
   menu: Menu | null;
   version: string | null;
+  /** Each item's stockVersion, so late or out-of-order "menu:stock" events are ignored. */
+  stockVersions: Record<string, number>;
   error: boolean;
   /** Fetch (or revalidate) the menu. Concurrent calls share one request. */
   load: () => Promise<void>;
+  /** A live stock change: updates just that item (no reload). */
+  applyStock: (itemId: string, inStock: boolean, stockVersion: number) => void;
 }
 
 let inflight: Promise<void> | null = null;
@@ -112,6 +116,7 @@ let inflight: Promise<void> | null = null;
 export const useMenuStore = create<MenuState>((set, get) => ({
   menu: null,
   version: null,
+  stockVersions: {},
   error: false,
 
   load: () => {
@@ -121,7 +126,24 @@ export const useMenuStore = create<MenuState>((set, get) => ({
         const res = await fetch("/api/menu", { cache: "no-cache", credentials: "same-origin" });
         if (!res.ok) throw new Error(String(res.status));
         const dto = (await res.json()) as MenuDTO;
-        if (dto.version !== get().version) set({ menu: menuFromDTO(dto), version: dto.version });
+        if (dto.version !== get().version) {
+          const { menu: current, stockVersions: known } = get();
+          const next = menuFromDTO(dto);
+          const versions: Record<string, number> = {};
+          // A live stock event newer than this response (it raced the fetch) wins.
+          next.items = next.items.map((item, i) => {
+            const fetched = dto.items[i]!.stockVersion;
+            const live = known[item.id];
+            if (live !== undefined && live > fetched) {
+              versions[item.id] = live;
+              const shown = current?.items.find((x) => x.id === item.id);
+              return shown ? { ...item, inStock: shown.inStock } : item;
+            }
+            versions[item.id] = fetched;
+            return item;
+          });
+          set({ menu: next, version: dto.version, stockVersions: versions });
+        }
         set({ error: false });
       } catch {
         // Keep showing the last good menu; only show the error state if we have nothing.
@@ -131,5 +153,16 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       }
     })();
     return inflight;
+  },
+
+  applyStock: (itemId, inStock, stockVersion) => {
+    const { menu, stockVersions } = get();
+    const known = stockVersions[itemId];
+    const index = menu?.items.findIndex((i) => i.id === itemId) ?? -1;
+    if (!menu || index < 0 || (known !== undefined && stockVersion <= known)) return;
+    const items = menu.items.slice();
+    items[index] = { ...items[index]!, inStock };
+    // Only this item object changes, so only screens showing it re-render.
+    set({ menu: { ...menu, items }, stockVersions: { ...stockVersions, [itemId]: stockVersion } });
   },
 }));
