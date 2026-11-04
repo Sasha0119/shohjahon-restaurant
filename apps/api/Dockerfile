@@ -19,11 +19,13 @@ RUN npm ci --omit=dev --workspace=@app/api --include-workspace-root=false --igno
 
 # ---------- runtime ----------
 FROM node:24-bookworm-slim AS runtime
+# OpenSSL for Prisma (the slim image has none).
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-COPY package.json ./
+COPY package.json tsconfig.base.json ./
 COPY config ./config
 COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api

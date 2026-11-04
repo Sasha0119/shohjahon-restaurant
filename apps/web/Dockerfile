@@ -13,6 +13,7 @@ COPY config/package.json config/
 COPY packages/shared/package.json packages/shared/
 COPY apps/web/package.json apps/web/
 RUN npm ci --workspace=@app/web --include-workspace-root=false --ignore-scripts
+COPY tsconfig.base.json ./
 COPY config ./config
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
