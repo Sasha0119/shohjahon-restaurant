@@ -27,9 +27,9 @@ services:
       - key: COOKIE_SECURE
         value: "true"
       - key: CORS_ORIGINS
-        value: https://shohjahon-restaurant-web.onrender.com
+        value: https://shohjahon-restaurant-web-78mj.onrender.com
       - key: PUBLIC_WEB_URL
-        value: https://shohjahon-restaurant-web.onrender.com
+        value: https://shohjahon-restaurant-web-78mj.onrender.com
       - key: DATABASE_URL
         sync: false # Neon connection string (the direct one, not "pooled")
       - key: QR_TOKEN_SECRET
@@ -61,4 +61,4 @@ services:
         value: "3000"
       # Baked in at build time (Render passes env vars to the Docker build).
       - key: API_INTERNAL_URL
-        value: https://shohjahon-restaurant-api.onrender.com
+        value: https://shohjahon-restaurant-api-78mj.onrender.com

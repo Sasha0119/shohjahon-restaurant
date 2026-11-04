@@ -172,7 +172,7 @@ the database lives on Neon. Everything is in `render.yaml`.
 3. Click **Apply**. The first build takes about 10 minutes. On the API's first
    start, `SEED_IF_EMPTY=true` loads the menu, tables and manager into the empty
    database; later restarts skip it, so menu edits are never overwritten.
-4. Open `https://shohjahon-restaurant-web.onrender.com`. If Render gave a service a different
+4. Open `https://shohjahon-restaurant-web-78mj.onrender.com`. If Render gave a service a different
    URL (a suffix is added when a name is taken), set `API_INTERNAL_URL` on the
    web service and `CORS_ORIGINS` + `PUBLIC_WEB_URL` on the API to the real URLs,
    then redeploy both.
