@@ -15,8 +15,11 @@ import { Sheet } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/toast";
 import { useNow } from "@/hooks/use-now";
 import { useStaffSocket } from "@/hooks/use-staff-socket";
-import { useT } from "@/i18n";
-import { ApiClientError, api } from "@/lib/api";
+import { useLineText } from "@/components/guest/line-text";
+import { useMenu } from "@/hooks/use-menu";
+import { useI18n, useT } from "@/i18n";
+import { translateError } from "@/i18n/errors";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatCountdown } from "@/lib/format";
 
@@ -35,6 +38,7 @@ export default function KitchenPage() {
 
 function KitchenDisplay() {
   const t = useT();
+  useMenu(); // dish names in the screen's language (tickets store the default language)
   const sound = useSoundAlerts();
   const [filter, setFilter] = useState<Filter>("all");
   const [tickets, setTickets] = useState<OrderTicketDTO[] | null>(null);
@@ -139,7 +143,7 @@ function KitchenDisplay() {
       }
     } catch (e) {
       servedRef.current.delete(ticket.id);
-      toast.error(e instanceof ApiClientError ? e.message : t("errors.generic"));
+      toast.error(translateError(e, t));
       void load();
     } finally {
       setBusy((s) => {
@@ -174,15 +178,16 @@ function KitchenDisplay() {
       <main className="grid gap-4 p-4 lg:grid-cols-3">
         {columns.map((col) => (
           <section key={col.status} aria-labelledby={`col-${col.status}`} className="min-w-0">
-            <h2 id={`col-${col.status}`} className="mb-3 flex items-center gap-2 px-1 font-sans text-sm font-bold uppercase tracking-wider text-fg-muted">
+            <h2 id={`col-${col.status}`} className="mb-3 flex items-center gap-3 px-1 font-sans text-[13px] font-semibold uppercase tracking-[0.2em] text-primary">
+              <span aria-hidden className="h-px w-6 bg-primary" />
               {t(`kitchen.columns.${col.status}`)}
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular text-fg">{col.items.length}</span>
+              <span className="grid h-6 min-w-6 place-items-center rounded-full px-2 text-xs tabular text-fg ring-1 ring-gold-line">{col.items.length}</span>
             </h2>
             <div className="space-y-3">
               {!tickets ? (
                 <Skeleton className="h-48 rounded-card" />
               ) : col.items.length === 0 ? (
-                <p className="rounded-card border-2 border-dashed border-line px-4 py-8 text-center text-sm text-fg-muted">
+                <p className="rounded-card border border-dashed border-gold-line px-4 py-10 text-center text-sm text-fg-muted">
                   {col.status === "received" ? t("kitchen.allClear") : t("kitchen.empty")}
                 </p>
               ) : (
@@ -204,6 +209,7 @@ function KitchenDisplay() {
 
 function TicketCard({ ticket, fresh, busy, onAdvance }: { ticket: OrderTicketDTO; fresh: boolean; busy: boolean; onAdvance: () => void }) {
   const t = useT();
+  const lineText = useLineText();
   const now = useNow(1000) ?? Date.now();
   const created = Date.parse(ticket.createdAt);
   const urgency = ticketUrgency(created, now, brand.kitchen);
@@ -219,49 +225,52 @@ function TicketCard({ ticket, fresh, busy, onAdvance }: { ticket: OrderTicketDTO
       exit={{ opacity: 0, scale: 0.96 }}
       className={cn(
         "overflow-hidden rounded-card bg-surface shadow-soft ring-2 transition-shadow",
-        urgency === "late" ? "ring-danger" : urgency === "warn" ? "ring-warning" : "ring-line/60",
+        urgency === "late" ? "ring-danger" : urgency === "warn" ? "ring-warning" : fresh ? "ring-primary" : "ring-line",
         fresh && "animate-pulse-ring",
       )}
     >
       <header
         className={cn(
           "flex items-center justify-between gap-3 px-4 py-3",
-          urgency === "late" ? "bg-danger text-white" : urgency === "warn" ? "bg-warning/20" : "bg-muted/70",
+          urgency === "late" ? "bg-danger text-white" : urgency === "warn" ? "bg-warning/20" : "bg-muted/60 border-b border-line",
         )}
       >
         <div>
-          <p className="font-display text-2xl font-semibold leading-none">{t("kitchen.table", { number: ticket.tableNumber })}</p>
+          <p className="font-display text-[1.75rem] font-semibold leading-none">{t("kitchen.table", { number: ticket.tableNumber })}</p>
           <p className={cn("mt-1 text-xs font-semibold uppercase tracking-wider", urgency === "late" ? "text-white/85" : "text-fg-muted")}>
             {t("kitchen.round", { number: ticket.round })} · {t(`kitchen.stations.${ticket.station}`)}
             {fresh && <span className="ml-2 rounded-full bg-primary px-1.5 py-0.5 text-on-primary">{t("kitchen.newBadge")}</span>}
           </p>
         </div>
-        <p className="flex items-center gap-1.5 text-lg font-bold tabular" aria-label={formatCountdown(now - created)}>
+        <p className="flex shrink-0 items-center gap-1.5 text-xl font-bold tabular" aria-label={formatCountdown(now - created)}>
           <Clock className="size-4" aria-hidden />
           {formatCountdown(now - created)}
         </p>
       </header>
       <ul className="space-y-2.5 px-4 py-3">
-        {ticket.lines.map((l) => (
+        {ticket.lines.map((l) => {
+          const text = lineText(l);
+          return (
           <li key={l.id}>
-            <p className="flex gap-2 text-[17px] font-semibold leading-snug">
-              <span className="min-w-7 tabular text-primary">{l.quantity}×</span>
-              <span>{l.name}</span>
+            <p className="flex gap-2 text-[19px] font-semibold leading-snug">
+              <span className="min-w-8 tabular text-primary">{l.quantity}×</span>
+              <span>{text.name}</span>
             </p>
-            {l.modifiers.length > 0 && (
-              <p className="ml-9 text-sm text-fg-muted">{l.modifiers.map((m) => m.option).join(" · ")}</p>
+            {text.modifiers.length > 0 && (
+              <p className="ml-10 text-[15px] text-fg-muted">{text.modifiers.join(" · ")}</p>
             )}
             {l.note && (
-              <p className="ml-9 mt-1 flex items-start gap-1.5 rounded-lg bg-warning/15 px-2 py-1 text-sm font-semibold">
+              <p className="ml-10 mt-1.5 flex items-start gap-1.5 rounded-lg bg-warning/15 px-2.5 py-1.5 text-[15px] font-semibold ring-1 ring-inset ring-warning/30">
                 <MessageSquareText className="mt-0.5 size-4 shrink-0" aria-label={t("kitchen.note")} />
                 {l.note}
               </p>
             )}
           </li>
-        ))}
+          );
+        })}
       </ul>
       <div className="px-3 pb-3">
-        <Button size="lg" className="w-full" variant={status === "ready" ? "secondary" : "primary"} onClick={onAdvance} disabled={busy} aria-busy={busy}>
+        <Button size="lg" className="min-h-16 w-full text-lg" variant={status === "ready" ? "outline" : "primary"} onClick={onAdvance} disabled={busy} aria-busy={busy}>
           {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Icon className="size-5" aria-hidden />}
           {label}
         </Button>
@@ -271,7 +280,9 @@ function TicketCard({ ticket, fresh, busy, onAdvance }: { ticket: OrderTicketDTO
 }
 
 function StockSheet({ open, onClose, version }: { open: boolean; onClose: () => void; version: number }) {
-  const t = useT();
+  const { t, locale } = useI18n();
+  const nameOf = (x: { name: string; translations?: Partial<Record<string, { name?: string }>> }) =>
+    x.translations?.[locale]?.name?.trim() || x.name;
   const [menu, setMenu] = useState<MenuDTO | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -290,7 +301,7 @@ function StockSheet({ open, onClose, version }: { open: boolean; onClose: () => 
       await api("PATCH", `/api/menu/items/${id}/stock`, { inStock });
       setMenu((m) => (m ? { ...m, items: m.items.map((i) => (i.id === id ? { ...i, inStock } : i)) } : m));
     } catch (e) {
-      toast.error(e instanceof ApiClientError ? e.message : t("errors.generic"));
+      toast.error(translateError(e, t));
     } finally {
       setBusy(null);
     }
@@ -306,17 +317,17 @@ function StockSheet({ open, onClose, version }: { open: boolean; onClose: () => 
       ) : (
         menu.categories.map((c) => (
           <section key={c.id} className="mt-5">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-fg-muted">{c.name}</h3>
-            <ul className="mt-2 divide-y divide-line/60 rounded-2xl ring-1 ring-line/70">
+            <h3 className="eyebrow">{nameOf(c)}</h3>
+            <ul className="mt-2 divide-y divide-line rounded-2xl ring-1 ring-line">
               {menu.items
                 .filter((i) => i.categoryId === c.id)
                 .map((i) => (
                   <li key={i.id} className="flex min-h-14 items-center gap-3 px-4 py-2">
-                    <span className={cn("flex-1 font-semibold", !i.inStock && "text-fg-muted line-through")}>{i.name}</span>
+                    <span className={cn("flex-1 font-semibold", !i.inStock && "text-fg-muted line-through")}>{nameOf(i)}</span>
                     {busy === i.id ? (
                       <Loader2 className="size-5 animate-spin text-fg-muted" aria-hidden />
                     ) : (
-                      <Switch compact checked={i.inStock} onChange={(v) => void toggle(i.id, v)} label={i.name} />
+                      <Switch compact checked={i.inStock} onChange={(v) => void toggle(i.id, v)} label={nameOf(i)} />
                     )}
                   </li>
                 ))}

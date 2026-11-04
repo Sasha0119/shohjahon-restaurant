@@ -11,10 +11,13 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: theme.light.bg,
-    theme_color: theme.light.primary,
+    // Splash screen and browser chrome in the signature dark colours.
+    background_color: theme.dark.bg,
+    theme_color: theme.dark.bg,
+    lang: brand.defaultLanguage,
     icons: [
       { src: "/icon", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/maskable-icon", sizes: "512x512", type: "image/png", purpose: "maskable" },
       { src: "/apple-icon", sizes: "180x180", type: "image/png" },
     ],
   };

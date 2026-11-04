@@ -1,8 +1,8 @@
 "use client";
 
 import { brand } from "@app/config";
-import { allowedAmounts, applyPercent, suggestedAmount, type SplitModeKey } from "@app/shared";
-import type { BillDTO, PaymentDTO } from "@app/shared/api";
+import { allowedAmounts, applyPercent, currencyDigits, suggestedAmount, type SplitModeKey } from "@app/shared";
+import type { BillDTO, OrderLineDTO, PaymentDTO } from "@app/shared/api";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Banknote,
@@ -20,7 +20,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GuestAvatar } from "@/components/guest/guest-avatar";
 import { useGuest } from "@/components/guest/guest-context";
+import { useLineText } from "@/components/guest/line-text";
 import { PageHeader } from "@/components/guest/page-header";
 import { RatingPanel } from "@/components/guest/rating-panel";
 import { haptic } from "@/components/guest/use-quick-add";
@@ -28,11 +30,13 @@ import { Button, LinkButton } from "@/components/ui/button";
 import { Badge, EmptyState, Segmented, Skeleton } from "@/components/ui/misc";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { Sheet } from "@/components/ui/sheet";
+import { celebrate } from "@/components/ui/success-burst";
 import { toast } from "@/components/ui/toast";
 import { useT } from "@/i18n";
+import { translateError } from "@/i18n/errors";
 import { ApiClientError, api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatPrice, parsePrice } from "@/lib/format";
+import { currencyLabel, formatPercent, formatPrice, parsePrice } from "@/lib/format";
 import { useSessionStore } from "@/store/session-store";
 import { useTableStore } from "@/store/table-store";
 
@@ -101,37 +105,42 @@ export default function BillPage() {
 // ── Itemised bill ───────────────────────────────────────────────────────────
 function Receipt({ bill }: { bill: BillDTO }) {
   const t = useT();
+  const lineText = useLineText();
   const orders = useSessionStore((s) => s.snapshot?.orders ?? []);
   const claimed = new Set(bill.claimedOrderItemIds);
   const lines = orders.filter((o) => o.status !== "cancelled").flatMap((o) => o.lines);
 
   return (
-    <section aria-labelledby="receipt" className="relative overflow-hidden rounded-card bg-surface shadow-soft ring-1 ring-line/60">
+    <section aria-labelledby="receipt" className="card relative overflow-hidden">
       <div className="p-5">
-        <h2 id="receipt" className="text-lg font-semibold">
+        <p className="eyebrow">{t("bill.title")}</p>
+        <h2 id="receipt" className="mt-1 font-display text-xl font-semibold">
           {t("bill.yourOrder")}
         </h2>
         <ul className="mt-4 space-y-3">
-          {lines.map((l) => (
-            <li key={l.id} className="flex justify-between gap-4 text-[15px]">
-              <span className="min-w-0">
-                <span className="font-semibold tabular">{l.quantity}×</span> {l.name}
-                {claimed.has(l.id) && (
-                  <Badge tone="success" className="ml-2 align-middle">
-                    {t("pay.alreadyPaid")}
-                  </Badge>
-                )}
-                {l.modifiers.length > 0 && <span className="block text-sm text-fg-muted">{l.modifiers.map((m) => m.option).join(" · ")}</span>}
-              </span>
-              <span className="tabular">{formatPrice(l.unitPriceCents * l.quantity)}</span>
-            </li>
-          ))}
+          {lines.map((l) => {
+            const text = lineText(l);
+            return (
+              <li key={l.id} className="flex justify-between gap-4 text-[15px]">
+                <span className="min-w-0">
+                  <span className="font-semibold tabular text-primary">{l.quantity}×</span> {text.name}
+                  {claimed.has(l.id) && (
+                    <Badge tone="success" className="ml-2 align-middle">
+                      {t("pay.alreadyPaid")}
+                    </Badge>
+                  )}
+                  {text.modifiers.length > 0 && <span className="block text-sm text-fg-muted">{text.modifiers.join(" · ")}</span>}
+                </span>
+                <span className="shrink-0 tabular">{formatPrice(l.unitPriceCents * l.quantity)}</span>
+              </li>
+            );
+          })}
         </ul>
       </div>
       <div aria-hidden className="relative h-4">
-        <span className="absolute -left-2 top-1/2 size-4 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line/60" />
-        <span className="absolute -right-2 top-1/2 size-4 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line/60" />
-        <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-line" />
+        <span className="absolute -left-2 top-1/2 size-4 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line" />
+        <span className="absolute -right-2 top-1/2 size-4 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line" />
+        <span className="absolute inset-x-4 top-1/2 border-t border-dashed border-gold-line" />
       </div>
       <dl className="space-y-2 p-5 text-[15px]">
         <Row label={t("bill.subtotal")} value={formatPrice(bill.subtotalCents)} />
@@ -142,19 +151,44 @@ function Receipt({ bill }: { bill: BillDTO }) {
         {brand.serviceChargePercent > 0 && (
           <Row label={t("bill.serviceCharge", { percent: formatPercent(brand.serviceChargePercent) })} value={formatPrice(bill.serviceChargeCents)} />
         )}
-        <Row label={t("bill.tax", { percent: formatPercent(brand.taxPercent) })} value={formatPrice(bill.taxCents)} />
-        <div className="flex items-baseline justify-between border-t border-dashed border-line pt-3">
-          <dt className="text-lg font-semibold">{t("bill.total")}</dt>
-          <dd className="font-display text-[1.75rem] font-semibold tabular">
+        {brand.taxPercent > 0 && <Row label={t("bill.tax", { percent: formatPercent(brand.taxPercent) })} value={formatPrice(bill.taxCents)} />}
+        <div className="flex items-baseline justify-between gap-4 border-t border-gold-line pt-3">
+          <dt className="font-display text-xl font-semibold">{t("bill.total")}</dt>
+          <dd className="font-display text-[1.85rem] font-semibold tabular text-primary">
             <Amount value={bill.totalCents} />
           </dd>
         </div>
         {bill.paidCents > 0 && <Row label={t("pay.paidSoFar")} value={`−${formatPrice(bill.paidCents)}`} tone="success" />}
         {bill.pendingCents > 0 && <Row label={t("pay.pending")} value={formatPrice(bill.pendingCents)} />}
         {(bill.paidCents > 0 || bill.pendingCents > 0) && <Row label={t("pay.outstanding")} value={formatPrice(bill.outstandingCents)} strong />}
+        {brand.taxPercent === 0 && <p className="pt-1 text-xs text-fg-muted">{t("bill.vatIncluded")}</p>}
       </dl>
     </section>
   );
+}
+
+/** Numbered step heading: a gold numeral in a thin circle, then the title. */
+function StepTitle({ n, id, children, sub }: { n: number; id: string; children: string; sub?: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full font-display text-[15px] font-semibold text-primary ring-1 ring-gold-line">
+        {n}
+      </span>
+      <div className="min-w-0 pt-0.5">
+        <h2 id={id} className="font-display text-xl font-semibold leading-tight">
+          {children}
+        </h2>
+        {sub && <p className="mt-1 text-sm text-fg-muted">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+/** Who added which lines → one group per person ("who pays what"). */
+function byPerson(lines: OrderLineDTO[]): { name: string; lines: OrderLineDTO[]; subtotal: number }[] {
+  const groups = new Map<string, OrderLineDTO[]>();
+  for (const l of lines) groups.set(l.addedBy, [...(groups.get(l.addedBy) ?? []), l]);
+  return [...groups.entries()].map(([name, ls]) => ({ name, lines: ls, subtotal: ls.reduce((n, l) => n + l.unitPriceCents * l.quantity, 0) }));
 }
 
 function Row({ label, value, tone, strong }: { label: string; value: string; tone?: "success"; strong?: boolean }) {
@@ -222,7 +256,7 @@ function DiscountCode({ bill }: { bill: BillDTO }) {
 
   if (bill.discountCode) {
     return (
-      <section className="flex items-center gap-3 rounded-card bg-success/8 p-4 ring-1 ring-success/30">
+      <section className="flex items-center gap-3 rounded-card bg-success/10 p-4 ring-1 ring-success/30">
         <Tag className="size-5 text-success" aria-hidden />
         <p className="flex-1 font-semibold">
           {bill.discountCode} <span className="font-normal text-fg-muted">· −{formatPrice(bill.codeDiscountCents)}</span>
@@ -239,7 +273,7 @@ function DiscountCode({ bill }: { bill: BillDTO }) {
   if (locked) return null;
 
   return (
-    <form onSubmit={submit} className="rounded-card bg-surface p-4 shadow-soft ring-1 ring-line/60">
+    <form onSubmit={submit} className="card p-4">
       <label htmlFor="discount" className="text-sm font-semibold">
         {t("pay.discountTitle")}
       </label>
@@ -277,6 +311,8 @@ const METHODS: { id: Method; icon: LucideIcon }[] = [
 
 function PayPanel({ bill }: { bill: BillDTO }) {
   const t = useT();
+  const lineText = useLineText();
+  const meName = useSessionStore((s) => s.snapshot?.me.nickname ?? "");
   const orders = useSessionStore((s) => s.snapshot?.orders ?? []);
   const tip = useTableStore((s) => s.tip);
   const setTip = useTableStore((s) => s.setTip);
@@ -322,8 +358,8 @@ function PayPanel({ bill }: { bill: BillDTO }) {
 
   if (bill.outstandingCents <= 0 && !outcome) {
     return (
-      <section className="rounded-card bg-surface p-5 text-center shadow-soft ring-1 ring-line/60">
-        <p className="font-semibold">{bill.pendingCents > 0 ? t("pay.cashTitle") : t("pay.nothingToPay")}</p>
+      <section className="card p-5 text-center">
+        <p className="font-display text-lg font-semibold">{bill.pendingCents > 0 ? t("pay.cashTitle") : t("pay.nothingToPay")}</p>
       </section>
     );
   }
@@ -355,6 +391,7 @@ function PayPanel({ bill }: { bill: BillDTO }) {
       if (payment.status === "succeeded") {
         if (payment.receiptToken) useTableStore.getState().setLastReceipt(payment.receiptToken);
         setOutcome({ kind: "success", payment, settled: (data.bill as BillDTO).balanceCents === 0 });
+        celebrate(t("pay.successTitle"), t("pay.successBody", { amount: formatPrice(payment.amountCents + payment.tipCents) }));
         setPicked(new Set());
       } else if (payment.status === "failed") {
         setOutcome({ kind: "declined", reason: payment.failureReason ?? "declined" });
@@ -370,7 +407,7 @@ function PayPanel({ bill }: { bill: BillDTO }) {
         if (code === "AMOUNT_CHANGED") toast.info(t("pay.amountChanged"));
         else if (code === "ITEMS_ALREADY_PAID") toast.info(t("pay.itemsTaken"));
         else if (code === "NOTHING_TO_PAY") toast.info(t("pay.nothingToPay"));
-        else toast.error(err.message || t("errors.generic"));
+        else toast.error(translateError(err, t));
         void api<{ bill: BillDTO }>("GET", "/api/session/bill").then(({ bill: b }) => useSessionStore.getState().setBill(b)).catch(() => {});
       }
     } finally {
@@ -380,10 +417,10 @@ function PayPanel({ bill }: { bill: BillDTO }) {
 
   return (
     <>
-      <section aria-labelledby="split" className="rounded-card bg-surface p-5 shadow-soft ring-1 ring-line/60">
-        <h2 id="split" className="text-lg font-semibold">
+      <section aria-labelledby="split" className="card p-5">
+        <StepTitle n={1} id="split">
           {t("bill.splitTitle")}
-        </h2>
+        </StepTitle>
         <Segmented
           className="mt-4"
           label={t("bill.splitTitle")}
@@ -404,7 +441,7 @@ function PayPanel({ bill }: { bill: BillDTO }) {
                   <span className="text-[15px] font-semibold">{t("bill.people")}</span>
                   <QuantityStepper value={people} min={2} max={20} onChange={setPeople} />
                 </div>
-                <div className="mt-4 flex items-baseline justify-between rounded-2xl bg-muted/70 px-4 py-3">
+                <div className="mt-4 flex items-baseline justify-between gap-4 rounded-2xl bg-muted/60 px-4 py-3 ring-1 ring-inset ring-line">
                   <span className="text-sm text-fg-muted">{t("bill.eachPays")}</span>
                   <span className="text-lg font-semibold tabular">{formatPrice(Math.min(...(evenShares.length ? evenShares : [amount])))}</span>
                 </div>
@@ -414,13 +451,21 @@ function PayPanel({ bill }: { bill: BillDTO }) {
             {mode === "items" && (
               <div className="mt-5">
                 <p className="text-sm font-semibold text-fg-muted">{t("bill.selectItems")}</p>
-                <ul className="mt-3 overflow-hidden rounded-2xl ring-1 ring-line">
-                  {lines.map((l, i) => {
+                <div className="mt-3 space-y-4">
+                {byPerson(lines).map((person) => (
+                <div key={person.name || "-"}>
+                  <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                    <GuestAvatar name={person.name || t("common.guest")} me={!!meName && person.name === meName} size={24} />
+                    <span className="min-w-0 flex-1 truncate">{meName && person.name === meName ? t("common.you") : person.name || t("common.guest")}</span>
+                    <span className="tabular text-fg-muted">{formatPrice(person.subtotal)}</span>
+                  </p>
+                <ul className="overflow-hidden rounded-2xl ring-1 ring-line">
+                  {person.lines.map((l, i) => {
                     const taken = claimed.has(l.id);
                     const on = picked.has(l.id);
                     return (
-                      <li key={l.id} className={cn(i > 0 && "border-t border-line/70")}>
-                        <label className={cn("flex min-h-14 items-center gap-3 px-4 py-3", taken ? "cursor-not-allowed opacity-50" : "cursor-pointer", on && "bg-primary/6")}>
+                      <li key={l.id} className={cn(i > 0 && "border-t border-line")}>
+                        <label className={cn("flex min-h-14 items-center gap-3 px-4 py-3", taken ? "cursor-not-allowed opacity-50" : "cursor-pointer", on && "bg-primary/8")}>
                           <input
                             type="checkbox"
                             className="peer sr-only"
@@ -437,7 +482,7 @@ function PayPanel({ bill }: { bill: BillDTO }) {
                             {(on || taken) && <Check className="size-3.5" strokeWidth={3.2} />}
                           </span>
                           <span className="flex-1 text-[15px]">
-                            <span className="font-semibold tabular">{l.quantity}×</span> {l.name}
+                            <span className="font-semibold tabular text-primary">{l.quantity}×</span> {lineText(l).name}
                             {taken && <span className="ml-2 text-xs font-semibold text-success">{t("pay.alreadyPaid")}</span>}
                           </span>
                           <span className="text-sm text-fg-muted tabular">{formatPrice(l.unitPriceCents * l.quantity)}</span>
@@ -446,6 +491,9 @@ function PayPanel({ bill }: { bill: BillDTO }) {
                     );
                   })}
                 </ul>
+                </div>
+                ))}
+                </div>
                 <p className="mt-2 text-xs text-fg-muted">{t("bill.includesExtras")}</p>
               </div>
             )}
@@ -462,11 +510,10 @@ function PayPanel({ bill }: { bill: BillDTO }) {
         </AnimatePresence>
       </section>
 
-      <section aria-labelledby="tip" className="rounded-card bg-surface p-5 shadow-soft ring-1 ring-line/60">
-        <h2 id="tip" className="text-lg font-semibold">
+      <section aria-labelledby="tip" className="card p-5">
+        <StepTitle n={2} id="tip" sub={`${t("pay.tipOnShare")} · ${t("bill.tipSubtitle")}`}>
           {t("bill.tipTitle")}
-        </h2>
-        <p className="text-sm text-fg-muted">{t("pay.tipOnShare")} · {t("bill.tipSubtitle")}</p>
+        </StepTitle>
         <div role="radiogroup" aria-labelledby="tip" className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
           {brand.tipOptions.map((pct) => (
             <TipChip
@@ -496,10 +543,10 @@ function PayPanel({ bill }: { bill: BillDTO }) {
         )}
       </section>
 
-      <section aria-labelledby="method" className="rounded-card bg-surface p-5 shadow-soft ring-1 ring-line/60">
-        <h2 id="method" className="text-lg font-semibold">
+      <section aria-labelledby="method" className="card p-5">
+        <StepTitle n={3} id="method">
           {t("bill.method")}
-        </h2>
+        </StepTitle>
         <div role="radiogroup" aria-labelledby="method" className="mt-4 grid grid-cols-2 gap-2.5">
           {METHODS.map(({ id, icon: Icon }) => {
             const active = method === id;
@@ -511,7 +558,7 @@ function PayPanel({ bill }: { bill: BillDTO }) {
                 aria-checked={active}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setMethod(id)}
-                className={cn("relative flex min-h-16 items-center gap-3 rounded-2xl px-4 text-left ring-1 transition-colors", active ? "bg-primary/8 ring-2 ring-primary" : "bg-muted/50 ring-line hover:bg-muted")}
+                className={cn("relative flex min-h-16 items-center gap-3 rounded-2xl px-4 pr-10 text-left ring-1 transition-colors", active ? "bg-primary/10 ring-2 ring-primary" : "bg-muted/50 ring-line hover:bg-muted")}
               >
                 <Icon className={cn("size-5", active ? "text-primary" : "text-fg-muted")} aria-hidden />
                 <span className="text-[15px] font-semibold">{t(`bill.${id}`)}</span>
@@ -528,10 +575,10 @@ function PayPanel({ bill }: { bill: BillDTO }) {
       </section>
 
       <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] z-20 -mx-4 px-4 pt-2 pb-3">
-        <div className="rounded-card bg-surface p-3 shadow-lift ring-1 ring-line/60">
-          <div className="flex items-center justify-between px-2 pb-2.5">
-            <span className="text-sm font-semibold text-fg-muted">{t("bill.youPay")}</span>
-            <span className="font-display text-2xl font-semibold tabular">
+        <div className="rounded-card bg-surface/95 p-3 shadow-lift ring-1 ring-gold-line backdrop-blur">
+          <div className="flex items-center justify-between gap-4 px-2 pb-2.5">
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">{t("bill.youPay")}</span>
+            <span className="font-display text-2xl font-semibold tabular text-primary">
               <Amount value={amount + tipCents} />
             </span>
           </div>
@@ -566,7 +613,7 @@ function OutcomeSheet({ outcome, onClose }: { outcome: Outcome | null; onClose: 
           transition={{ type: "spring", stiffness: 260, damping: 16 }}
           className={cn(
             "my-4 grid size-20 place-items-center rounded-full",
-            o.kind === "success" ? "bg-success text-white" : o.kind === "declined" ? "bg-danger/12 text-danger" : "bg-primary/12 text-primary",
+            o.kind === "success" ? "bg-primary text-on-primary shadow-glow" : o.kind === "declined" ? "bg-danger/12 text-danger ring-1 ring-danger/30" : "bg-primary/12 text-primary ring-1 ring-gold-line",
           )}
         >
           {o.kind === "success" ? <CircleCheckBig className="size-10" aria-hidden /> : o.kind === "declined" ? <X className="size-10" aria-hidden /> : <Banknote className="size-10" aria-hidden />}
@@ -583,7 +630,7 @@ function OutcomeSheet({ outcome, onClose }: { outcome: Outcome | null; onClose: 
           {o.kind === "success" && o.payment.receiptToken && (
             <Link
               href={`/receipt/${o.payment.receiptToken}`}
-              className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-primary px-6 font-semibold text-on-primary shadow-glow"
+              className="pressable inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-primary px-6 font-semibold text-on-primary shadow-glow"
             >
               <ReceiptText className="size-5" aria-hidden />
               {t("pay.viewReceipt")}
@@ -606,27 +653,33 @@ function TipChip({ active, onClick, title, sub }: { active: boolean; onClick: ()
       aria-checked={active}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={cn("flex min-h-16 flex-col items-center justify-center rounded-2xl px-2 py-2 ring-1 transition-colors", active ? "bg-primary text-on-primary ring-primary shadow-glow" : "bg-muted/60 ring-line hover:bg-muted")}
+      className={cn("flex min-h-16 flex-col items-center justify-center rounded-2xl px-2 py-2 text-center leading-tight ring-1 transition-colors", active ? "bg-primary text-on-primary ring-primary shadow-glow" : "bg-muted/60 ring-line hover:bg-muted")}
     >
-      <span className="text-[15px] font-semibold">{title}</span>
-      {sub && <span className={cn("text-xs tabular", active ? "opacity-85" : "text-fg-muted")}>{sub}</span>}
+      <span className="max-w-full text-[14px] font-semibold [overflow-wrap:anywhere]">{title}</span>
+      {sub && <span className={cn("max-w-full truncate text-xs tabular", active ? "opacity-85" : "text-fg-muted")}>{sub}</span>}
     </motion.button>
   );
 }
 
 function MoneyInput({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) {
-  const symbol = new Intl.NumberFormat(brand.currency.locale, { style: "currency", currency: brand.currency.code }).formatToParts(0).find((p) => p.type === "currency")?.value;
+  const symbol = currencyLabel();
+  // Currency words ("soʻm") go after the number; symbols ("$") before it.
+  const suffix = !!brand.currency.symbol;
+  const whole = currencyDigits(brand.currency.code) === 0;
   return (
     <div className="relative mt-2">
-      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-semibold text-fg-muted">{symbol}</span>
+      <span className={cn("pointer-events-none absolute top-1/2 -translate-y-1/2 font-semibold text-fg-muted", suffix ? "right-4" : "left-4")}>{symbol}</span>
       <input
         id={id}
-        inputMode="decimal"
+        inputMode={whole ? "numeric" : "decimal"}
         autoComplete="off"
         value={value}
-        onChange={(e) => onChange(e.target.value.replace(/[^\d.,]/g, "").slice(0, 9))}
-        placeholder="0.00"
-        className="h-13 w-full rounded-2xl bg-muted pl-10 pr-4 text-lg font-semibold tabular focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+        onChange={(e) => onChange(e.target.value.replace(/[^\d.,\s]/g, "").slice(0, 14))}
+        placeholder={whole ? "0" : "0.00"}
+        className={cn(
+          "h-13 w-full rounded-2xl bg-muted text-lg font-semibold tabular ring-1 ring-inset ring-line focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary",
+          suffix ? "pl-4 pr-16" : "pl-10 pr-4",
+        )}
       />
     </div>
   );

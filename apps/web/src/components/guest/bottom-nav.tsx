@@ -31,7 +31,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label={t("nav.label")}
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line/60 glass pb-safe"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-gold-line/60 glass pb-safe"
     >
       <ul className="mx-auto flex max-w-xl items-stretch justify-around px-2">
         {items.map(({ key, icon: Icon, href }) => {
@@ -43,7 +43,7 @@ export function BottomNav() {
                 {active && (
                   <motion.span
                     layoutId="nav-pill"
-                    className="absolute inset-0 rounded-full bg-primary/14"
+                    className="absolute inset-0 rounded-full bg-primary/12 ring-1 ring-inset ring-gold-line"
                     transition={{ type: "spring", stiffness: 500, damping: 36 }}
                   />
                 )}
@@ -66,7 +66,7 @@ export function BottomNav() {
                   </AnimatePresence>
                 )}
               </span>
-              <span className="text-[11px] font-semibold tracking-wide">{label}</span>
+              <span className="max-w-full truncate px-0.5 text-[11px] font-semibold tracking-wide">{label}</span>
             </>
           );
           const cls = cn(

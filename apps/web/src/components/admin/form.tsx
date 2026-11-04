@@ -1,10 +1,14 @@
 "use client";
 
-import { brand } from "@app/config";
+import { translateError } from "@/i18n/errors";
+import { brand, type LocaleCode } from "@app/config";
+import { currencyDigits } from "@app/shared";
 import { cloneElement, isValidElement, useEffect, useId, useState, type ReactNode } from "react";
 import { ApiClientError } from "@/lib/api";
+import { Segmented } from "@/components/ui/misc";
+import { localeNames, useT } from "@/i18n";
 import { cn } from "@/lib/cn";
-import { parsePrice } from "@/lib/format";
+import { currencyLabel, parsePrice } from "@/lib/format";
 
 /** Shared admin form building blocks — one look for every editor. */
 
@@ -127,8 +131,7 @@ export function MoneyField({
   className?: string;
 }) {
   const auto = useId();
-  const digits = new Intl.NumberFormat("en", { style: "currency", currency: brand.currency.code }).resolvedOptions()
-    .maximumFractionDigits ?? 2;
+  const digits = currencyDigits(brand.currency.code);
   const show = (c: number | null) => (c == null ? "" : (c / 10 ** digits).toFixed(digits));
   const [text, setText] = useState(show(cents));
   // Follow outside changes (e.g. form reset) without fighting the user's typing.
@@ -136,12 +139,11 @@ export function MoneyField({
     if (parsePrice(text) !== cents) setText(show(cents));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cents]);
-  const symbol = new Intl.NumberFormat(brand.currency.locale, { style: "currency", currency: brand.currency.code })
-    .formatToParts(0)
-    .find((p) => p.type === "currency")?.value;
+  const symbol = currencyLabel();
   return (
     <div className={cn("relative", className)}>
-      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-semibold text-fg-muted">{symbol}</span>
+      {/* The currency as a suffix, so a word like "soʻm" never covers the digits. */}
+      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-fg-muted">{symbol}</span>
       <input
         id={id ?? auto}
         inputMode="decimal"
@@ -154,28 +156,28 @@ export function MoneyField({
           setText(v);
           onChange(v === "" ? null : parsePrice(v));
         }}
-        className={cn(inputClass, "pl-9 tabular")}
+        className={cn(inputClass, "pr-16 tabular")}
       />
     </div>
   );
 }
 
-/** Field errors from a 400 VALIDATION_ERROR, keyed by path ("modifierGroups.0.name"). */
-export function fieldErrors(e: unknown): Record<string, string> {
+/**
+ * Fields a 400 VALIDATION_ERROR points at, keyed by path ("modifierGroups.0.name").
+ * The server's own wording is English, so each field gets a translated hint instead.
+ */
+export function fieldErrors(e: unknown, t: (key: "admin.fieldInvalid") => string): Record<string, string> {
   if (!(e instanceof ApiClientError) || !Array.isArray(e.details)) return {};
   const out: Record<string, string> = {};
-  for (const d of e.details as { path?: string; message?: string }[]) {
-    if (d.path && d.message && !out[d.path]) out[d.path] = d.message;
+  for (const d of e.details as { path?: string }[]) {
+    if (d.path && !out[d.path]) out[d.path] = t("admin.fieldInvalid");
   }
   return out;
 }
 
-export function apiMessage(e: unknown, fallback: string): string {
-  if (e instanceof ApiClientError) {
-    const first = Array.isArray(e.details) ? (e.details[0] as { message?: string; path?: string } | undefined) : undefined;
-    return first?.message ? `${first.path ? `${first.path}: ` : ""}${first.message}` : e.message;
-  }
-  return fallback;
+/** A translated message for an API error (see i18n/errors.ts). */
+export function apiMessage(e: unknown, t: Parameters<typeof translateError>[1]): string {
+  return translateError(e, t);
 }
 
 /** "Lemon Tart!" → "lemon-tart" */
@@ -187,4 +189,46 @@ export function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
+}
+
+// ── Menu texts in several languages ─────────────────────────────────────────
+
+type Tr = Partial<Record<string, Partial<Record<string, string>>>>;
+
+/**
+ * Read a text in the language being edited: the plain field for the main
+ * language, otherwise the matching entry in `translations` ("" = not yet translated).
+ */
+export function textIn(lang: LocaleCode, base: string, translations: Tr | undefined, field: string): string {
+  return lang === brand.defaultLanguage ? base : (translations?.[lang]?.[field] ?? "");
+}
+
+/** The new `translations` object after editing one field in one language. */
+export function withText(translations: Tr | undefined, lang: LocaleCode, field: string, value: string): Tr {
+  return { ...translations, [lang]: { ...translations?.[lang], [field]: value } };
+}
+
+/**
+ * "Editing language" switch for menu editors: the main language edits the
+ * plain fields; the others edit translations (empty = falls back to the main one).
+ */
+export function EditLanguageBar({ value, onChange, className }: { value: LocaleCode; onChange: (l: LocaleCode) => void; className?: string }) {
+  const t = useT();
+  if (brand.languages.length < 2) return null;
+  const main = localeNames[brand.defaultLanguage];
+  return (
+    <div className={cn("rounded-2xl bg-muted/50 p-3 ring-1 ring-inset ring-gold-line", className)}>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">{t("admin.menu.editLanguage")}</p>
+      <Segmented<LocaleCode>
+        label={t("admin.menu.editLanguage")}
+        value={value}
+        onChange={onChange}
+        options={brand.languages.map((l) => ({
+          value: l,
+          label: l === brand.defaultLanguage ? t("admin.menu.mainLanguage", { language: localeNames[l] }) : localeNames[l],
+        }))}
+      />
+      {value !== brand.defaultLanguage && <p className="mt-2 text-xs text-fg-muted">{t("admin.menu.translationHint", { language: main })}</p>}
+    </div>
+  );
 }

@@ -27,13 +27,14 @@ export function EmptyState({ icon: Icon, title, body, action, className }: Empty
       className={cn("flex flex-col items-center px-8 py-14 text-center", className)}
     >
       <div className="relative mb-6">
-        <div className="absolute inset-0 scale-150 rounded-full bg-primary/10 blur-2xl" aria-hidden />
-        <div className="relative grid size-20 place-items-center rounded-[1.75rem] bg-surface shadow-soft ring-1 ring-line/70">
-          <Icon className="size-9 text-primary" strokeWidth={1.6} aria-hidden />
+        <div className="absolute inset-0 scale-150 rounded-full bg-primary/12 blur-2xl" aria-hidden />
+        <div className="relative grid size-20 place-items-center rounded-full bg-surface shadow-soft ring-1 ring-gold-line">
+          <Icon className="size-8 text-primary" strokeWidth={1.4} aria-hidden />
         </div>
       </div>
       <h2 className="text-2xl font-semibold">{title}</h2>
-      {body && <p className="mt-2 max-w-xs text-[15px] text-fg-muted">{body}</p>}
+      <span aria-hidden className="gold-rule mt-4 w-16" />
+      {body && <p className="mt-4 max-w-xs text-[15px] leading-relaxed text-fg-muted">{body}</p>}
       {action && <div className="mt-7">{action}</div>}
     </motion.div>
   );
@@ -54,7 +55,7 @@ export function Segmented<T extends string>({ value, onChange, options, label, c
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn("flex rounded-full bg-muted p-1", className)}
+      className={cn("flex rounded-full bg-muted p-1 ring-1 ring-inset ring-line/80", className)}
       onKeyDown={(e) => {
         if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
         e.preventDefault();
@@ -76,14 +77,14 @@ export function Segmented<T extends string>({ value, onChange, options, label, c
             data-value={o.value}
             onClick={() => onChange(o.value)}
             className={cn(
-              "relative min-h-10 flex-1 rounded-full px-2 text-[13px] font-semibold transition-colors sm:text-sm",
+              "pressable relative min-h-10 flex-1 rounded-full px-2 py-1.5 text-[13px] font-semibold leading-tight transition-colors sm:text-sm",
               active ? "text-fg" : "text-fg-muted hover:text-fg",
             )}
           >
             {active && (
               <motion.span
                 layoutId={`seg-${id}`}
-                className="absolute inset-0 rounded-full bg-surface shadow-soft"
+                className="absolute inset-0 rounded-full bg-surface shadow-soft ring-1 ring-gold-line"
                 transition={{ type: "spring", stiffness: 500, damping: 38 }}
               />
             )}
@@ -108,9 +109,9 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
-        tone === "muted" && "bg-muted text-fg-muted",
-        tone === "primary" && "bg-primary/12 text-primary",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold leading-none",
+        tone === "muted" && "bg-muted text-fg-muted ring-1 ring-inset ring-line",
+        tone === "primary" && "bg-primary/12 text-primary ring-1 ring-inset ring-gold-line",
         tone === "secondary" && "bg-secondary text-on-secondary",
         tone === "success" && "bg-success/12 text-success",
         tone === "danger" && "bg-danger/12 text-danger",
@@ -129,21 +130,25 @@ export function SectionTitle({
   subtitle,
   action,
   id,
+  eyebrow,
   className,
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
   id?: string;
+  /** A short gold rule above the title (the signature section marker). */
+  eyebrow?: boolean;
   className?: string;
 }) {
   return (
     <div className={cn("flex items-end justify-between gap-4", className)}>
-      <div>
-        <h2 id={id} className="text-[1.375rem] font-semibold leading-tight">
+      <div className="min-w-0">
+        {eyebrow && <span aria-hidden className="mb-3 block h-px w-10 bg-primary" />}
+        <h2 id={id} className="text-[1.5rem] font-semibold leading-tight">
           {title}
         </h2>
-        {subtitle && <p className="mt-1 text-sm text-fg-muted">{subtitle}</p>}
+        {subtitle && <p className="mt-1.5 text-sm text-fg-muted">{subtitle}</p>}
       </div>
       {action}
     </div>

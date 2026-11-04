@@ -1,16 +1,18 @@
 "use client";
 
+import { brand, localize, type LocalizedText } from "@app/config";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, Heart, Loader2, Star } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { useT } from "@/i18n";
+import { useI18n } from "@/i18n";
+import { translateError } from "@/i18n/errors";
 import { ApiClientError, api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { useTableStore } from "@/store/table-store";
 
-type Phase = { kind: "rate" } | { kind: "thanks"; publicLinks: { label: string; url: string }[]; isPublic: boolean };
+type Phase = { kind: "rate" } | { kind: "thanks"; publicLinks: { label: LocalizedText; url: string }[]; isPublic: boolean };
 
 /**
  * "How was your visit?" — shown only after paying.
@@ -18,7 +20,7 @@ type Phase = { kind: "rate" } | { kind: "thanks"; publicLinks: { label: string; 
  * 1–3 stars → a private note for the manager (never published).
  */
 export function RatingPanel({ sessionId, className }: { sessionId: string; className?: string }) {
-  const t = useT();
+  const { t, locale } = useI18n();
   const reviewed = useTableStore((s) => s.reviewedSessions.includes(sessionId));
   const markReviewed = useTableStore((s) => s.markReviewed);
   const [rating, setRating] = useState(0);
@@ -32,7 +34,7 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
   const submit = async () => {
     setBusy(true);
     try {
-      const res = await api<{ kind: "public" | "private"; reviewLinks: { label: string; url: string }[] }>("POST", "/api/session/review", {
+      const res = await api<{ kind: "public" | "private"; reviewLinks: { label: LocalizedText; url: string }[] }>("POST", "/api/session/review", {
         rating,
         comment: comment.trim(),
       });
@@ -42,7 +44,7 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
       if (e instanceof ApiClientError && e.code === "ALREADY_REVIEWED") {
         markReviewed(sessionId);
         toast.info(t("rate.alreadyRated"));
-      } else toast.error(e instanceof ApiClientError ? e.message : t("errors.generic"));
+      } else toast.error(translateError(e, t));
     } finally {
       setBusy(false);
     }
@@ -50,11 +52,11 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
 
   const shown = hover || rating;
   return (
-    <section className={cn("w-full rounded-card bg-surface p-5 text-center shadow-soft ring-1 ring-line/60", className)} aria-labelledby="rate-title">
+    <section className={cn("card w-full p-5 text-center ring-1 ring-gold-line", className)} aria-labelledby="rate-title">
       <AnimatePresence mode="wait" initial={false}>
         {phase.kind === "rate" ? (
           <motion.div key="rate" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <h2 id="rate-title" className="text-xl font-semibold">
+            <h2 id="rate-title" className="font-display text-2xl font-semibold">
               {t("rate.title")}
             </h2>
             <p className="mt-1 text-sm text-fg-muted">{t("rate.subtitle")}</p>
@@ -73,7 +75,7 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
                 >
                   <motion.span animate={{ scale: n <= shown ? 1.12 : 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}>
                     <Star
-                      className={cn("size-9 transition-colors", n <= shown ? "fill-secondary text-secondary" : "text-fg/25")}
+                      className={cn("size-9 transition-colors", n <= shown ? "fill-primary text-primary" : "text-fg/25")}
                       strokeWidth={1.6}
                       aria-hidden
                     />
@@ -96,7 +98,7 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
                     maxLength={1000}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className="mt-2 w-full resize-none rounded-2xl bg-muted px-4 py-3 text-[15px] focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="mt-2 w-full resize-none rounded-2xl bg-muted px-4 py-3 text-[15px] ring-1 ring-inset ring-line focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <Button className="mt-3 w-full" size="lg" onClick={() => void submit()} disabled={busy}>
                     {busy && <Loader2 className="size-5 animate-spin" aria-hidden />}
@@ -112,11 +114,11 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
               initial={{ scale: 0.4 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 14 }}
-              className="grid size-14 place-items-center rounded-full bg-primary/12 text-primary"
+              className="grid size-14 place-items-center rounded-full bg-primary/12 text-primary ring-1 ring-gold-line"
             >
               <Heart className="size-7 fill-current" aria-hidden />
             </motion.span>
-            <p className="mt-3 font-semibold" role="status">
+            <p className="mt-3 font-display text-lg font-semibold" role="status">
               {phase.isPublic ? (phase.publicLinks.length ? t("rate.thanksPublic") : t("rate.thanksPublicNoLinks")) : t("rate.thanksPrivate")}
             </p>
             {phase.publicLinks.length > 0 && (
@@ -127,9 +129,9 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
                     href={l.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 font-semibold text-on-primary shadow-glow"
+                    className="pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 font-semibold text-on-primary shadow-glow"
                   >
-                    {l.label}
+                    {localize(l.label, locale, brand.defaultLanguage)}
                     <ExternalLink className="size-4" aria-hidden />
                   </a>
                 ))}

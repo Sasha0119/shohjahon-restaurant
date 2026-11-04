@@ -21,7 +21,8 @@ import { Sheet } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/toast";
 import { useNow } from "@/hooks/use-now";
 import { useT } from "@/i18n";
-import { ApiClientError, api, type StaffRole } from "@/lib/api";
+import { translateError } from "@/i18n/errors";
+import { api, type StaffRole } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
 
@@ -39,14 +40,6 @@ interface StaffRow {
 const input =
   "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
-/** First field error from a VALIDATION_ERROR, else the API message. */
-function errorText(e: unknown, fallback: string): string {
-  if (e instanceof ApiClientError) {
-    const first = Array.isArray(e.details) ? (e.details[0] as { message?: string } | undefined) : undefined;
-    return first?.message ?? e.message;
-  }
-  return fallback;
-}
 
 export default function StaffAdminPage() {
   const t = useT();
@@ -70,7 +63,7 @@ export default function StaffAdminPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">{t("admin.staff.title")}</h1>
+          <h1 className="text-[2.1rem] font-semibold leading-tight">{t("admin.staff.title")}</h1>
           <p className="mt-1 text-fg-muted">{t("admin.staff.subtitle")}</p>
         </div>
         <Button onClick={() => setCreating(true)}>
@@ -107,8 +100,8 @@ function StaffList({ rows, onEdit }: { rows: StaffRow[]; onEdit: (r: StaffRow) =
   const now = useNow(60_000) ?? Date.now();
 
   return (
-    <div className="overflow-hidden rounded-card bg-surface shadow-soft ring-1 ring-line/60">
-      <div className="hidden grid-cols-[minmax(0,2fr)_8rem_8rem_10rem_3rem] gap-4 border-b border-line/70 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-fg-muted md:grid">
+    <div className="overflow-hidden card">
+      <div className="hidden grid-cols-[minmax(0,2fr)_8rem_8rem_10rem_3rem] gap-4 border-b border-line px-5 py-3 text-xs font-semibold uppercase tracking-wider text-fg-muted md:grid">
         <span>{t("admin.staff.name")}</span>
         <span>{t("admin.staff.role")}</span>
         <span>{t("admin.staff.status")}</span>
@@ -124,7 +117,7 @@ function StaffList({ rows, onEdit }: { rows: StaffRow[]; onEdit: (r: StaffRow) =
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               className={cn(
-                "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b border-line/60 px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,2fr)_8rem_8rem_10rem_3rem]",
+                "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b border-line px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,2fr)_8rem_8rem_10rem_3rem]",
                 !r.active && "opacity-60",
               )}
             >
@@ -222,7 +215,7 @@ function CreateStaffSheet({
       toast.success(t("admin.staff.created", { name: staff.name }));
       onClose();
     } catch (err) {
-      setError(errorText(err, t("errors.generic")));
+      setError(translateError(err, t));
     } finally {
       setBusy(false);
     }
@@ -330,7 +323,7 @@ function EditStaffSheet({
       toast.success(message);
       onClose();
     } catch (err) {
-      setError(errorText(err, t("errors.generic")));
+      setError(translateError(err, t));
     } finally {
       setBusy(false);
     }

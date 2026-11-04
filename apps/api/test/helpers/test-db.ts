@@ -11,6 +11,9 @@ import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { createPrisma, type Db } from "../../src/db.ts";
+import { writeMenu } from "../../src/seed-menu.ts";
+import { buildSeedPlan } from "../../src/seed-plan.ts";
+import { seedMenu as fixtureMenu } from "../../../../packages/shared/test/fixtures/classic-menu.ts";
 
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 const apiDir = fileURLToPath(new URL("../..", import.meta.url));
@@ -57,6 +60,10 @@ export async function createTestDb(): Promise<TestDb> {
   execSync("npx tsx prisma/seed.ts", { cwd: apiDir, env, stdio: "pipe" });
 
   const db = createPrisma(url);
+  // The tests are written against a fixed fixture menu, not the demo menu (which
+  // changes with the brand): swap it in, keeping the seeded tables and staff.
+  await db.$transaction([db.menuItem.deleteMany(), db.comboDeal.deleteMany(), db.category.deleteMany()]);
+  await writeMenu(db, buildSeedPlan(fixtureMenu));
   return {
     db,
     url,

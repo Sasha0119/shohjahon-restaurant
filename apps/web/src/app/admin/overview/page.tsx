@@ -11,24 +11,30 @@ import { EmptyState, Skeleton } from "@/components/ui/misc";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { formatPrice } from "@/lib/format";
+import { useMenu } from "@/hooks/use-menu";
+import { formatDate, formatLocale, formatPrice } from "@/lib/format";
 
-const locale = brand.currency.locale;
+// All formatting reads the current UI language at call time (see lib/format.ts).
 /** Monday-first short weekday names (the API's busiest-hours rows start on Monday). */
-const WEEKDAYS = Array.from({ length: 7 }, (_, i) =>
-  new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2024, 0, 1 + i))),
-);
+const weekdays = () =>
+  Array.from({ length: 7 }, (_, i) =>
+    formatDate(new Date(Date.UTC(2024, 0, 1 + i)), { weekday: "short", timeZone: "UTC" }),
+  );
 const hourLabel = (h: number) =>
-  new Intl.DateTimeFormat(locale, { hour: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(2024, 0, 1, h)));
+  formatDate(new Date(Date.UTC(2024, 0, 1, h)), { hour: "numeric", timeZone: "UTC" });
 const hourRange = (h: number) => {
-  const f = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
-  return [f.format(new Date(Date.UTC(2024, 0, 1, h))), f.format(new Date(Date.UTC(2024, 0, 1, h + 1)))] as const;
+  const f = (at: number) => formatDate(new Date(Date.UTC(2024, 0, 1, at)), { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
+  return [f(h), f(h + 1)] as const;
 };
-const pct = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
-const rating = (v: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v);
+const pct = { format: (v: number) => new Intl.NumberFormat(formatLocale(), { style: "percent", maximumFractionDigits: 0 }).format(v) };
+const rating = (v: number) => new Intl.NumberFormat(formatLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v);
 
 export default function OverviewPage() {
   const t = useT();
+  // Report names are as ordered (default language); show them in the screen's language.
+  const { itemsById } = useMenu();
+  const dishName = (i: { itemId: string; name: string }) => itemsById.get(i.itemId)?.name ?? i.name;
+  const WEEKDAYS = weekdays();
   const [range, setRange] = useState<DateRange>(() => presetRange("30"));
   const [data, setData] = useState<AnalyticsDTO | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,7 +76,7 @@ export default function OverviewPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold">{t("admin.overview.title")}</h1>
+      <h1 className="text-[2.1rem] font-semibold leading-tight">{t("admin.overview.title")}</h1>
       <p className="mt-1 text-fg-muted">{t("admin.overview.subtitle")}</p>
 
       <div className="mt-6">
@@ -155,7 +161,7 @@ export default function OverviewPage() {
                   data.topItems.length > 0 && (
                     <DataTable
                       head={[t("admin.overview.table.item"), t("admin.overview.table.quantity"), t("admin.overview.table.revenue")]}
-                      rows={data.topItems.map((i) => [i.name, formatCount(i.quantity), formatPrice(i.revenueCents)])}
+                      rows={data.topItems.map((i) => [dishName(i), formatCount(i.quantity), formatPrice(i.revenueCents)])}
                     />
                   )
                 }
@@ -167,7 +173,7 @@ export default function OverviewPage() {
                     label={t("admin.overview.topItems.title")}
                     rows={data.topItems.map((i) => ({
                       key: i.itemId,
-                      label: i.name,
+                      label: dishName(i),
                       value: i.quantity,
                       valueLabel: t("admin.overview.topItems.sold", { count: formatCount(i.quantity) }),
                     }))}

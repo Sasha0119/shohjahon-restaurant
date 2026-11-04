@@ -13,6 +13,7 @@ import { toast } from "@/components/ui/toast";
 import { useNow } from "@/hooks/use-now";
 import { useStaffSocket } from "@/hooks/use-staff-socket";
 import { useT } from "@/i18n";
+import { translateError } from "@/i18n/errors";
 import { ApiClientError, api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatRelative } from "@/lib/format";
@@ -121,7 +122,7 @@ function Floor() {
       toast.success(t("waiter.handled"));
     } catch (e) {
       if (!(e instanceof ApiClientError && e.code === "ALREADY_HANDLED")) {
-        toast.error(e instanceof ApiClientError ? e.message : t("errors.generic"));
+        toast.error(translateError(e, t));
         void loadCalls();
       }
     }
@@ -175,14 +176,16 @@ function Floor() {
                   whileTap={{ scale: 0.97 }}
                   onClick={() => tb.session && setOpenTable(tb)}
                   className={cn(
-                    "flex h-full min-h-32 w-full flex-col rounded-card bg-surface p-4 text-left shadow-soft ring-2",
-                    tb.status === "billRequested" ? "ring-danger/50" : tb.status === "ordered" ? "ring-warning/50" : tb.status === "seated" ? "ring-primary/40" : "ring-line/60",
+                    "pressable flex h-full min-h-36 w-full flex-col rounded-card bg-surface p-4 text-left shadow-soft ring-1",
+                    tb.status === "billRequested" ? "ring-2 ring-danger/60" : tb.status === "ordered" ? "ring-2 ring-warning/50" : tb.status === "seated" ? "ring-gold-line" : "ring-line",
+                    !tb.session && "cursor-default opacity-75",
                   )}
                 >
                   <span className="flex items-start justify-between gap-2">
-                    <span className="font-display text-3xl font-semibold leading-none tabular">{tb.number}</span>
+                    <span className="font-display text-[2.6rem] font-semibold leading-none tabular">{tb.number}</span>
                     <Badge tone={STATUS_TONE[tb.status]}>{t(`admin.tables.status.${tb.status}`)}</Badge>
                   </span>
+                  {tb.label && <span className="mt-1 truncate text-xs text-fg-muted">{tb.label}</span>}
                   {tb.session && (
                     <span className="mt-auto pt-3 text-sm">
                       <span className="flex items-center gap-1.5 font-semibold">
@@ -217,25 +220,31 @@ function CallCard({ call, fresh, onHandle }: { call: CallDTO; fresh: boolean; on
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 40 }}
       className={cn(
-        "flex flex-wrap items-center gap-4 rounded-card bg-surface p-4 shadow-soft ring-2",
-        urgent ? "ring-danger/40" : "ring-primary/30",
+        "flex flex-wrap items-center gap-4 rounded-card bg-surface p-4 shadow-soft ring-1",
+        urgent ? "ring-danger/50" : "ring-gold-line",
         fresh && "animate-pulse-ring",
       )}
     >
-      <span className={cn("grid size-14 shrink-0 place-items-center rounded-2xl", urgent ? "bg-danger/12 text-danger" : "bg-primary/12 text-primary")}>
-        <Icon className="size-7" aria-hidden />
+      {/* The call type in a thin ring, echoing the logo mark. */}
+      <span
+        className={cn(
+          "grid size-16 shrink-0 place-items-center rounded-full ring-1 ring-offset-4 ring-offset-surface",
+          urgent ? "bg-danger/10 text-danger ring-danger/50" : "bg-primary/10 text-primary ring-primary/50",
+        )}
+      >
+        <Icon className="size-7" strokeWidth={1.6} aria-hidden />
       </span>
       <div className="min-w-[9rem] flex-1">
-        <p className="font-display text-2xl font-semibold leading-tight">{t("kitchen.table", { number: call.tableNumber })}</p>
-        <p className="font-semibold">{t(`waiter.callTypes.${call.type}`)}</p>
-        <p className="text-sm text-fg-muted">
+        <p className="font-display text-[1.75rem] font-semibold leading-tight">{t("kitchen.table", { number: call.tableNumber })}</p>
+        <p className={cn("font-semibold", urgent && "text-danger")}>{t(`waiter.callTypes.${call.type}`)}</p>
+        <p className="text-sm text-fg-muted tabular">
           {formatRelative(Date.parse(call.createdAt), now)}
           {call.amountCents ? ` · ${formatPrice(call.amountCents)}` : ""}
         </p>
       </div>
       <Button
         size="lg"
-        className="w-full sm:w-auto"
+        className="min-h-14 w-full text-base sm:w-auto"
         onClick={onHandle}
         aria-label={`${call.type === "cashPayment" ? t("waiter.cashReceived") : t("waiter.handle")}: ${t("kitchen.table", { number: call.tableNumber })}`}
       >
@@ -263,7 +272,7 @@ function CloseTableSheet({ table, onClose, onClosed }: { table: FloorTable | nul
       onClosed();
       onClose();
     } catch (e) {
-      toast.error(e instanceof ApiClientError ? e.message : t("errors.generic"));
+      toast.error(translateError(e, t));
     } finally {
       setBusy(false);
     }

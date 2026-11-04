@@ -34,6 +34,13 @@ async function main() {
   app = createApp({ db, env, logger, realtime }).app;
   const stopSweeper = startSessionSweeper({ db, realtime, logger, idleMinutes: env.SESSION_IDLE_MINUTES });
 
+  // The web server (and any reverse proxy) reuses idle connections to the API.
+  // Node closes idle ones after 5 s by default; a request that lands on a
+  // connection just as it closes fails with ECONNRESET ("Can't reach the
+  // restaurant"). Keep idle connections open longer than the proxies do.
+  server.keepAliveTimeout = 65_000;
+  server.headersTimeout = 66_000;
+
   server.listen(env.API_PORT, () => logger.info(`API listening on http://localhost:${env.API_PORT}`));
 
   const shutdown = (signal: string) => {

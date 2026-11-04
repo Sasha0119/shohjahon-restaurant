@@ -1,7 +1,16 @@
 import type { en } from "./en";
 
 export type PluralForms = { other: string } & Partial<Record<Intl.LDMLPluralRule, string>>;
-export type Messages = typeof en;
+
+/**
+ * The shape every language file must match: the same keys as English, with any
+ * plain string allowed, and plural objects free to use the forms their language
+ * needs (Russian uses one / few / many / other, Uzbek only one / other).
+ */
+type Shape<T> = {
+  [K in keyof T]: T[K] extends string ? string : T[K] extends { other: string } ? PluralForms : Shape<T[K]>;
+};
+export type Messages = Shape<typeof en>;
 
 /** Every valid key, e.g. "menu.title" or "cart.items" (plural objects count as leaves). */
 type Leaves<T, P extends string = ""> = {

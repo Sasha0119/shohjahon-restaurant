@@ -1,3 +1,4 @@
+import { brand } from "@app/config";
 import { randomUUID } from "node:crypto";
 import { shareForItems } from "@app/shared";
 import { pino } from "pino";
@@ -77,15 +78,16 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
 
     it("computes the bill on the server", async () => {
       const b = await bill(g);
-      // 23.00 + 10 % service (2.30) + 8 % tax (1.84)
+      // 2300 + 10 % service (230). The brand's tax is 0 % (prices include VAT).
+      expect(brand.taxPercent).toBe(0);
       expect(b).toMatchObject({
         subtotalCents: 2300,
         serviceChargeCents: 230,
-        taxCents: 184,
-        totalCents: 2714,
+        taxCents: 0,
+        totalCents: 2530,
         paidCents: 0,
-        balanceCents: 2714,
-        outstandingCents: 2714,
+        balanceCents: 2530,
+        outstandingCents: 2530,
         discountCode: null,
       });
       const preview = await as(g).get("/api/session/bill?tipPercent=15");
@@ -100,7 +102,7 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
 
       expect((await as(g).post("/api/session/discount", { code: "nope" })).body.error.code).toBe("INVALID_CODE");
       const applied = await as(g).post("/api/session/discount", { code: "welcome10" });
-      expect(applied.body.bill).toMatchObject({ discountCode: "WELCOME10", codeDiscountCents: 230, serviceChargeCents: 207, taxCents: 166, totalCents: 2443 });
+      expect(applied.body.bill).toMatchObject({ discountCode: "WELCOME10", codeDiscountCents: 230, serviceChargeCents: 207, taxCents: 0, totalCents: 2277 });
       expect(rt.events.find((e) => e.event === "bill:updated")).toBeTruthy();
 
       // Only one use: another table can't have it…
@@ -110,7 +112,7 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
       await as(g).del("/api/session/discount");
       expect((await as(other).post("/api/session/discount", { code: "WELCOME10" })).status).toBe(200);
       await as(other).del("/api/session/discount");
-      expect((await as(g).post("/api/session/discount", { code: "WELCOME10" })).body.bill.totalCents).toBe(2443);
+      expect((await as(g).post("/api/session/discount", { code: "WELCOME10" })).body.bill.totalCents).toBe(2277);
     });
 
     it("respects minimum order size, dates and the on/off switch", async () => {
@@ -138,18 +140,18 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
     it("pays for chosen items with a fair share of service, tax and discount", async () => {
       const snap = (await as(g).get("/api/session")).body.snapshot;
       const burgerLine = snap.orders.flatMap((o: { lines: { id: string; name: string }[] }) => o.lines).find((l: { name: string }) => l.name === "Double Smash Burger");
-      const share = shareForItems(2443, 2300, 1850);
-      expect(share).toBe(1965);
+      const share = shareForItems(2277, 2300, 1850);
+      expect(share).toBe(1832);
 
       expect((await pay(g, { splitMode: "items", method: "card", amountCents: share + 1, orderItemIds: [burgerLine.id] })).body.error.code).toBe("AMOUNT_CHANGED");
-      expect((await as(g).post("/api/session/payments", { splitMode: "full", method: "card", amountCents: 2443 })).body.error.code).toBe("IDEMPOTENCY_KEY_REQUIRED");
+      expect((await as(g).post("/api/session/payments", { splitMode: "full", method: "card", amountCents: 2277 })).body.error.code).toBe("IDEMPOTENCY_KEY_REQUIRED");
 
       const key = randomUUID();
       const res = await pay(g, { splitMode: "items", method: "card", amountCents: share, tipCents: 300, orderItemIds: [burgerLine.id] }, key);
       expect(res.status).toBe(201);
-      expect(res.body.payment).toMatchObject({ status: "succeeded", method: "card", amountCents: 1965, tipCents: 300 });
+      expect(res.body.payment).toMatchObject({ status: "succeeded", method: "card", amountCents: 1832, tipCents: 300 });
       expect(res.body.payment.receiptToken).toMatch(/^[A-Za-z0-9_-]{32}$/);
-      expect(res.body.bill).toMatchObject({ paidCents: 1965, balanceCents: 478, outstandingCents: 478, tipsPaidCents: 300 });
+      expect(res.body.bill).toMatchObject({ paidCents: 1832, balanceCents: 445, outstandingCents: 445, tipsPaidCents: 300 });
       expect(res.body.bill.claimedOrderItemIds).toEqual([burgerLine.id]);
       receiptToken = res.body.payment.receiptToken;
       expect(rt.events.map((e) => e.event)).toEqual(expect.arrayContaining(["payment:updated", "bill:updated"]));
@@ -161,7 +163,7 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
 
       // Nobody can pay the same item twice.
       const friend = await seat(1, true);
-      const dup = await pay(friend, { splitMode: "items", method: "card", amountCents: 1965, orderItemIds: [burgerLine.id] });
+      const dup = await pay(friend, { splitMode: "items", method: "card", amountCents: 1832, orderItemIds: [burgerLine.id] });
       expect(dup.body.error.code).toBe("ITEMS_ALREADY_PAID");
     });
 
@@ -172,19 +174,19 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
     it("records a declined card without touching the balance", async () => {
       const res = await pay(g, { splitMode: "custom", method: "card", amountCents: 113 }); // mock declines totals ending in 13
       expect(res.body.payment).toMatchObject({ status: "failed", failureReason: "card_declined", receiptToken: null });
-      expect((await bill(g)).outstandingCents).toBe(478);
+      expect((await bill(g)).outstandingCents).toBe(445);
     });
 
     it("cash: reserves the amount, alerts the waiter, and closes the table once confirmed", async () => {
-      const res = await pay(g, { splitMode: "full", method: "cash", amountCents: 478, tipCents: 22 });
+      const res = await pay(g, { splitMode: "full", method: "cash", amountCents: 445, tipCents: 22 });
       expect(res.body.payment.status).toBe("pending");
-      expect(res.body.bill).toMatchObject({ pendingCents: 478, outstandingCents: 0, balanceCents: 478 });
+      expect(res.body.bill).toMatchObject({ pendingCents: 445, outstandingCents: 0, balanceCents: 445 });
       expect((await pay(g, { splitMode: "custom", method: "card", amountCents: 100 })).body.error.code).toBe("NOTHING_TO_PAY");
 
       const waiter = await waiterLogin();
       const calls = (await as(waiter).get("/api/waiter/calls")).body.calls;
       const cashCall = calls.find((c: { type: string }) => c.type === "cashPayment");
-      expect(cashCall).toMatchObject({ amountCents: 500, tableNumber: 1, paymentId: res.body.payment.id });
+      expect(cashCall).toMatchObject({ amountCents: 467, tableNumber: 1, paymentId: res.body.payment.id });
 
       rt.clear();
       const sessionId = (await db.tableSession.findFirstOrThrow({ where: { table: { number: 1 }, status: "OPEN" } })).id;
@@ -204,10 +206,10 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
       expect(r.headers["x-robots-tag"]).toBe("noindex");
       expect(r.body.receipt).toMatchObject({
         tableNumber: 1,
-        bill: { totalCents: 2443, discountCode: "WELCOME10" },
-        payment: { amountCents: 1965, tipCents: 300, chargedCents: 2265, method: "card", splitMode: "items" },
-        paidToDateCents: 1965,
-        balanceAfterCents: 478,
+        bill: { totalCents: 2277, discountCode: "WELCOME10" },
+        payment: { amountCents: 1832, tipCents: 300, chargedCents: 2132, method: "card", splitMode: "items" },
+        paidToDateCents: 1832,
+        balanceAfterCents: 445,
       });
       expect(r.body.receipt.lines.map((l: { name: string }) => l.name)).toEqual(["Double Smash Burger", "Flat White"]);
       expect((await request(app).get("/api/receipts/not-a-real-receipt-token-x")).status).toBe(404);
@@ -229,7 +231,7 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
   describe("split evenly and concurrency", () => {
     it("three even shares add up to the exact total and close the table", async () => {
       const g = await tableWithOrder(5);
-      const total = (await bill(g)).totalCents as number; // 2714 → 905 + 905 + 904
+      const total = (await bill(g)).totalCents as number; // 2530 → 844 + 843 + 843
       const paid: number[] = [];
       for (let i = 0; i < 3; i++) {
         const b = await bill(g).catch(() => null);

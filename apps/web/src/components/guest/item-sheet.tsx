@@ -97,13 +97,31 @@ export function ItemSheet({ itemId, onClose }: ItemSheetProps) {
       shown.inStock ? (
         <div className="flex items-center gap-3">
           <QuantityStepper value={form.quantity} onChange={(quantity) => update({ quantity })} />
-          <motion.div animate={controls} className="flex-1">
-            <Button size="lg" className="w-full" onClick={() => void submit()} disabled={adding} aria-busy={adding}>
-              {adding && <Loader2 className="size-5 animate-spin" aria-hidden />}
-              {t("item.add", {
+          <motion.div animate={controls} className="min-w-0 flex-1">
+            <Button
+              size="lg"
+              className="w-full min-w-0 justify-between gap-3 px-5"
+              onClick={() => void submit()}
+              disabled={adding}
+              aria-busy={adding}
+              aria-label={t("item.add", {
                 quantity: form.quantity,
                 price: formatPrice(unitPrice(shown, form.selection) * form.quantity),
               })}
+            >
+              <span className="flex min-w-0 items-center gap-2 truncate">
+                {adding && <Loader2 className="size-5 animate-spin" aria-hidden />}
+                {t("item.addButton")}
+              </span>
+              <motion.span
+                key={unitPrice(shown, form.selection) * form.quantity}
+                initial={{ scale: 0.92, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 520, damping: 26 }}
+                className="shrink-0 whitespace-nowrap tabular"
+              >
+                {formatPrice(unitPrice(shown, form.selection) * form.quantity)}
+              </motion.span>
             </Button>
           </motion.div>
         </div>
@@ -131,7 +149,7 @@ export function ItemSheet({ itemId, onClose }: ItemSheetProps) {
 
 function ItemMedia({ item }: { item: MenuItem }) {
   return (
-    <div className="relative aspect-[16/11] w-full overflow-hidden bg-muted sm:aspect-[16/9]">
+    <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted sm:aspect-[16/10]">
       <motion.div
         key={item.id}
         initial={{ scale: 1.08, opacity: 0.6 }}
@@ -148,7 +166,8 @@ function ItemMedia({ item }: { item: MenuItem }) {
           priority
         />
       </motion.div>
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-transparent" />
+      <div aria-hidden className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface to-transparent" />
     </div>
   );
 }
@@ -180,19 +199,20 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4">
-        <p className="font-display text-[1.65rem] font-semibold leading-tight" aria-hidden>
-          {item.name}
-        </p>
-        <p className="pt-1 text-xl font-bold tabular">{formatPrice(item.price)}</p>
+      <p className="font-display text-[1.85rem] font-semibold leading-tight" aria-hidden>
+        {item.name}
+      </p>
+      <div className="mt-3 flex items-center gap-3">
+        <span aria-hidden className="h-px w-10 bg-primary" />
+        <p className="text-lg font-semibold tabular text-primary">{formatPrice(item.price)}</p>
       </div>
 
-      <DietaryTags tags={item.tags} className="mt-3" />
+      <DietaryTags tags={item.tags} className="mt-4" />
 
-      <p className="mt-3 text-[15px] leading-relaxed text-fg-muted">{item.description}</p>
+      <p className="mt-4 text-[15px] leading-relaxed text-fg-muted">{item.description}</p>
 
-      <div className="mt-4 flex items-start gap-2.5 rounded-2xl bg-muted/70 px-3.5 py-3 text-sm">
-        <Info className="mt-0.5 size-4 shrink-0 text-fg-muted" aria-hidden />
+      <div className="mt-5 flex items-start gap-2.5 rounded-2xl bg-muted/60 px-3.5 py-3 text-sm ring-1 ring-inset ring-line">
+        <Info className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
         <p>
           <span className="font-semibold">{t("item.contains")}: </span>
           <span className="text-fg-muted">
@@ -209,9 +229,9 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
       {combos.map((combo) => (
         <div
           key={combo.id}
-          className="mt-3 flex items-start gap-2.5 rounded-2xl border border-dashed border-secondary px-3.5 py-3 text-sm"
+          className="mt-3 flex items-start gap-2.5 rounded-2xl border border-dashed border-gold-line bg-primary/5 px-3.5 py-3 text-sm"
         >
-          <Tag className="mt-0.5 size-4 shrink-0 text-secondary" aria-hidden />
+          <Tag className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
           <p>
             <span className="font-semibold">{t("item.combo")}: </span>
             <span className="text-fg-muted">
@@ -239,7 +259,7 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
           <fieldset key={group.id} id={`group-${group.id}`} className="mt-7 scroll-mt-6">
             <legend className="flex w-full items-center justify-between gap-3">
               <span>
-                <span className="block text-[17px] font-semibold">{group.name}</span>
+                <span className="block font-display text-[1.15rem] font-semibold">{group.name}</span>
                 <span className="block text-sm text-fg-muted">{groupHint(group, t)}</span>
               </span>
               {invalid ? (
@@ -270,7 +290,7 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
                     className={cn(
                       "flex min-h-14 cursor-pointer items-center gap-3.5 px-4 py-3 transition-colors",
                       idx > 0 && "border-t border-line/70",
-                      selected ? "bg-primary/6" : "hover:bg-muted/60",
+                      selected ? "bg-primary/8" : "hover:bg-muted/60",
                       disabled && "cursor-not-allowed opacity-45",
                     )}
                   >
@@ -294,7 +314,7 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
                       className={cn(
                         "grid size-[22px] shrink-0 place-items-center border-2 transition-all peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface",
                         multi ? "rounded-md" : "rounded-full",
-                        selected ? "border-primary bg-primary text-on-primary" : "border-fg/25",
+                        selected ? "border-primary bg-primary text-on-primary shadow-[0_0_0_4px_color-mix(in_oklab,var(--primary-color)_18%,transparent)]" : "border-fg/25",
                       )}
                     >
                       {selected &&
@@ -304,7 +324,7 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
                           <span className="size-2 rounded-full bg-on-primary" />
                         ))}
                     </span>
-                    <span className="flex-1 text-[15px] font-medium">{option.name}</span>
+                    <span className={cn("flex-1 text-[15px] font-medium", selected && "text-fg")}>{option.name}</span>
                     {option.priceDelta > 0 && (
                       <span className="text-sm text-fg-muted tabular">+{formatPrice(option.priceDelta)}</span>
                     )}
@@ -318,7 +338,7 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
 
       {item.inStock && (
         <div className="mt-7">
-          <label htmlFor={`note-${item.id}`} className="block text-[17px] font-semibold">
+          <label htmlFor={`note-${item.id}`} className="block font-display text-[1.15rem] font-semibold">
             {t("item.instructions")}{" "}
             <span className="text-sm font-normal text-fg-muted">· {t("item.optional")}</span>
           </label>
@@ -329,7 +349,7 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
             placeholder={t("item.instructionsPlaceholder")}
             rows={2}
             maxLength={140}
-            className="mt-3 w-full resize-none rounded-2xl bg-muted px-4 py-3 text-[15px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+            className="mt-3 w-full resize-none rounded-2xl bg-muted px-4 py-3 text-[15px] ring-1 ring-inset ring-line placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
             aria-describedby={`note-hint-${item.id}`}
           />
           <div id={`note-hint-${item.id}`} className="mt-1.5 flex justify-between gap-4 text-xs text-fg-muted">
@@ -341,7 +361,7 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
 
       {suggestions.length > 0 && (
         <section className="mt-8" aria-labelledby={`pair-${item.id}`}>
-          <h3 id={`pair-${item.id}`} className="text-[17px] font-semibold">
+          <h3 id={`pair-${item.id}`} className="font-display text-[1.15rem] font-semibold">
             {t("item.goesWellWith")}
           </h3>
           <div className="no-scrollbar -mx-5 mt-3 flex snap-x gap-3 overflow-x-auto px-5 pb-1">

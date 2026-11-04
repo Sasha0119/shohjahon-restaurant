@@ -88,7 +88,7 @@ export default function OrdersPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">{t("admin.orders.title")}</h1>
+          <h1 className="text-[2.1rem] font-semibold leading-tight">{t("admin.orders.title")}</h1>
           <p className="mt-1 text-fg-muted">{t("admin.orders.subtitle")}</p>
         </div>
         {/* Plain link: the browser downloads it with the manager's session cookie. */}
@@ -160,7 +160,7 @@ export default function OrdersPage() {
               {data.orders.map((o) => {
                 const expanded = open.has(o.id);
                 return (
-                  <li key={o.id} className="rounded-card bg-surface shadow-soft ring-1 ring-line/60">
+                  <li key={o.id} className="card">
                     <button
                       type="button"
                       onClick={() => toggle(o.id)}
@@ -178,14 +178,14 @@ export default function OrdersPage() {
                         </p>
                       </div>
                       <Badge tone={statusTone(o.status)}>{t(`status.${o.status}`)}</Badge>
-                      <p className={cn("ml-auto w-24 text-right font-semibold tabular sm:ml-0", o.status === "cancelled" && "text-fg-muted line-through")}>
+                      <p className={cn("ml-auto min-w-24 whitespace-nowrap text-right font-semibold tabular sm:ml-0", o.status === "cancelled" && "text-fg-muted line-through")}>
                         {formatPrice(o.totalCents)}
                       </p>
                       <ChevronDown className={cn("size-5 shrink-0 text-fg-muted transition-transform", expanded && "rotate-180")} aria-hidden />
                       <span className="sr-only">{t("admin.orders.showLines")}</span>
                     </button>
                     {expanded && (
-                      <ul id={`lines-${o.id}`} className="space-y-2 border-t border-line/60 px-4 py-3 text-sm sm:px-5">
+                      <ul id={`lines-${o.id}`} className="space-y-2 border-t border-line px-4 py-3 text-sm sm:px-5">
                         {o.lines.map((l, i) => (
                           <li key={i} className="flex gap-3">
                             <span className="w-8 shrink-0 font-semibold tabular">{l.quantity}×</span>

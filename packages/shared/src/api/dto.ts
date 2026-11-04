@@ -2,7 +2,7 @@
  * Shapes the API sends to clients (REST responses and Socket.io payloads).
  * Wire format uses lowercase enum values ("received", "kitchen", …) and cents.
  */
-import type { Allergen, DietaryTag, ModifierSelection, Money, OrderStatus, Station } from "../types";
+import type { Allergen, DietaryTag, ModifierSelection, Money, OrderStatus, Station, TextTranslations } from "../types";
 
 export type CallTypeDTO = "water" | "assistance" | "bill" | "cashPayment";
 export type PaymentMethodDTO = "card" | "applePay" | "googlePay" | "cash";
@@ -143,6 +143,7 @@ export interface MenuDTO {
     slug: string;
     name: string;
     description: string | null;
+    translations: TextTranslations<"name" | "description">;
     station: Station;
     sortOrder: number;
   }[];
@@ -152,6 +153,7 @@ export interface MenuDTO {
     categoryId: string;
     name: string;
     description: string;
+    translations: TextTranslations<"name" | "description" | "imageAlt">;
     priceCents: Money;
     imageUrl: string;
     imageAlt: string;
@@ -163,13 +165,14 @@ export interface MenuDTO {
     modifierGroups: {
       id: string;
       name: string;
+      translations: TextTranslations<"name">;
       minSelect: number;
       maxSelect: number;
-      options: { id: string; name: string; priceDeltaCents: Money; isDefault: boolean }[];
+      options: { id: string; name: string; translations: TextTranslations<"name">; priceDeltaCents: Money; isDefault: boolean }[];
     }[];
   }[];
   suggestions: { itemId: string; suggestItemId: string }[];
-  combos: { id: string; name: string; discountCents: Money; itemIds: string[] }[];
+  combos: { id: string; name: string; translations: TextTranslations<"name">; discountCents: Money; itemIds: string[] }[];
 }
 
 /** The full menu as the manager edits it (GET /api/admin/menu) — includes inactive and archived entries. */
@@ -185,13 +188,21 @@ export interface AdminMenuDTO {
     modifierGroups: {
       id: string;
       name: string;
+      translations: TextTranslations<"name">;
       minSelect: number;
       maxSelect: number;
-      options: { id: string; name: string; priceDeltaCents: Money; isDefault: boolean; active: boolean }[];
+      options: {
+        id: string;
+        name: string;
+        translations: TextTranslations<"name">;
+        priceDeltaCents: Money;
+        isDefault: boolean;
+        active: boolean;
+      }[];
     }[];
   })[];
   suggestions: { id: string; itemId: string; suggestItemId: string }[];
-  combos: { id: string; name: string; discountCents: Money; itemIds: string[]; active: boolean }[];
+  combos: { id: string; name: string; translations: TextTranslations<"name">; discountCents: Money; itemIds: string[]; active: boolean }[];
 }
 
 export interface AnalyticsKpisDTO {

@@ -54,7 +54,7 @@ export function CallServerSheet({ open, onClose }: { open: boolean; onClose: () 
             className="flex flex-col items-center pt-4 pb-2 text-center"
           >
             <div className="relative my-4 grid size-24 place-items-center">
-              <span className="absolute inset-0 animate-ping rounded-full bg-primary/20" aria-hidden />
+              <span className="absolute inset-0 animate-ping rounded-full border border-primary/50" aria-hidden />
               <span className="relative grid size-20 place-items-center rounded-full bg-primary text-on-primary shadow-glow">
                 <motion.span
                   animate={{ rotate: [0, -14, 12, -8, 6, 0] }}
@@ -64,7 +64,7 @@ export function CallServerSheet({ open, onClose }: { open: boolean; onClose: () 
                 </motion.span>
               </span>
             </div>
-            <p className="text-lg font-semibold">{t(`call.${justSent}`)}</p>
+            <p className="font-display text-2xl font-semibold">{t(`call.${justSent}`)}</p>
             <p className="mt-1 max-w-xs text-[15px] text-fg-muted">{t("call.onTheWayBody")}</p>
             <Button className="mt-7 w-full" size="lg" onClick={onClose}>
               {t("call.done")}
@@ -95,11 +95,11 @@ export function CallServerSheet({ open, onClose }: { open: boolean; onClose: () 
                       cooling && "opacity-60",
                     )}
                   >
-                    <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-surface text-primary shadow-soft">
-                      <Icon className="size-6" aria-hidden />
+                    <span className="grid size-12 shrink-0 place-items-center rounded-full bg-surface text-primary ring-1 ring-gold-line">
+                      <Icon className="size-6" strokeWidth={1.7} aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-base font-semibold">{t(`call.${type}`)}</span>
+                      <span className="block font-display text-[1.1rem] font-semibold">{t(`call.${type}`)}</span>
                       <span className="block text-sm text-fg-muted">
                         {pending && <span className="font-semibold text-success">{t("call.pending")} · </span>}
                         {cooling

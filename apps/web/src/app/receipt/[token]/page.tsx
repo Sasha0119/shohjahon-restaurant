@@ -1,23 +1,25 @@
 "use client";
 
-import { brand } from "@app/config";
+import { brand, localize } from "@app/config";
 import type { ReceiptDTO } from "@app/shared/api";
 import { motion } from "framer-motion";
 import { CircleCheckBig, Loader2, Mail, Printer, ReceiptText } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Logo } from "@/components/brand/logo";
+import { Logo, Wordmark } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/brand/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
 import { toast } from "@/components/ui/toast";
-import { useT } from "@/i18n";
+import { useI18n, useT } from "@/i18n";
+import { translateError } from "@/i18n/errors";
 import { ApiClientError, api } from "@/lib/api";
-import { formatPrice } from "@/lib/format";
+import { formatDate, formatPercent, formatPrice } from "@/lib/format";
 
 /** Public, unguessable receipt link. Always readable on paper. */
 export default function ReceiptPage() {
-  const t = useT();
+  const { t, locale } = useI18n();
+  const tagline = localize(brand.tagline, locale);
   const { token } = useParams<{ token: string }>();
   const [receipt, setReceipt] = useState<ReceiptDTO | null>(null);
   const [missing, setMissing] = useState(false);
@@ -33,10 +35,7 @@ export default function ReceiptPage() {
   return (
     <main className="min-h-svh px-4 py-8 print:p-0">
       <div className="mx-auto flex max-w-md items-center justify-between print:hidden">
-        <div className="flex items-center gap-2.5">
-          <Logo size={36} />
-          <span className="font-display text-lg font-semibold">{brand.name}</span>
-        </div>
+        <Wordmark size={36} />
         <ThemeToggle />
       </div>
 
@@ -46,63 +45,77 @@ export default function ReceiptPage() {
         <motion.article
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-auto mt-6 max-w-md rounded-card bg-white p-6 text-[#1b1b1b] shadow-lift ring-1 ring-black/5 print:shadow-none print:ring-0"
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          // Paper is always ivory, so the logo uses the deep (light-mode) gold here.
+          style={{ "--primary-color": "#8A6424" } as React.CSSProperties}
+          className="relative mx-auto mt-6 max-w-md overflow-hidden rounded-card bg-[#FBF8F2] px-6 pb-7 pt-8 text-[#1d1a15] shadow-lift ring-1 ring-[#C9A45C]/40 print:mt-0 print:shadow-none print:ring-0"
         >
-          <header className="text-center">
-            <CircleCheckBig className="mx-auto size-10 text-[#1f7a4d]" aria-hidden />
-            <h1 className="mt-3 font-display text-2xl font-semibold">{brand.name}</h1>
-            <p className="mt-1 text-sm text-[#555]">
+          {/* A gold hairline frame inside the paper edge. */}
+          <div aria-hidden className="pointer-events-none absolute inset-2.5 rounded-[calc(var(--radius-card)-6px)] ring-1 ring-[#C9A45C]/35" />
+
+          <header className="relative text-center">
+            <Logo size={58} className="mx-auto" />
+            <h1 className="mt-3 font-display text-[1.75rem] font-semibold leading-none tracking-wide">{brand.name}</h1>
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8A6424]">{tagline}</p>
+            <GoldRule />
+            <p className="text-sm text-[#5a5348]">
               {t("receipt.number", { number: receipt.number })} · {t("receipt.table", { number: receipt.tableNumber })}
             </p>
-            <p className="text-sm text-[#555]">
-              {new Intl.DateTimeFormat(brand.currency.locale, { dateStyle: "medium", timeStyle: "short", timeZone: brand.timezone }).format(new Date(receipt.issuedAt))}
+            <p className="text-sm text-[#5a5348]">
+              {formatDate(new Date(receipt.issuedAt), { dateStyle: "medium", timeStyle: "short", timeZone: brand.timezone })}
             </p>
-            {brand.contact.address && <p className="mt-1 text-xs text-[#777]">{brand.contact.address}</p>}
+            {brand.contact.address && <p className="mt-1 text-xs text-[#7a7264]">{brand.contact.address}</p>}
           </header>
 
-          <ul className="mt-6 space-y-2 border-t border-dashed border-[#ccc] pt-4 text-[15px]">
+          <ul className="relative mt-6 space-y-2.5 border-t border-dashed border-[#d8cdb8] pt-5 text-[15px]">
             {receipt.lines.map((l, i) => (
               <li key={i} className="flex justify-between gap-4">
-                <span>
-                  <span className="font-semibold tabular">{l.quantity}×</span> {l.name}
-                  {l.options.length > 0 && <span className="block text-sm text-[#666]">{l.options.join(" · ")}</span>}
+                <span className="min-w-0">
+                  <span className="font-semibold tabular text-[#8A6424]">{l.quantity}×</span> {l.name}
+                  {l.options.length > 0 && <span className="block text-sm text-[#6b6355]">{l.options.join(" · ")}</span>}
                 </span>
-                <span className="tabular">{formatPrice(l.unitPriceCents * l.quantity)}</span>
+                <span className="shrink-0 tabular">{formatPrice(l.unitPriceCents * l.quantity)}</span>
               </li>
             ))}
           </ul>
 
-          <dl className="mt-4 space-y-1.5 border-t border-dashed border-[#ccc] pt-4 text-[15px] text-[#444]">
+          <dl className="relative mt-5 space-y-1.5 border-t border-dashed border-[#d8cdb8] pt-4 text-[15px] text-[#4a443a]">
             <Line label={t("bill.subtotal")} value={formatPrice(receipt.bill.subtotalCents)} />
             {receipt.bill.comboDiscountCents > 0 && <Line label={t("bill.comboSavings")} value={`−${formatPrice(receipt.bill.comboDiscountCents)}`} />}
             {receipt.bill.codeDiscountCents > 0 && (
               <Line label={t("pay.codeDiscount", { code: receipt.bill.discountCode ?? "" })} value={`−${formatPrice(receipt.bill.codeDiscountCents)}`} />
             )}
-            <Line label={t("bill.serviceCharge", { percent: `${brand.serviceChargePercent}%` })} value={formatPrice(receipt.bill.serviceChargeCents)} />
-            <Line label={t("bill.tax", { percent: `${brand.taxPercent}%` })} value={formatPrice(receipt.bill.taxCents)} />
-            <div className="flex justify-between pt-1 text-lg font-semibold text-[#1b1b1b]">
-              <dt>{t("bill.total")}</dt>
-              <dd className="tabular">{formatPrice(receipt.bill.totalCents)}</dd>
+            <Line label={t("bill.serviceCharge", { percent: formatPercent(brand.serviceChargePercent) })} value={formatPrice(receipt.bill.serviceChargeCents)} />
+            {brand.taxPercent > 0 && <Line label={t("bill.tax", { percent: formatPercent(brand.taxPercent) })} value={formatPrice(receipt.bill.taxCents)} />}
+            <div className="flex items-baseline justify-between gap-4 border-t border-[#C9A45C]/50 pt-3 text-[#1d1a15]">
+              <dt className="font-display text-xl font-semibold">{t("bill.total")}</dt>
+              <dd className="font-display text-2xl font-semibold tabular">{formatPrice(receipt.bill.totalCents)}</dd>
             </div>
+            {brand.taxPercent === 0 && <p className="text-xs text-[#7a7264]">{t("bill.vatIncluded")}</p>}
           </dl>
 
-          <section className="mt-5 rounded-2xl bg-[#f4f4f2] p-4 text-[15px]" aria-labelledby="your-payment">
-            <h2 id="your-payment" className="font-semibold">{t("receipt.yourPayment")}</h2>
-            <dl className="mt-2 space-y-1 text-[#444]">
+          <section className="relative mt-6 rounded-2xl bg-[#F3ECDF] p-4 text-[15px] ring-1 ring-inset ring-[#C9A45C]/30" aria-labelledby="your-payment">
+            <h2 id="your-payment" className="flex items-center gap-2 font-semibold">
+              <CircleCheckBig className="size-5 text-[#1f7a4d]" aria-hidden />
+              {t("receipt.yourPayment")}
+            </h2>
+            <dl className="mt-2 space-y-1 text-[#4a443a]">
               <Line label={t("receipt.method")} value={`${t(`bill.${receipt.payment.method}`)} · ${t(`receipt.splitModes.${receipt.payment.splitMode}`)}`} />
               <Line label={t("receipt.amount")} value={formatPrice(receipt.payment.amountCents)} />
               <Line label={t("receipt.tip")} value={formatPrice(receipt.payment.tipCents)} />
-              <div className="flex justify-between font-semibold text-[#1b1b1b]">
+              <div className="flex justify-between gap-4 font-semibold text-[#1d1a15]">
                 <dt>{t("receipt.charged")}</dt>
                 <dd className="tabular">{formatPrice(receipt.payment.chargedCents)}</dd>
               </div>
             </dl>
-            <p className="mt-3 border-t border-[#ddd] pt-2 text-sm text-[#555]">
+            <p className="mt-3 border-t border-[#d8cdb8] pt-2 text-sm text-[#5a5348]">
               {receipt.balanceAfterCents === 0
                 ? t("receipt.settled")
                 : `${t("receipt.paidToDate")}: ${formatPrice(receipt.paidToDateCents)} · ${t("receipt.balanceAfter")}: ${formatPrice(receipt.balanceAfterCents)}`}
             </p>
           </section>
+
+          <p className="relative mt-6 text-center font-display text-lg italic text-[#8A6424]">{t("receipt.thanks")}</p>
         </motion.article>
       )}
 
@@ -116,6 +129,17 @@ export default function ReceiptPage() {
         </div>
       )}
     </main>
+  );
+}
+
+/** A short gold rule with a diamond in the middle. */
+function GoldRule() {
+  return (
+    <div aria-hidden className="my-4 flex items-center justify-center gap-2 text-[#C9A45C]">
+      <span className="h-px w-14 bg-current opacity-70" />
+      <span className="size-1.5 rotate-45 bg-current" />
+      <span className="h-px w-14 bg-current opacity-70" />
+    </div>
   );
 }
 
@@ -143,14 +167,14 @@ function EmailForm({ token, emailedTo }: { token: string; emailedTo: string | nu
       setEmail("");
       toast.success(t("receipt.sent"));
     } catch (err) {
-      toast.error(err instanceof ApiClientError && err.code === "EMAIL_NOT_CONFIGURED" ? t("receipt.emailUnavailable") : err instanceof ApiClientError ? err.message : t("errors.generic"));
+      toast.error(err instanceof ApiClientError && err.code === "EMAIL_NOT_CONFIGURED" ? t("receipt.emailUnavailable") : translateError(err, t));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <form onSubmit={send} className="rounded-card bg-surface p-4 shadow-soft ring-1 ring-line/60">
+    <form onSubmit={send} className="card p-4">
       <label htmlFor="receipt-email" className="text-sm font-semibold">
         {t("receipt.emailTitle")}
       </label>

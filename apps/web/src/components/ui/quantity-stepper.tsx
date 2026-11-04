@@ -33,14 +33,14 @@ export function QuantityStepper({
 
   return (
     <div
-      className={cn("inline-flex items-center rounded-full bg-muted p-1", className)}
+      className={cn("inline-flex items-center rounded-full bg-muted p-1 ring-1 ring-inset ring-line", className)}
       role="group"
       aria-label={t("item.quantity")}
     >
       <motion.button
         type="button"
         whileTap={{ scale: 0.85 }}
-        className={cn(btn, "grid place-items-center rounded-full bg-surface text-fg shadow-sm disabled:opacity-40")}
+        className={cn(btn, "pressable grid place-items-center rounded-full bg-surface text-fg shadow-sm ring-1 ring-inset ring-line disabled:opacity-40")}
         onClick={() => onChange(value - 1)}
         disabled={!removable && value <= min}
         aria-label={showTrash ? (removeLabel ?? t("item.decrease")) : t("item.decrease")}
@@ -70,7 +70,7 @@ export function QuantityStepper({
       <motion.button
         type="button"
         whileTap={{ scale: 0.85 }}
-        className={cn(btn, "grid place-items-center rounded-full bg-surface text-fg shadow-sm disabled:opacity-40")}
+        className={cn(btn, "pressable grid place-items-center rounded-full bg-surface text-fg shadow-sm ring-1 ring-inset ring-line disabled:opacity-40")}
         onClick={() => onChange(value + 1)}
         disabled={value >= max}
         aria-label={t("item.increase")}

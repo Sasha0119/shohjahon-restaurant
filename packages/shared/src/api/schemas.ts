@@ -9,8 +9,9 @@ import { ALLERGENS, DIETARY_TAGS } from "../types";
 
 // ── primitives ───────────────────────────────────────────────────────────────
 export const zId = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/, "Invalid id");
-export const zCents = z.int().min(0).max(10_000_000);
-export const zPositiveCents = z.int().min(1).max(10_000_000);
+/** Minor units of the brand currency (whole so'm for UZS). Fits the database's 32-bit columns. */
+export const zCents = z.int().min(0).max(1_000_000_000);
+export const zPositiveCents = z.int().min(1).max(1_000_000_000);
 export const zQuantity = z.int().min(1).max(99);
 export const zSlug = z
   .string()
@@ -151,10 +152,33 @@ export const availabilityWindowInput = z
   })
   .refine((w) => w.from < w.to, { message: "'to' must be after 'from'", path: ["to"] });
 
+/**
+ * Optional texts in other languages: `{ en: { name: "Plov" }, ru: { name: "Плов" } }`.
+ * Empty strings are dropped, so a cleared field falls back to the default language.
+ */
+function zTranslations<const F extends string>(fields: Record<F, number>) {
+  const shape = Object.fromEntries(
+    Object.entries(fields).map(([f, max]) => [f, z.string().trim().max(max as number).optional()]),
+  ) as Record<F, z.ZodOptional<z.ZodString>>;
+  return z
+    .record(z.string().regex(/^[a-z]{2}$/, "Use a 2-letter language code"), z.object(shape).strict())
+    .refine((r) => Object.keys(r).length <= 10, "Too many languages")
+    .transform((r) =>
+      Object.fromEntries(
+        Object.entries(r)
+          .map(([lang, t]) => [lang, Object.fromEntries(Object.entries(t as object).filter(([, v]) => v))])
+          .filter(([, t]) => Object.keys(t as object).length > 0),
+      ) as Record<string, Partial<Record<F, string>>>,
+    )
+    .default({});
+}
+export const zNameTranslations = zTranslations({ name: 80 });
+
 export const categoryInput = z.object({
   slug: zSlug,
   name: z.string().trim().min(1).max(60),
   description: z.string().trim().max(200).optional(),
+  translations: zTranslations({ name: 60, description: 200 }),
   station: zStation,
   sortOrder: z.int().min(0).max(10_000).default(0),
   active: z.boolean().default(true),
@@ -164,6 +188,7 @@ export const categoryInput = z.object({
 export const modifierOptionInput = z.object({
   id: zId.optional(),
   name: z.string().trim().min(1).max(80),
+  translations: zNameTranslations,
   priceDeltaCents: zCents.default(0),
   isDefault: z.boolean().default(false),
   active: z.boolean().default(true),
@@ -173,6 +198,7 @@ export const modifierGroupInput = z
   .object({
     id: zId.optional(),
     name: z.string().trim().min(1).max(80),
+    translations: zNameTranslations,
     minSelect: z.int().min(0).max(20),
     maxSelect: z.int().min(1).max(20),
     options: z.array(modifierOptionInput).min(1).max(30),
@@ -192,6 +218,7 @@ export const menuItemInput = z.object({
   categoryId: zId,
   name: z.string().trim().min(1).max(80),
   description: z.string().trim().max(400).default(""),
+  translations: zTranslations({ name: 80, description: 400, imageAlt: 200 }),
   priceCents: zCents,
   imageUrl: zImagePath,
   imageAlt: z.string().trim().max(200).default(""),
@@ -222,6 +249,7 @@ export const upsellSuggestionInput = z
 
 export const comboDealInput = z.object({
   name: z.string().trim().min(1).max(60),
+  translations: zNameTranslations,
   discountCents: zPositiveCents,
   itemIds: z.array(zId).min(2).max(6),
   active: z.boolean().default(true),

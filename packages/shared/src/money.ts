@@ -29,8 +29,17 @@ export function sum(values: Money[]): Money {
   return values.reduce((a, b) => a + b, 0);
 }
 
-/** Number of minor-unit digits for a currency, e.g. USD → 2, JPY → 0. */
+/**
+ * Currencies whose minor unit exists on paper but is never used in practice,
+ * so amounts are kept (and shown) as whole numbers. ISO 4217 lists UZS with
+ * 2 decimals (tiyin), but prices and bills in Uzbekistan are whole so'm.
+ */
+const WHOLE_UNIT_CURRENCIES: Record<string, number> = { UZS: 0 };
+
+/** Number of minor-unit digits for a currency, e.g. USD → 2, JPY → 0, UZS → 0. */
 export function currencyDigits(currency: string): number {
+  const override = WHOLE_UNIT_CURRENCIES[currency.toUpperCase()];
+  if (override !== undefined) return override;
   return (
     new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions()
       .maximumFractionDigits ?? 2
@@ -49,9 +58,12 @@ export function formatMoney(amount: Money, currency: string, locale: string): st
 
 /** "12.5" → 1250 (for USD). Returns null for invalid input. */
 export function parseMoney(input: string, currency: string): Money | null {
-  const cleaned = input.trim().replace(/[^\d.,]/g, "").replace(",", ".");
-  if (!/^\d+(\.\d+)?$/.test(cleaned)) return null;
   const digits = currencyDigits(currency);
+  const raw = input.trim().replace(/[^\d.,]/g, "");
+  // Whole-unit currencies: "85,000" / "85.000" are thousands separators, not decimals.
+  if (digits === 0 && /^\d{1,3}([.,]\d{3})+$/.test(raw)) return Number(raw.replace(/[.,]/g, ""));
+  const cleaned = raw.replace(",", ".");
+  if (!/^\d+(\.\d+)?$/.test(cleaned)) return null;
   const [whole = "0", frac = ""] = cleaned.split(".");
   if (frac.length > digits) return null;
   return Number(whole) * 10 ** digits + Number(frac.padEnd(digits, "0") || "0");

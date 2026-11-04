@@ -4,6 +4,7 @@ import { brand } from "@app/config";
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
+import { LanguageSwitcher } from "@/components/brand/language-switcher";
 import { ThemeToggle } from "@/components/brand/theme-toggle";
 
 /** Calm, branded backdrop for staff sign-in screens. */
@@ -23,7 +24,8 @@ export function StaffAuthLayout({ title, subtitle, children, footer }: {
             "radial-gradient(60rem 40rem at 50% -10%, color-mix(in oklab, var(--primary-color) 18%, transparent), transparent 70%), radial-gradient(40rem 30rem at 100% 100%, color-mix(in oklab, var(--secondary-color) 14%, transparent), transparent 70%)",
         }}
       />
-      <div className="absolute right-3 top-3">
+      <div className="absolute right-3 top-3 flex items-center gap-2">
+        <LanguageSwitcher />
         <ThemeToggle />
       </div>
       <motion.div
@@ -38,7 +40,7 @@ export function StaffAuthLayout({ title, subtitle, children, footer }: {
           <h1 className="mt-2 text-3xl font-semibold">{title}</h1>
           {subtitle && <p className="mt-2 max-w-sm text-[15px] text-fg-muted">{subtitle}</p>}
         </div>
-        <div className="rounded-sheet bg-surface p-5 shadow-lift ring-1 ring-line/60 sm:p-7">{children}</div>
+        <div className="rounded-sheet bg-surface p-5 shadow-lift ring-1 ring-gold-line sm:p-7">{children}</div>
         {footer && <div className="mt-6 text-center">{footer}</div>}
       </motion.div>
     </main>

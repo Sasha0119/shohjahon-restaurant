@@ -46,9 +46,9 @@ export function FloatingCartBar() {
             <Link
               href={`${base}/cart`}
               aria-label={t("cart.barLabel", { count, total })}
-              className="flex h-14 items-center gap-3 rounded-full bg-primary pl-2 pr-5 text-on-primary shadow-glow transition active:scale-[0.98]"
+              className="pressable flex h-[3.75rem] items-center gap-3 rounded-full bg-primary pl-2 pr-5 text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.3),var(--shadow-glow)]"
             >
-              <span className="relative grid size-10 place-items-center rounded-full bg-on-primary/15">
+              <span className="relative grid size-11 place-items-center rounded-full bg-on-primary/12 ring-1 ring-on-primary/20">
                 <ShoppingBag className="size-5" aria-hidden />
                 <AnimatePresence mode="popLayout" initial={false}>
                   <motion.span
@@ -62,7 +62,7 @@ export function FloatingCartBar() {
                   </motion.span>
                 </AnimatePresence>
               </span>
-              <span className="flex-1 text-[15px] font-semibold">{t("cart.viewCart")}</span>
+              <span className="flex-1 truncate text-[15px] font-semibold tracking-[0.01em]">{t("cart.viewCart")}</span>
               <span className="text-[15px] font-bold tabular">{total}</span>
               <ChevronRight className="-mr-1 size-5 opacity-80" aria-hidden />
             </Link>

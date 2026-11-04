@@ -5,6 +5,7 @@ import type { BillDTO, CallDTO, CartLineDTO, OrderTicketDTO, SessionSnapshotDTO 
 import { useCallback, useRef } from "react";
 import { toast } from "@/components/ui/toast";
 import { useT } from "@/i18n";
+import { translateError } from "@/i18n/errors";
 import { ApiClientError, api } from "@/lib/api";
 import { useMenuStore } from "@/store/menu-store";
 import { useSessionStore } from "@/store/session-store";
@@ -63,7 +64,7 @@ export function useGuestActions() {
         case "NETWORK":
           return void toast.error(t("errors.offline"));
         default:
-          return void toast.error(e.message || t("errors.generic"));
+          return void toast.error(translateError(e, t));
       }
     },
     [resync, s, t],

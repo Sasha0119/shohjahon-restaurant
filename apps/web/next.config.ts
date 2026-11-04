@@ -34,8 +34,11 @@ const nextConfig: NextConfig = {
   turbopack: { root: repoRoot },
   outputFileTracingRoot: repoRoot,
   images: {
-    // Smallest modern formats first — matters on slow mobile networks.
-    formats: ["image/avif", "image/webp"],
+    // WebP only: nearly as small as AVIF on mobile networks, but encodes many times
+    // faster. AVIF encoding is CPU-heavy and runs on Node's small worker pool,
+    // which the API proxy also uses — a cold menu of 25 photos could stall API
+    // calls for seconds.
+    formats: ["image/webp"],
     deviceSizes: [384, 640, 750, 828, 1080, 1200, 1920],
     imageSizes: [64, 96, 128, 256, 320],
     minimumCacheTTL: 60 * 60 * 24 * 30,

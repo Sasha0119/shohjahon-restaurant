@@ -23,13 +23,11 @@ function contrast(a: string, b: string): number {
   return (x + 0.05) / (y + 0.05);
 }
 
-describe("theme presets", () => {
-  it("ships exactly the three named presets", () => {
-    expect(Object.values(themePresets).map((p) => p.label)).toEqual([
-      "Warm Bistro",
-      "Fresh Cafe",
-      "Modern Dark",
-    ]);
+describe("signature theme", () => {
+  it("ships one signature theme, dark first", () => {
+    expect(Object.values(themePresets).map((p) => p.label)).toEqual(["Signature"]);
+    expect(themePresets.signature.defaultMode).toBe("dark");
+    expect(themePresets.signature.fonts).toEqual({ display: "playfair-display", body: "inter" });
   });
 
   for (const preset of Object.values(themePresets)) {
@@ -51,11 +49,11 @@ describe("theme presets", () => {
 describe("resolveTheme / buildThemeCss", () => {
   it("applies brand overrides on top of the preset", () => {
     const t = resolveTheme({
-      theme: { preset: "fresh-cafe", mode: "light", overrides: { light: { primary: "#123456" } } },
+      theme: { preset: "signature", mode: "light", overrides: { light: { primary: "#123456" } } },
     });
     expect(t.light.primary).toBe("#123456");
-    expect(t.light.bg).toBe(themePresets["fresh-cafe"].light.bg);
-    expect(t.fonts).toEqual(themePresets["fresh-cafe"].fonts);
+    expect(t.light.bg).toBe(themePresets.signature.light.bg);
+    expect(t.fonts).toEqual(themePresets.signature.fonts);
   });
 
   it("emits the required CSS variables for both modes", () => {
@@ -64,7 +62,7 @@ describe("resolveTheme / buildThemeCss", () => {
       expect(css).toContain(v);
     }
     expect(css).toContain(':root[data-theme="dark"]');
-    expect(css).toContain("var(--ff-fraunces)");
+    expect(css).toContain("var(--ff-playfair-display)");
   });
 
   it("throws on an unknown preset", () => {
@@ -86,7 +84,15 @@ describe("monogramFor", () => {
     expect(monogramFor({ name: "X", logo: { type: "monogram", text: "AB" } })).toBe("AB");
   });
 
-  it("brand defaults contain no real brand name", () => {
-    expect(brand.name).toBe("Your Restaurant");
+  it("uses the wordmark letter for the Shohjahon brand", () => {
+    expect(monogramFor(brand)).toBe("S");
+    expect(monogramFor({ name: "Olive", logo: { type: "wordmark" } })).toBe("O");
+  });
+
+  it("brand texts exist in every configured language", () => {
+    for (const text of [brand.tagline, brand.welcomeLine, brand.cuisine, ...brand.reviewLinks.map((l) => l.label)]) {
+      for (const lang of brand.languages) expect(text[lang], lang).toBeTruthy();
+    }
+    expect(brand.languages).toContain(brand.defaultLanguage);
   });
 });

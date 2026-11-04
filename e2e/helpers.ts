@@ -9,6 +9,14 @@ export const AUTH = {
 
 export const PHONE = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } as const;
 
+/**
+ * The app defaults to Uzbek; these tests read English labels, so every
+ * browser context gets the language cookie the switcher would set.
+ */
+export async function useEnglish(ctx: BrowserContext) {
+  await ctx.addCookies([{ name: "lang", value: "en", url: process.env.E2E_BASE_URL ?? "http://localhost:3300" }]);
+}
+
 /** Fail the test on any uncaught page error or CSP violation. */
 export function watchForErrors(page: Page, errors: string[]) {
   page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
@@ -19,6 +27,7 @@ export function watchForErrors(page: Page, errors: string[]) {
 
 export async function staffPage(browser: Browser, role: keyof typeof AUTH, errors: string[], opts = {}): Promise<{ ctx: BrowserContext; page: Page }> {
   const ctx = await browser.newContext({ storageState: AUTH[role], ...opts });
+  await useEnglish(ctx);
   const page = await ctx.newPage();
   watchForErrors(page, errors);
   return { ctx, page };
@@ -26,6 +35,7 @@ export async function staffPage(browser: Browser, role: keyof typeof AUTH, error
 
 export async function guestPage(browser: Browser, errors: string[]): Promise<{ ctx: BrowserContext; page: Page }> {
   const ctx = await browser.newContext(PHONE);
+  await useEnglish(ctx);
   const page = await ctx.newPage();
   watchForErrors(page, errors);
   return { ctx, page };

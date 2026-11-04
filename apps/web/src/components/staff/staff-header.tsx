@@ -3,6 +3,7 @@
 import { Bell, BellOff, LogOut, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
+import { LanguageSwitcher } from "@/components/brand/language-switcher";
 import { ThemeToggle } from "@/components/brand/theme-toggle";
 import { IconButton } from "@/components/ui/button";
 import { useT } from "@/i18n";
@@ -52,7 +53,7 @@ export function StaffHeader({
   const t = useT();
   const { me, signOut } = useStaffSession();
   return (
-    <header className="sticky top-0 z-30 border-b border-line/60 glass">
+    <header className="sticky top-0 z-30 border-b border-line glass">
       <div className="flex min-h-16 flex-wrap items-center gap-3 px-4 py-2">
         <Logo size={36} />
         <div className="min-w-0">
@@ -74,6 +75,7 @@ export function StaffHeader({
           <IconButton label={sound.muted ? t("kitchen.soundOff") : t("kitchen.soundOn")} variant="muted" onClick={sound.toggle} aria-pressed={!sound.muted}>
             {sound.muted ? <BellOff className="size-5" aria-hidden /> : <Bell className="size-5" aria-hidden />}
           </IconButton>
+          <LanguageSwitcher />
           <ThemeToggle />
           <IconButton label={t("staff.signOut")} onClick={signOut}>
             <LogOut className="size-5" aria-hidden />

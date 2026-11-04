@@ -4,467 +4,564 @@ import type {
   MenuItem,
   ModifierGroup,
   ModifierOption,
+  TextTranslations,
   UpsellRule,
 } from "../types";
 
 /**
- * Demo menu: 25 dishes across 5 categories. Prices are in cents.
+ * Demo menu for "Shohjahon": premium modern Uzbek cuisine with European
+ * touches. 25 dishes in 5 categories. Prices are whole so'm.
+ *
+ * Every text is written in Uzbek (the restaurant's default language, stored
+ * in the plain fields) with English and Russian translations.
  * Photos: apps/web/public/images/menu/<slug>.jpg (see CREDITS.md there).
- * In Phase 2 this same data seeds the database.
+ * This same data seeds the database (`npm run db:seed`).
  */
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-const $ = (dollars: number) => Math.round(dollars * 100);
+/** One text in every language: [uz, en, ru]. */
+type T3 = readonly [uz: string, en: string, ru: string];
 
-function opt(id: string, name: string, extra = 0, isDefault = false): ModifierOption {
-  return { id, name, priceDelta: $(extra), ...(isDefault ? { isDefault } : {}) };
+function translations<F extends string>(fields: Partial<Record<F, T3>>): TextTranslations<F> {
+  const out: Record<string, Partial<Record<F, string>>> = { en: {}, ru: {} };
+  for (const [field, t] of Object.entries(fields) as [F, T3][]) {
+    out.en![field] = t[1];
+    out.ru![field] = t[2];
+  }
+  return out;
 }
 
+function opt(id: string, name: T3, extra = 0, isDefault = false): ModifierOption {
+  return { id, name: name[0], translations: translations({ name }), priceDelta: extra, ...(isDefault ? { isDefault } : {}) };
+}
+
+function group(id: string, name: T3, minSelect: number, maxSelect: number, options: ModifierOption[]): ModifierGroup {
+  return { id, name: name[0], translations: translations({ name }), minSelect, maxSelect, options };
+}
 /** Guest must pick exactly one. */
-function pickOne(id: string, name: string, options: ModifierOption[]): ModifierGroup {
-  return { id, name, minSelect: 1, maxSelect: 1, options };
-}
-
+const pickOne = (id: string, name: T3, options: ModifierOption[]) => group(id, name, 1, 1, options);
 /** Optional, at most one. */
-function maybeOne(id: string, name: string, options: ModifierOption[]): ModifierGroup {
-  return { id, name, minSelect: 0, maxSelect: 1, options };
-}
-
+const maybeOne = (id: string, name: T3, options: ModifierOption[]) => group(id, name, 0, 1, options);
 /** Optional, up to `max`. */
-function upTo(max: number, id: string, name: string, options: ModifierOption[]): ModifierGroup {
-  return { id, name, minSelect: 0, maxSelect: max, options };
-}
+const upTo = (max: number, id: string, name: T3, options: ModifierOption[]) => group(id, name, 0, max, options);
 
-type ItemInput = Omit<MenuItem, "id" | "image" | "imageAlt" | "inStock" | "modifierGroups"> & {
-  imageAlt?: string;
+type ItemInput = Omit<
+  MenuItem,
+  "id" | "image" | "imageAlt" | "inStock" | "modifierGroups" | "name" | "description" | "translations"
+> & {
+  name: T3;
+  description: T3;
   inStock?: boolean;
   modifierGroups?: ModifierGroup[];
 };
 
 function item(input: ItemInput): MenuItem {
+  const { name, description, ...rest } = input;
   return {
-    ...input,
+    ...rest,
     id: `item-${input.slug}`,
+    name: name[0],
+    description: description[0],
+    translations: translations({ name, description, imageAlt: name }),
     image: `/images/menu/${input.slug}.jpg`,
-    imageAlt: input.imageAlt ?? input.name,
+    imageAlt: name[0],
     inStock: input.inStock ?? true,
     modifierGroups: input.modifierGroups ?? [],
   };
 }
 
+function category(c: Omit<Category, "name" | "description" | "translations"> & { name: T3; description: T3 }): Category {
+  const { name, description, ...rest } = c;
+  return { ...rest, name: name[0], description: description[0], translations: translations({ name, description }) };
+}
+
 // Shared modifier groups
-const pizzaSize = () =>
-  pickOne("size", "Size", [opt("10in", '10" classic', 0, true), opt("14in", '14" large', 5)]);
-const coffeeMilk = () =>
-  pickOne("milk", "Milk", [
-    opt("whole", "Whole milk", 0, true),
-    opt("skim", "Skimmed milk"),
-    opt("oat", "Oat milk", 0.6),
-    opt("almond", "Almond milk", 0.6),
-  ]);
-const coffeeExtras = () =>
-  upTo(2, "extras", "Extras", [
-    opt("shot", "Extra shot", 0.8),
-    opt("vanilla", "Vanilla syrup", 0.5),
-    opt("caramel", "Caramel syrup", 0.5),
+const drinkSize = (jugExtra: number) =>
+  pickOne("size", ["Hajmi", "Size", "Объём"], [
+    opt("glass", ["Stakan", "Glass", "Стакан"], 0, true),
+    opt("jug", ["Grafin (1 litr)", "Jug (1 litre)", "Кувшин (1 л)"], jugExtra),
   ]);
 
 // ── categories ───────────────────────────────────────────────────────────────
 export const categories: Category[] = [
-  {
+  category({
     id: "cat-starters",
     slug: "starters",
-    name: "Starters",
-    description: "Small plates to share while you settle in.",
+    name: ["Salatlar va gazaklar", "Starters", "Закуски"],
+    description: [
+      "Dasturxonni boshlash uchun yengil taomlar.",
+      "Small plates to start the table.",
+      "Лёгкие блюда, чтобы начать застолье.",
+    ],
     station: "kitchen",
     sortOrder: 1,
-  },
-  {
+  }),
+  category({
     id: "cat-mains",
     slug: "mains",
-    name: "Mains",
-    description: "Grill, sea and garden — cooked to order.",
+    name: ["Asosiy taomlar", "Main dishes", "Основные блюда"],
+    description: [
+      "Qozon va tandirdan — oilaviy retseptlar zamonaviy talqinda.",
+      "From the kazan and the tandoor — family recipes, refined.",
+      "Из казана и тандыра — семейные рецепты в современной подаче.",
+    ],
     station: "kitchen",
     sortOrder: 2,
-  },
-  {
-    id: "cat-pizza-pasta",
-    slug: "pizza-pasta",
-    name: "Pizza & Pasta",
-    description: "Slow-proved dough and sauces made in-house.",
+  }),
+  category({
+    id: "cat-grill",
+    slug: "grill",
+    name: ["Kabob va grill", "Grill", "Гриль"],
+    description: ["Saksovul koʻmirida pishirilgan.", "Cooked over saxaul charcoal.", "Готовим на углях саксаула."],
     station: "kitchen",
     sortOrder: 3,
-  },
-  {
+  }),
+  category({
     id: "cat-desserts",
     slug: "desserts",
-    name: "Desserts",
-    description: "Leave room. You won't regret it.",
+    name: ["Shirinliklar", "Desserts", "Десерты"],
+    description: [
+      "Choy bilan yoki choysiz — shirin yakun.",
+      "A sweet finish, with or without tea.",
+      "Сладкое завершение — к чаю и не только.",
+    ],
     station: "kitchen",
     sortOrder: 4,
-  },
-  {
+  }),
+  category({
     id: "cat-drinks",
     slug: "drinks",
-    name: "Drinks",
-    description: "Coffee, fresh juices and house coolers.",
+    name: ["Ichimliklar", "Drinks", "Напитки"],
+    description: ["Choy, qahva va uy limonadlari.", "Tea, coffee and house lemonades.", "Чай, кофе и домашние лимонады."],
     station: "bar",
     sortOrder: 5,
     // Example of a time-based menu (uncomment to try):
     // availability: [{ from: "08:00", to: "23:00" }],
-  },
+  }),
 ];
 
 // ── items ────────────────────────────────────────────────────────────────────
 export const items: MenuItem[] = [
-  // Starters
+  // ── Starters
   item({
-    slug: "tomato-bruschetta",
+    slug: "achichuk",
     categoryId: "cat-starters",
-    name: "Heirloom Tomato Bruschetta",
-    description:
-      "Charred sourdough, heirloom tomatoes, torn basil, garlic and a generous pour of extra-virgin olive oil.",
-    price: $(9.5),
-    tags: ["vegan"],
-    allergens: ["gluten"],
-    calories: 320,
-    modifierGroups: [maybeOne("extras", "Make it richer", [opt("stracciatella", "Add stracciatella (contains milk)", 3.5)])],
-  }),
-  item({
-    slug: "crispy-chicken-tenders",
-    categoryId: "cat-starters",
-    name: "Buttermilk Chicken Tenders",
-    description: "Crunchy, juicy tenders brined overnight in buttermilk. Served with your choice of dip.",
-    price: $(11),
-    tags: ["halal"],
-    allergens: ["gluten", "eggs", "milk"],
-    calories: 540,
-    modifierGroups: [
-      pickOne("dip", "Choose a dip", [
-        opt("honey-chipotle", "Honey chipotle", 0, true),
-        opt("garlic-aioli", "Garlic aioli"),
-        opt("smoky-bbq", "Smoky BBQ"),
-      ]),
+    name: ["Achchiq-chuchuk", "Achichuk tomato salad", "Салат ачичук"],
+    description: [
+      "Toshkent pomidorlari, yupqa toʻgʻralgan shirin piyoz, rayhon va ozgina achchiq qalampir.",
+      "Tashkent tomatoes, paper-thin sweet onion, basil and a little hot pepper.",
+      "Ташкентские помидоры, тонкий сладкий лук, базилик и немного острого перца.",
     ],
-  }),
-  item({
-    slug: "smoky-chicken-wings",
-    categoryId: "cat-starters",
-    name: "Smoky Chicken Wings",
-    description: "Slow-smoked, then flash-grilled and glazed. Crisp peppers and a cooling dip on the side.",
-    price: $(12.5),
-    tags: ["halal", "gluten-free", "spicy"],
-    allergens: ["milk", "mustard", "celery"],
-    calories: 610,
-    modifierGroups: [
-      pickOne("portion", "Portion", [opt("6", "6 pieces", 0, true), opt("12", "12 pieces", 9)]),
-      pickOne("heat", "Heat level", [opt("mild", "Mild"), opt("medium", "Medium", 0, true), opt("hot", "Hot")]),
-    ],
-  }),
-  item({
-    slug: "roasted-pumpkin-soup",
-    categoryId: "cat-starters",
-    name: "Roasted Pumpkin Soup",
-    description: "Velvety roasted pumpkin, coconut cream, toasted seeds and a pinch of chili.",
-    price: $(8.5),
-    tags: ["vegan", "gluten-free"],
-    allergens: ["celery"],
-    calories: 260,
-    modifierGroups: [maybeOne("bread", "On the side", [opt("sourdough", "Warm sourdough (contains gluten)", 2)])],
-  }),
-  item({
-    slug: "parmesan-fries",
-    categoryId: "cat-starters",
-    name: "Truffle Parmesan Fries",
-    description: "Hand-cut fries tossed in truffle oil, aged parmesan and fresh parsley.",
-    price: $(7.5),
-    tags: ["vegetarian", "gluten-free"],
-    allergens: ["milk"],
-    calories: 480,
-  }),
-
-  // Mains
-  item({
-    slug: "double-smash-burger",
-    categoryId: "cat-mains",
-    name: "Double Smash Burger",
-    description:
-      "Two crisp-edged beef patties, aged cheddar, pickles and house sauce on a toasted brioche bun.",
-    price: $(18.5),
-    tags: ["halal"],
-    allergens: ["gluten", "milk", "eggs", "mustard", "sesame"],
-    calories: 980,
-    featured: true,
-    modifierGroups: [
-      pickOne("side", "Choose a side", [
-        opt("fries", "Skin-on fries", 0, true),
-        opt("salad", "Side salad"),
-        opt("truffle-fries", "Truffle parmesan fries", 2.5),
-      ]),
-      upTo(3, "extras", "Add extras", [
-        opt("patty", "Extra patty", 5),
-        opt("cheese", "Extra cheddar", 1.5),
-        opt("bacon-jam", "Beef bacon jam", 2.5),
-        opt("jalapenos", "Pickled jalapeños", 1),
-      ]),
-    ],
-  }),
-  item({
-    slug: "steak-frites",
-    categoryId: "cat-mains",
-    name: "Ribeye Steak Frites",
-    description: "300 g grass-fed ribeye, herb butter and crisp frites. Rested, sliced and served sizzling.",
-    price: $(34),
-    tags: ["halal", "gluten-free"],
-    allergens: ["milk"],
-    calories: 1150,
-    featured: true,
-    modifierGroups: [
-      pickOne("doneness", "How would you like it cooked?", [
-        opt("rare", "Rare"),
-        opt("medium-rare", "Medium rare"),
-        opt("medium", "Medium"),
-        opt("medium-well", "Medium well"),
-        opt("well-done", "Well done"),
-      ]),
-      maybeOne("sauce", "Add a sauce", [
-        opt("peppercorn", "Green peppercorn", 2),
-        opt("bearnaise", "Béarnaise (contains eggs)", 2),
-        opt("chimichurri", "Chimichurri", 2),
-      ]),
-    ],
-  }),
-  item({
-    slug: "seared-salmon",
-    categoryId: "cat-mains",
-    name: "Crispy-Skin Salmon",
-    description: "Pan-seared salmon on wilted greens with a bright citrus butter and fresh lime.",
-    price: $(27),
-    tags: ["gluten-free"],
-    allergens: ["fish", "milk"],
-    calories: 640,
-    featured: true,
-  }),
-  item({
-    slug: "mixed-grill-skewers",
-    categoryId: "cat-mains",
-    name: "Charcoal Mixed Grill",
-    description:
-      "Marinated chicken and lamb skewers, blistered peppers, roast potatoes and two house dips.",
-    price: $(26),
-    tags: ["halal", "gluten-free", "spicy"],
-    allergens: ["milk"],
-    calories: 890,
-    modifierGroups: [
-      upTo(2, "dips", "Extra dips", [
-        opt("harissa", "Chili harissa", 1),
-        opt("garlic-yogurt", "Garlic yogurt", 1),
-        opt("toum", "Whipped garlic toum", 1),
-      ]),
-    ],
-  }),
-  item({
-    slug: "rainbow-buddha-bowl",
-    categoryId: "cat-mains",
-    name: "Rainbow Buddha Bowl",
-    description:
-      "Roast sweet potato, chickpeas, avocado, pickled red cabbage, greens and tahini-lemon dressing.",
-    price: $(16.5),
-    tags: ["vegan", "gluten-free"],
-    allergens: ["sesame"],
-    calories: 590,
-    modifierGroups: [
-      maybeOne("protein", "Add protein", [
-        opt("tofu", "Crispy tofu (contains soy)", 3.5),
-        opt("chicken", "Grilled chicken", 4.5),
-        opt("salmon", "Seared salmon (contains fish)", 6.5),
-      ]),
-    ],
-  }),
-
-  // Pizza & Pasta
-  item({
-    slug: "margherita-pizza",
-    categoryId: "cat-pizza-pasta",
-    name: "Margherita",
-    description: "San Marzano tomato, fior di latte, fresh basil and olive oil on a 48-hour dough.",
-    price: $(15),
-    tags: ["vegetarian"],
-    allergens: ["gluten", "milk"],
-    calories: 820,
-    featured: true,
-    modifierGroups: [
-      pizzaSize(),
-      upTo(3, "toppings", "Extra toppings", [
-        opt("burrata", "Burrata", 4),
-        opt("olives", "Kalamata olives", 1.5),
-        opt("mushrooms", "Roast mushrooms", 1.5),
-        opt("chili-oil", "Chili oil", 1),
-      ]),
-    ],
-  }),
-  item({
-    slug: "four-cheese-pizza",
-    categoryId: "cat-pizza-pasta",
-    name: "Quattro Formaggi",
-    description: "Mozzarella, gorgonzola, fontina and parmesan with a drizzle of wildflower honey.",
-    price: $(17.5),
-    tags: ["vegetarian"],
-    allergens: ["gluten", "milk"],
-    calories: 940,
-    modifierGroups: [pizzaSize()],
-  }),
-  item({
-    slug: "garlic-prawn-spaghetti",
-    categoryId: "cat-pizza-pasta",
-    name: "Garlic Prawn Spaghetti",
-    description: "Tiger prawns, cherry tomatoes, garlic, chili and white wine, tossed through fresh spaghetti.",
-    price: $(22),
-    tags: ["spicy"],
-    allergens: ["gluten", "crustaceans", "eggs", "sulphites"],
-    calories: 760,
-    inStock: false,
-  }),
-  item({
-    slug: "penne-arrabbiata",
-    categoryId: "cat-pizza-pasta",
-    name: "Penne all'Arrabbiata",
-    description: "Penne in a fiery tomato, garlic and chili sauce, finished with fresh parsley.",
-    price: $(14.5),
-    tags: ["vegan", "spicy"],
-    allergens: ["gluten"],
-    calories: 620,
-    modifierGroups: [
-      maybeOne("pasta", "Pasta", [opt("gf", "Gluten-free penne", 2)]),
-      maybeOne("cheese", "Finish with", [opt("parmesan", "Shaved parmesan (contains milk)", 1.5)]),
-    ],
-  }),
-  item({
-    slug: "pesto-farfalle",
-    categoryId: "cat-pizza-pasta",
-    name: "Basil Pesto Farfalle",
-    description: "Farfalle with fresh basil pesto, blistered cherry tomatoes and toasted pine nuts.",
-    price: $(15.5),
-    tags: ["vegetarian"],
-    allergens: ["gluten", "milk", "tree-nuts"],
-    calories: 680,
-  }),
-
-  // Desserts
-  item({
-    slug: "classic-tiramisu",
-    categoryId: "cat-desserts",
-    name: "Classic Tiramisu",
-    description: "Espresso-soaked savoiardi, mascarpone cream and a dusting of dark cocoa.",
-    price: $(9),
-    tags: ["vegetarian"],
-    allergens: ["gluten", "eggs", "milk"],
-    calories: 450,
-    featured: true,
-  }),
-  item({
-    slug: "fudge-brownie",
-    categoryId: "cat-desserts",
-    name: "Warm Fudge Brownie",
-    description: "Dense dark-chocolate brownie, served warm with a glossy fudge sauce.",
-    price: $(8.5),
-    tags: ["vegetarian"],
-    allergens: ["gluten", "eggs", "milk", "tree-nuts"],
-    calories: 520,
-    modifierGroups: [maybeOne("side", "Add on the side", [opt("ice-cream", "Vanilla ice cream", 2.5)])],
-  }),
-  item({
-    slug: "raspberry-layer-cake",
-    categoryId: "cat-desserts",
-    name: "Raspberry Layer Cake",
-    description: "Light sponge layered with raspberry jam and vanilla cream, topped with fresh berries.",
-    price: $(9.5),
-    tags: ["vegetarian"],
-    allergens: ["gluten", "eggs", "milk"],
-    calories: 480,
-    inStock: false,
-  }),
-  item({
-    slug: "strawberry-panna-cotta",
-    categoryId: "cat-desserts",
-    name: "Strawberry Panna Cotta",
-    description: "Silky vanilla panna cotta set with agar, macerated strawberries and mint.",
-    price: $(8),
-    tags: ["vegetarian", "gluten-free"],
-    allergens: ["milk"],
-    calories: 340,
-  }),
-  item({
-    slug: "strawberry-soft-serve",
-    categoryId: "cat-desserts",
-    name: "Strawberry Soft Serve",
-    description: "Creamy soft serve swirled with real strawberry. Simple, cold, perfect.",
-    price: $(6),
-    tags: ["vegetarian"],
-    allergens: ["milk", "gluten"],
-    calories: 290,
-    modifierGroups: [
-      pickOne("serve", "Cone or cup?", [opt("cone", "Waffle cone", 0, true), opt("cup", "Cup (gluten-free)")]),
-    ],
-  }),
-
-  // Drinks
-  item({
-    slug: "flat-white",
-    categoryId: "cat-drinks",
-    name: "Flat White",
-    description: "Double ristretto with silky micro-foamed milk.",
-    price: $(4.5),
-    tags: ["vegetarian", "gluten-free"],
-    allergens: ["milk"],
-    calories: 120,
-    modifierGroups: [coffeeMilk(), coffeeExtras()],
-  }),
-  item({
-    slug: "iced-latte",
-    categoryId: "cat-drinks",
-    name: "Iced Latte",
-    description: "Espresso poured over cold milk and ice. Smooth and refreshing.",
-    price: $(5.25),
-    tags: ["vegetarian", "gluten-free"],
-    allergens: ["milk"],
-    calories: 150,
-    modifierGroups: [coffeeMilk(), coffeeExtras()],
-  }),
-  item({
-    slug: "fresh-orange-juice",
-    categoryId: "cat-drinks",
-    name: "Fresh Orange Juice",
-    description: "Squeezed to order. Nothing added.",
-    price: $(5.5),
-    tags: ["vegan", "gluten-free"],
-    allergens: [],
-    calories: 110,
-    modifierGroups: [pickOne("size", "Size", [opt("regular", "Regular", 0, true), opt("large", "Large", 1.5)])],
-  }),
-  item({
-    slug: "mint-lime-cooler",
-    categoryId: "cat-drinks",
-    name: "Mint & Lime Cooler",
-    description: "Muddled mint and lime, cane sugar and sparkling water over crushed ice.",
-    price: $(6.5),
+    price: 32_000,
     tags: ["vegan", "gluten-free"],
     allergens: [],
     calories: 90,
+  }),
+  item({
+    slug: "burrata-tomatoes",
+    categoryId: "cat-starters",
+    name: ["Burrata va Toshkent pomidorlari", "Burrata with Tashkent tomatoes", "Буррата с ташкентскими томатами"],
+    description: [
+      "Kremli burrata, pishgan mahalliy pomidorlar, rayhon va zaytun moyi.",
+      "Creamy burrata on ripe local tomatoes with basil and olive oil.",
+      "Нежная буррата на спелых местных томатах с базиликом и оливковым маслом.",
+    ],
+    price: 98_000,
+    tags: ["vegetarian", "gluten-free"],
+    allergens: ["milk"],
+    calories: 380,
     featured: true,
+  }),
+  item({
+    slug: "beef-tartare",
+    categoryId: "cat-starters",
+    name: ["Mol goʻshtidan tartar", "Beef tartare", "Тартар из говядины"],
+    description: [
+      "Qoʻlda toʻgʻralgan mol goʻshti, kaperslar, tuxum sarigʻi va qizartirilgan tandir noni.",
+      "Hand-cut beef, capers, a golden yolk and toasted tandoor bread.",
+      "Говядина ручной рубки, каперсы, желток и подсушенный тандырный хлеб.",
+    ],
+    price: 95_000,
+    tags: ["halal"],
+    allergens: ["eggs", "gluten", "mustard"],
+    calories: 420,
+  }),
+  item({
+    slug: "tandir-samsa",
+    categoryId: "cat-starters",
+    name: ["Tandir somsa", "Tandoor samsa", "Тандырная самса"],
+    description: [
+      "Qatlamli xamir ichida mayda toʻgʻralgan goʻsht va piyoz, tandir devorida pishirilgan. Narxi bir dona uchun.",
+      "Flaky pastry filled with hand-chopped meat and onion, baked on the tandoor wall. Price per piece.",
+      "Слоёное тесто с рубленым мясом и луком, запечённое на стенке тандыра. Цена за штуку.",
+    ],
+    price: 22_000,
+    tags: ["halal"],
+    allergens: ["gluten", "eggs", "sesame"],
+    calories: 360,
     modifierGroups: [
-      pickOne("sweetness", "Sweetness", [opt("less", "Less sweet"), opt("regular", "Regular", 0, true)]),
+      pickOne("filling", ["Ichi", "Filling", "Начинка"], [
+        opt("lamb", ["Qoʻy goʻshti", "Lamb", "Баранина"], 0, true),
+        opt("beef", ["Mol goʻshti", "Beef", "Говядина"]),
+        opt("pumpkin", ["Qovoq (goʻshtsiz)", "Pumpkin (meat-free)", "Тыква (без мяса)"]),
+      ]),
     ],
   }),
   item({
-    slug: "house-iced-tea",
+    slug: "lamb-shurpa",
+    categoryId: "cat-starters",
+    name: ["Qoʻy goʻshtli shoʻrva", "Lamb shurpa", "Шурпа из баранины"],
+    description: [
+      "Suyakli qoʻy goʻshtida sekin qaynatilgan shaffof shoʻrva, sabzavotlar va yangi koʻkatlar bilan.",
+      "Clear lamb broth slow-simmered on the bone, with vegetables and fresh herbs.",
+      "Прозрачный бульон из баранины на кости с овощами и свежей зеленью.",
+    ],
+    price: 68_000,
+    tags: ["halal", "gluten-free"],
+    allergens: ["celery"],
+    calories: 450,
+  }),
+
+  // ── Main dishes
+  item({
+    slug: "tashkent-plov",
+    categoryId: "cat-mains",
+    name: ["Toshkent oshi", "Tashkent plov", "Ташкентский плов"],
+    description: [
+      "Devzira guruchi, sariq sabzi, qoʻy goʻshti, noʻxat va mayiz — qozonda damlangan. Bedana tuxumi bilan.",
+      "Devzira rice, yellow carrots, lamb, chickpeas and raisins, slow-steamed in the kazan. With quail eggs.",
+      "Рис девзира, жёлтая морковь, баранина, нут и изюм, томлённые в казане. С перепелиными яйцами.",
+    ],
+    price: 89_000,
+    tags: ["halal", "gluten-free"],
+    allergens: ["eggs"],
+    calories: 880,
+    featured: true,
+    modifierGroups: [
+      upTo(2, "extras", ["Qoʻshimcha", "Extras", "Добавить"], [
+        opt("qazi", ["Qazi", "Qazi (horse sausage)", "Казы"], 35_000),
+        opt("quail-eggs", ["Yana bedana tuxumi", "More quail eggs", "Ещё перепелиные яйца"], 8_000),
+      ]),
+    ],
+  }),
+  item({
+    slug: "hand-pulled-lagman",
+    categoryId: "cat-mains",
+    name: ["Qoʻlda choʻzilgan lagʻmon", "Hand-pulled lagman", "Лагман ручной тяжки"],
+    description: [
+      "Yangi choʻzilgan ugra, mol goʻshti, bulgʻor qalampiri va uygʻurcha sous.",
+      "Fresh hand-pulled noodles tossed with beef, peppers and a Uyghur-style sauce.",
+      "Свежая лапша ручной тяжки с говядиной, перцем и уйгурским соусом.",
+    ],
+    price: 76_000,
+    tags: ["halal", "spicy"],
+    allergens: ["gluten", "celery"],
+    calories: 760,
+    modifierGroups: [
+      pickOne("style", ["Tayyorlanishi", "Style", "Подача"], [
+        opt("fried", ["Qovurma", "Stir-fried", "Жареный"], 0, true),
+        opt("broth", ["Shoʻrvali", "In broth", "С бульоном"]),
+      ]),
+    ],
+  }),
+  item({
+    slug: "lamb-manti",
+    categoryId: "cat-mains",
+    name: ["Manti", "Manti dumplings", "Манты"],
+    description: [
+      "Bugʻda pishirilgan yupqa xamirli manti, suzma va qalampirli sariyogʻ bilan.",
+      "Delicate steamed dumplings with suzma and chilli butter.",
+      "Нежные манты на пару с сузьмой и перечным маслом.",
+    ],
+    price: 72_000,
+    tags: ["halal"],
+    allergens: ["gluten", "milk"],
+    calories: 690,
+    modifierGroups: [
+      pickOne("filling", ["Ichi", "Filling", "Начинка"], [
+        opt("lamb", ["Qoʻy goʻshti va piyoz", "Lamb and onion", "Баранина с луком"], 0, true),
+        opt("pumpkin", ["Qovoq", "Pumpkin", "Тыква"]),
+      ]),
+    ],
+  }),
+  item({
+    slug: "sea-bass-saffron",
+    categoryId: "cat-mains",
+    name: ["Zafaronli levrek", "Sea bass with saffron", "Сибас с шафраном"],
+    description: [
+      "Qarsildoq terili levrek filesi, zafaronli pyure va bahor sabzavotlari.",
+      "Crisp-skinned sea bass fillet, saffron purée and spring vegetables.",
+      "Филе сибаса с хрустящей корочкой, шафрановое пюре и весенние овощи.",
+    ],
+    price: 165_000,
+    tags: ["gluten-free"],
+    allergens: ["fish", "milk"],
+    calories: 540,
+  }),
+  item({
+    slug: "beef-dimlama",
+    categoryId: "cat-mains",
+    name: ["Mol goʻshtli dimlama", "Beef dimlama", "Димлама из говядины"],
+    description: [
+      "Mol goʻshti va mavsumiy sabzavotlar oʻz sharbatida olti soat damlangan.",
+      "Beef and seasonal vegetables slow-braised in their own juices for six hours.",
+      "Говядина и сезонные овощи, шесть часов томлённые в собственном соку.",
+    ],
+    price: 128_000,
+    tags: ["halal", "gluten-free"],
+    allergens: ["celery"],
+    calories: 720,
+  }),
+
+  // ── Grill
+  item({
+    slug: "lamb-shashlik",
+    categoryId: "cat-grill",
+    name: ["Qoʻy goʻshtidan shashlik", "Lamb shashlik", "Шашлык из баранины"],
+    description: [
+      "Yumshoq qoʻy goʻshti saksovul koʻmirida, sumaxli piyoz bilan.",
+      "Tender lamb over saxaul charcoal, with sumac onions.",
+      "Нежная баранина на углях саксаула с луком и сумахом.",
+    ],
+    price: 79_000,
+    tags: ["halal", "gluten-free"],
+    allergens: [],
+    calories: 640,
+    featured: true,
+    modifierGroups: [
+      pickOne("portion", ["Porsiya", "Portion", "Порция"], [
+        opt("2", ["2 six", "2 skewers", "2 шампура"], 0, true),
+        opt("4", ["4 six", "4 skewers", "4 шампура"], 76_000),
+      ]),
+      maybeOne("bread", ["Yoniga", "On the side", "К блюду"], [
+        opt("tandir-non", ["Issiq tandir noni", "Warm tandoor bread", "Тёплая тандырная лепёшка"], 8_000),
+      ]),
+    ],
+  }),
+  item({
+    slug: "lula-kebab",
+    categoryId: "cat-grill",
+    name: ["Lula kabob", "Lula kebab", "Люля-кебаб"],
+    description: [
+      "Qoʻlda qiyma qilingan mol va qoʻy goʻshti, zira va kashnich bilan.",
+      "Hand-minced beef and lamb with cumin and coriander, grilled on flat skewers.",
+      "Рубленая говядина и баранина с зирой и кориандром на плоских шампурах.",
+    ],
+    price: 62_000,
+    tags: ["halal", "gluten-free"],
+    allergens: [],
+    calories: 560,
+  }),
+  item({
+    slug: "saffron-chicken-shashlik",
+    categoryId: "cat-grill",
+    name: ["Zafaronli tovuq shashlik", "Saffron chicken shashlik", "Шашлык из курицы с шафраном"],
+    description: [
+      "Qatiq va zafaronda marinadlangan tovuq soni.",
+      "Chicken thigh marinated in yogurt and saffron.",
+      "Куриное бедро в маринаде из йогурта и шафрана.",
+    ],
+    price: 58_000,
+    tags: ["halal", "gluten-free"],
+    allergens: ["milk"],
+    calories: 480,
+  }),
+  item({
+    slug: "ribeye-steak",
+    categoryId: "cat-grill",
+    name: ["Ribai steyk", "Dry-aged ribeye", "Рибай сухого вызревания"],
+    description: [
+      "300 g quruq yetiltirilgan ribai, koʻkatli sariyogʻ bilan.",
+      "300 g dry-aged ribeye, rested and sliced, with herb butter.",
+      "300 г рибая сухого вызревания с маслом с травами.",
+    ],
+    price: 295_000,
+    tags: ["halal", "gluten-free"],
+    allergens: ["milk"],
+    calories: 980,
+    featured: true,
+    modifierGroups: [
+      pickOne("doneness", ["Pishirish darajasi", "How would you like it cooked?", "Степень прожарки"], [
+        opt("rare", ["Kam pishgan", "Rare", "С кровью"]),
+        opt("medium-rare", ["Oʻrtachadan kam", "Medium rare", "Слабая прожарка"]),
+        opt("medium", ["Oʻrtacha", "Medium", "Средняя прожарка"]),
+        opt("medium-well", ["Oʻrtachadan koʻp", "Medium well", "Почти полная прожарка"]),
+        opt("well-done", ["Toʻliq pishgan", "Well done", "Полная прожарка"]),
+      ]),
+    ],
+  }),
+  item({
+    slug: "grilled-vegetables",
+    categoryId: "cat-grill",
+    name: ["Grilda pishgan sabzavotlar", "Charred vegetables", "Овощи на гриле"],
+    description: [
+      "Baqlajon, qalampir, qovoqcha va pomidor — tahini va anor bilan.",
+      "Aubergine, peppers, courgette and tomatoes with tahini and pomegranate.",
+      "Баклажан, перец, цукини и томаты с тахини и гранатом.",
+    ],
+    price: 48_000,
+    tags: ["vegan", "gluten-free"],
+    allergens: ["sesame"],
+    calories: 310,
+  }),
+
+  // ── Desserts
+  item({
+    slug: "napoleon",
+    categoryId: "cat-desserts",
+    name: ["Napoleon", "Napoleon cake", "Торт «Наполеон»"],
+    description: [
+      "Yupqa qatlamli xamir va vanilli qaymoq — oilaviy retsept.",
+      "Paper-thin pastry layers and vanilla custard cream, a family recipe.",
+      "Тончайшие коржи и ванильный заварной крем по семейному рецепту.",
+    ],
+    price: 42_000,
+    tags: ["vegetarian"],
+    allergens: ["gluten", "milk", "eggs"],
+    calories: 520,
+  }),
+  item({
+    slug: "honey-cake",
+    categoryId: "cat-desserts",
+    name: ["Asal torti", "Honey cake", "Медовик"],
+    description: [
+      "Asalli yupqa qatlamlar va yengil smetanali krem.",
+      "Thin honey sponge layers with a light sour-cream frosting.",
+      "Тонкие медовые коржи с лёгким сметанным кремом.",
+    ],
+    price: 45_000,
+    tags: ["vegetarian"],
+    allergens: ["gluten", "milk", "eggs"],
+    calories: 480,
+  }),
+  item({
+    slug: "chocolate-fondant",
+    categoryId: "cat-desserts",
+    name: ["Shokoladli fondan", "Chocolate fondant", "Шоколадный фондан"],
+    description: [
+      "Ichi suyuq issiq shokoladli fondan, vanilli muzqaymoq va karamel bilan.",
+      "Warm chocolate fondant with a molten centre, vanilla ice cream and caramel.",
+      "Тёплый фондан с жидкой серединой, ванильным мороженым и карамелью.",
+    ],
+    price: 58_000,
+    tags: ["vegetarian"],
+    allergens: ["gluten", "milk", "eggs"],
+    calories: 610,
+  }),
+  item({
+    slug: "walnut-halva",
+    categoryId: "cat-desserts",
+    name: ["Yongʻoqli holva", "Walnut & date halva", "Халва с орехами и финиками"],
+    description: [
+      "Xurmo, yongʻoq va bodom — qoʻlda tayyorlangan, shakar qoʻshilmagan.",
+      "Dates, walnuts and almonds, pressed by hand. No added sugar.",
+      "Финики, грецкие орехи и миндаль ручной работы. Без добавленного сахара.",
+    ],
+    price: 38_000,
+    tags: ["vegan", "gluten-free"],
+    allergens: ["tree-nuts"],
+    calories: 340,
+  }),
+  item({
+    slug: "creamy-ice-cream",
+    categoryId: "cat-desserts",
+    name: ["Qaymoqli muzqaymoq", "Cream ice cream", "Сливочное мороженое"],
+    description: [
+      "Ikki shar: vanilli va shokoladli.",
+      "Two scoops: vanilla and dark chocolate.",
+      "Два шарика: ванильный и шоколадный.",
+    ],
+    price: 34_000,
+    tags: ["vegetarian", "gluten-free"],
+    allergens: ["milk"],
+    calories: 290,
+  }),
+
+  // ── Drinks
+  item({
+    slug: "green-tea",
     categoryId: "cat-drinks",
-    name: "Peach Iced Tea",
-    description: "Cold-brewed black tea with ripe peach and a squeeze of lime.",
-    price: $(4.75),
+    name: ["Koʻk choy", "Green tea", "Зелёный чай"],
+    description: [
+      "Choynakda damlangan barg choy, limon va yalpiz bilan.",
+      "A pot of loose-leaf green tea with lemon and mint.",
+      "Чайник зелёного листового чая с лимоном и мятой.",
+    ],
+    price: 24_000,
     tags: ["vegan", "gluten-free"],
     allergens: [],
-    calories: 80,
+    calories: 5,
+    modifierGroups: [
+      pickOne("pot", ["Choynak", "Teapot", "Чайник"], [
+        opt("small", ["Kichik (2 kishi)", "Small (for 2)", "Маленький (на двоих)"], 0, true),
+        opt("large", ["Katta (4 kishi)", "Large (for 4)", "Большой (на четверых)"], 16_000),
+      ]),
+    ],
+  }),
+  item({
+    slug: "blooming-herbal-tea",
+    categoryId: "cat-drinks",
+    name: ["Togʻ oʻtlari choyi", "Mountain herbal tea", "Травяной чай с гор"],
+    description: [
+      "Chimyon togʻ oʻtlari, naʼmatak va bir qoshiq asal.",
+      "Herbs from the Chimgan mountains, rosehip and a spoon of honey.",
+      "Травы с гор Чимгана, шиповник и ложка мёда.",
+    ],
+    price: 32_000,
+    tags: ["vegetarian", "gluten-free"],
+    allergens: [],
+    calories: 40,
+  }),
+  item({
+    slug: "cappuccino",
+    categoryId: "cat-drinks",
+    name: ["Kapuchino", "Cappuccino", "Капучино"],
+    description: [
+      "Ikki shot espresso va baxmal sut koʻpigi.",
+      "Double espresso with velvety milk foam.",
+      "Двойной эспрессо с бархатной молочной пенкой.",
+    ],
+    price: 32_000,
+    tags: ["vegetarian", "gluten-free"],
+    allergens: ["milk"],
+    calories: 120,
+    modifierGroups: [
+      pickOne("milk", ["Sut", "Milk", "Молоко"], [
+        opt("whole", ["Oddiy sut", "Whole milk", "Обычное молоко"], 0, true),
+        opt("oat", ["Suli suti", "Oat milk", "Овсяное молоко"], 8_000),
+        opt("almond", ["Bodom suti", "Almond milk", "Миндальное молоко"], 8_000),
+      ]),
+    ],
+  }),
+  item({
+    slug: "pomegranate-lemonade",
+    categoryId: "cat-drinks",
+    name: ["Anorli limonad", "Pomegranate lemonade", "Гранатовый лимонад"],
+    description: [
+      "Yangi siqilgan anor sharbati, rozmarin va gazli suv.",
+      "Fresh pomegranate juice, rosemary and sparkling water.",
+      "Свежевыжатый гранатовый сок, розмарин и газированная вода.",
+    ],
+    price: 36_000,
+    tags: ["vegan", "gluten-free"],
+    allergens: [],
+    calories: 140,
+    modifierGroups: [drinkSize(68_000)],
+  }),
+  item({
+    slug: "lemon-mint-lemonade",
+    categoryId: "cat-drinks",
+    name: ["Limon va yalpizli limonad", "Lemon & mint lemonade", "Лимонад с лимоном и мятой"],
+    description: [
+      "Limon, yangi yalpiz va asal, gazli suv bilan.",
+      "Lemon, fresh mint and honey with sparkling water.",
+      "Лимон, свежая мята и мёд с газированной водой.",
+    ],
+    price: 32_000,
+    tags: ["vegetarian", "gluten-free"],
+    allergens: [],
+    calories: 110,
+    modifierGroups: [drinkSize(60_000)],
   }),
 ];
 
@@ -477,38 +574,38 @@ const suggest = (from: string, to: string): UpsellRule => ({
 });
 
 export const upsells: UpsellRule[] = [
-  suggest("double-smash-burger", "parmesan-fries"),
-  suggest("double-smash-burger", "house-iced-tea"),
-  suggest("steak-frites", "tomato-bruschetta"),
-  suggest("steak-frites", "classic-tiramisu"),
-  suggest("seared-salmon", "strawberry-panna-cotta"),
-  suggest("seared-salmon", "mint-lime-cooler"),
-  suggest("mixed-grill-skewers", "parmesan-fries"),
-  suggest("mixed-grill-skewers", "mint-lime-cooler"),
-  suggest("rainbow-buddha-bowl", "fresh-orange-juice"),
-  suggest("margherita-pizza", "tomato-bruschetta"),
-  suggest("margherita-pizza", "mint-lime-cooler"),
-  suggest("four-cheese-pizza", "house-iced-tea"),
-  suggest("penne-arrabbiata", "tomato-bruschetta"),
-  suggest("pesto-farfalle", "fresh-orange-juice"),
-  suggest("smoky-chicken-wings", "parmesan-fries"),
-  suggest("crispy-chicken-tenders", "parmesan-fries"),
-  suggest("classic-tiramisu", "flat-white"),
-  suggest("fudge-brownie", "flat-white"),
-  suggest("strawberry-soft-serve", "iced-latte"),
+  suggest("tashkent-plov", "achichuk"),
+  suggest("tashkent-plov", "green-tea"),
+  suggest("lamb-shashlik", "achichuk"),
+  suggest("lamb-shashlik", "pomegranate-lemonade"),
+  suggest("lula-kebab", "grilled-vegetables"),
+  suggest("saffron-chicken-shashlik", "lemon-mint-lemonade"),
+  suggest("ribeye-steak", "grilled-vegetables"),
+  suggest("sea-bass-saffron", "burrata-tomatoes"),
+  suggest("hand-pulled-lagman", "tandir-samsa"),
+  suggest("lamb-manti", "green-tea"),
+  suggest("beef-dimlama", "achichuk"),
+  suggest("beef-tartare", "pomegranate-lemonade"),
+  suggest("napoleon", "cappuccino"),
+  suggest("honey-cake", "green-tea"),
+  suggest("chocolate-fondant", "cappuccino"),
+  suggest("walnut-halva", "blooming-herbal-tea"),
+  suggest("creamy-ice-cream", "cappuccino"),
   {
-    id: "combo-burger-night",
+    id: "combo-tashkent-table",
     kind: "combo",
-    name: "Burger night",
-    itemIds: ["item-double-smash-burger", "item-parmesan-fries", "item-house-iced-tea"],
-    discount: $(3),
+    name: "Toshkent dasturxoni",
+    translations: translations({ name: ["Toshkent dasturxoni", "Tashkent table", "Ташкентский стол"] }),
+    itemIds: ["item-tashkent-plov", "item-achichuk", "item-green-tea"],
+    discount: 15_000,
   },
   {
-    id: "combo-coffee-and-cake",
+    id: "combo-shashlik-night",
     kind: "combo",
-    name: "Coffee & tiramisu",
-    itemIds: ["item-classic-tiramisu", "item-flat-white"],
-    discount: $(1.5),
+    name: "Kabob kechasi",
+    translations: translations({ name: ["Kabob kechasi", "Shashlik night", "Вечер шашлыка"] }),
+    itemIds: ["item-lamb-shashlik", "item-achichuk", "item-pomegranate-lemonade"],
+    discount: 12_000,
   },
 ];
 

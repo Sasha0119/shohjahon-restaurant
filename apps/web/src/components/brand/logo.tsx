@@ -2,14 +2,24 @@ import { brand, monogramFor } from "@app/config";
 import Image from "next/image";
 import { cn } from "@/lib/cn";
 
+/*
+ * The brand logo, configured in config/brand.ts (`logo`).
+ *
+ *   <Logo />      the mark: a serif letter in a thin gold circle
+ *   <Wordmark />  the mark + the name set in the display serif
+ *
+ * Colours come from the theme, so the same logo works in dark mode, light
+ * mode and on photos (`onImage`: ivory on any background).
+ */
+
 interface LogoProps {
   size?: number;
-  /** On top of photos: frosted glass with white text. */
+  /** On top of photos: ivory lines regardless of the theme. */
   onImage?: boolean;
   className?: string;
 }
 
-/** The brand logo — an image if configured, otherwise a monogram from the name. */
+/** The mark alone — used in headers, loading screens, icons and receipts. */
 export function Logo({ size = 40, onImage, className }: LogoProps) {
   if (brand.logo.type === "image") {
     return (
@@ -22,18 +32,75 @@ export function Logo({ size = 40, onImage, className }: LogoProps) {
       />
     );
   }
-  const text = monogramFor(brand);
+  const letter = monogramFor(brand);
+  const ring = onImage ? "rgb(255 255 255 / 0.78)" : "var(--primary-color)";
+  const ink = onImage ? "#FFFFFF" : "var(--primary-color)";
+  return (
+    <svg
+      aria-hidden
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      className={cn("shrink-0", className)}
+      style={onImage ? { filter: "drop-shadow(0 1px 6px rgb(0 0 0 / 0.35))" } : undefined}
+    >
+      {/* Outer hairline + inner fine ring: the "thin circle". */}
+      <circle cx="32" cy="32" r="30.5" fill="none" stroke={ring} strokeWidth="1.25" />
+      <circle cx="32" cy="32" r="27" fill="none" stroke={ring} strokeOpacity="0.45" strokeWidth="0.6" />
+      <text
+        x="32"
+        y="33"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill={ink}
+        style={{
+          fontFamily: "var(--font-display-family)",
+          fontSize: letter.length > 1 ? 24 : 34,
+          fontWeight: 500,
+        }}
+      >
+        {letter}
+      </text>
+    </svg>
+  );
+}
+
+interface WordmarkProps extends LogoProps {
+  /** "row": mark left of the name (headers). "stack": mark above the name (hero, splash). */
+  layout?: "row" | "stack";
+  /** Show the brand tagline under the name (stack layout only). */
+  tagline?: string;
+}
+
+/** The mark + the name in the display serif. Height follows `size` (the mark). */
+export function Wordmark({ size = 40, onImage, layout = "row", tagline, className }: WordmarkProps) {
+  const stack = layout === "stack";
   return (
     <span
-      aria-hidden
-      style={{ width: size, height: size, fontSize: size * 0.4 }}
-      className={cn(
-        "inline-grid shrink-0 place-items-center rounded-[30%] font-display font-semibold tracking-tight",
-        onImage ? "glass-dark" : "bg-primary text-on-primary shadow-glow",
-        className,
-      )}
+      className={cn("inline-flex items-center", stack ? "flex-col gap-3 text-center" : "gap-3", className)}
+      aria-label={brand.name}
+      role="img"
     >
-      {text}
+      <Logo size={size} onImage={onImage} />
+      <span className={cn("flex flex-col", stack && "items-center")}>
+        <span
+          className={cn(
+            "font-display font-medium uppercase leading-none tracking-[0.2em]",
+            onImage ? "text-white" : "text-fg",
+          )}
+          style={{ fontSize: Math.max(14, size * (stack ? 0.42 : 0.4)) }}
+        >
+          {brand.name}
+        </span>
+        {stack && tagline && (
+          <span
+            className={cn("mt-3 font-display italic", onImage ? "text-white/85" : "text-fg-muted")}
+            style={{ fontSize: Math.max(14, size * 0.24) }}
+          >
+            {tagline}
+          </span>
+        )}
+      </span>
     </span>
   );
 }

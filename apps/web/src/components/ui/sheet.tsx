@@ -106,7 +106,7 @@ export function Sheet({
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <motion.div
             aria-hidden
-            className="absolute inset-0 bg-black/50 backdrop-blur-[3px]"
+            className="absolute inset-0 bg-black/60 backdrop-blur-[4px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -121,7 +121,7 @@ export function Sheet({
             aria-describedby={description ? descId : undefined}
             tabIndex={-1}
             className={cn(
-              "relative flex max-h-[min(92svh,900px)] w-full max-w-xl flex-col overflow-hidden rounded-t-sheet bg-surface shadow-lift outline-none sm:mb-4 sm:rounded-sheet",
+              "relative flex max-h-[min(92svh,900px)] w-full max-w-xl flex-col overflow-hidden rounded-t-sheet bg-surface shadow-lift outline-none ring-1 ring-gold-line sm:mb-4 sm:rounded-sheet",
               className,
             )}
             initial={{ y: "100%" }}
@@ -145,7 +145,7 @@ export function Sheet({
               <span
                 className={cn(
                   "h-1.5 w-11 rounded-full",
-                  media ? "bg-white/80 shadow" : "bg-fg/20",
+                  media ? "bg-white/80 shadow" : "bg-primary/40",
                 )}
               />
             </div>
@@ -182,7 +182,7 @@ export function Sheet({
             </div>
 
             {footer && (
-              <div className="border-t border-line/70 bg-surface px-5 pt-3 pb-[max(env(safe-area-inset-bottom),0.875rem)]">
+              <div className="border-t border-gold-line bg-surface/95 px-5 pt-3 pb-[max(env(safe-area-inset-bottom),0.875rem)] backdrop-blur">
                 {footer}
               </div>
             )}

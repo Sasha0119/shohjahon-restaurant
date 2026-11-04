@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ScanLine } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { LanguageSwitcher } from "@/components/brand/language-switcher";
 import { Logo } from "@/components/brand/logo";
 import { useT } from "@/i18n";
 
@@ -18,6 +19,7 @@ export default function Landing() {
       <div className="flex items-center gap-2.5 px-5 pt-[max(env(safe-area-inset-top),1.25rem)]">
         <Logo size={40} onImage />
         <span className="font-semibold">{brand.name}</span>
+        <LanguageSwitcher onImage className="ml-auto" />
       </div>
       <motion.div
         initial={{ opacity: 0, y: 16 }}

@@ -3,7 +3,7 @@
  * Pure function — no database access — so it is unit-tested. IDs are stable,
  * which makes `npm run db:seed` safe to run repeatedly (it upserts).
  */
-import { toMinutes, type Menu } from "@app/shared";
+import { toMinutes, type Menu, type TextTranslations } from "@app/shared";
 import type { Allergen, DietaryTag, Station, Weekday } from "./generated/prisma/enums.ts";
 import { enums, toDbEnum } from "./lib/enums.ts";
 
@@ -13,6 +13,7 @@ export interface SeedPlan {
     slug: string;
     name: string;
     description: string | null;
+    translations: TextTranslations;
     station: Station;
     sortOrder: number;
     availability: { days: Weekday[]; fromMinute: number; toMinute: number }[];
@@ -23,6 +24,7 @@ export interface SeedPlan {
     categoryId: string;
     name: string;
     description: string;
+    translations: TextTranslations;
     priceCents: number;
     imageUrl: string;
     imageAlt: string;
@@ -35,14 +37,15 @@ export interface SeedPlan {
     groups: {
       id: string;
       name: string;
+      translations: TextTranslations;
       minSelect: number;
       maxSelect: number;
       sortOrder: number;
-      options: { id: string; name: string; priceDeltaCents: number; isDefault: boolean; sortOrder: number }[];
+      options: { id: string; name: string; translations: TextTranslations; priceDeltaCents: number; isDefault: boolean; sortOrder: number }[];
     }[];
   }[];
   suggestions: { itemId: string; suggestItemId: string; sortOrder: number }[];
-  combos: { id: string; name: string; discountCents: number; itemIds: string[]; sortOrder: number }[];
+  combos: { id: string; name: string; translations: TextTranslations; discountCents: number; itemIds: string[]; sortOrder: number }[];
   tables: { number: number; seats: number }[];
 }
 
@@ -57,6 +60,7 @@ export function buildSeedPlan(menu: Menu, tableCount = 12): SeedPlan {
     slug: c.slug,
     name: c.name,
     description: c.description ?? null,
+    translations: c.translations ?? {},
     station: enums.station.toDb(c.station),
     sortOrder: c.sortOrder,
     availability: (c.availability ?? []).map((w) => ({
@@ -76,6 +80,7 @@ export function buildSeedPlan(menu: Menu, tableCount = 12): SeedPlan {
       categoryId: item.categoryId,
       name: item.name,
       description: item.description,
+      translations: item.translations ?? {},
       priceCents: item.price,
       imageUrl: item.image,
       imageAlt: item.imageAlt,
@@ -88,12 +93,14 @@ export function buildSeedPlan(menu: Menu, tableCount = 12): SeedPlan {
       groups: item.modifierGroups.map((g, gi) => ({
         id: groupDbId(item.id, g.id),
         name: g.name,
+        translations: g.translations ?? {},
         minSelect: g.minSelect,
         maxSelect: g.maxSelect,
         sortOrder: gi,
         options: g.options.map((o, oi) => ({
           id: optionDbId(item.id, g.id, o.id),
           name: o.name,
+          translations: o.translations ?? {},
           priceDeltaCents: o.priceDelta,
           isDefault: o.isDefault ?? false,
           sortOrder: oi,
@@ -114,6 +121,7 @@ export function buildSeedPlan(menu: Menu, tableCount = 12): SeedPlan {
       combos.push({
         id: rule.id,
         name: rule.name,
+        translations: rule.translations ?? {},
         discountCents: rule.discount,
         itemIds: rule.itemIds,
         sortOrder: combos.length,

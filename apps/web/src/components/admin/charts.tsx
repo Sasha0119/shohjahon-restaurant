@@ -5,6 +5,7 @@ import { currencyDigits } from "@app/shared";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { useT } from "@/i18n";
+import { currencyLabel, formatLocale, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 /*
@@ -17,20 +18,24 @@ import { cn } from "@/lib/cn";
 
 // ── number formatting ───────────────────────────────────────────────────────
 
-const locale = brand.currency.locale;
 const digits = currencyDigits(brand.currency.code);
 
-/** 123456 cents → "$1.2K" (axis ticks). */
-export function compactMoney(cents: number): string {
-  return new Intl.NumberFormat(locale, {
+/** Axis ticks: 1 200 000 → "1,2 mln soʻm" / "$1.2K" — short, in the current language. */
+export function compactMoney(minor: number): string {
+  const value = minor / 10 ** digits;
+  if (brand.currency.symbol) {
+    const n = new Intl.NumberFormat(formatLocale(), { notation: "compact", maximumFractionDigits: 1 }).format(value);
+    return `${n} ${currencyLabel()}`;
+  }
+  return new Intl.NumberFormat(formatLocale(), {
     style: "currency",
     currency: brand.currency.code,
     notation: "compact",
     maximumFractionDigits: 1,
-  }).format(cents / 10 ** digits);
+  }).format(value);
 }
 
-export const formatCount = (n: number) => new Intl.NumberFormat(locale).format(n);
+export const formatCount = (n: number) => formatNumber(n);
 
 /** Clean axis ticks: 0 and 3–5 round steps covering `max`. */
 export function niceTicks(max: number, target = 4): number[] {
@@ -62,14 +67,14 @@ export function ChartCard({
   const t = useT();
   const id = useId();
   return (
-    <section aria-labelledby={id} className={cn("rounded-card bg-surface p-5 shadow-soft ring-1 ring-line/60 sm:p-6", className)}>
-      <h2 id={id} className="text-lg font-semibold">
+    <section aria-labelledby={id} className={cn("card p-5 sm:p-6", className)}>
+      <h2 id={id} className="font-display text-xl font-semibold">
         {title}
       </h2>
       {subtitle && <p className="text-sm text-fg-muted">{subtitle}</p>}
       <div className="mt-5">{children}</div>
       {table && (
-        <details className="group mt-4 border-t border-line/60 pt-3">
+        <details className="group mt-4 border-t border-line pt-3">
           <summary className="cursor-pointer select-none text-sm font-semibold text-fg-muted hover:text-fg">
             {t("admin.overview.table.show")}
           </summary>
@@ -203,7 +208,7 @@ export function ColumnChart({ points, label, formatTick }: { points: ColumnPoint
           className="relative h-56 touch-pan-y rounded-sm outline-offset-4"
         >
           {ticks.map((v) => (
-            <div key={v} aria-hidden className="absolute inset-x-0 border-t border-line/70" style={{ bottom: `${(v / top) * 100}%` }} />
+            <div key={v} aria-hidden className="absolute inset-x-0 border-t border-line" style={{ bottom: `${(v / top) * 100}%` }} />
           ))}
           <div className="absolute inset-0 flex items-end" aria-hidden>
             {points.map((p, i) => (
@@ -437,9 +442,11 @@ export function StatTile({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-card bg-surface p-5 shadow-soft ring-1 ring-line/60", className)}>
-      <p className="text-sm font-semibold text-fg-muted">{label}</p>
-      <p className={cn("mt-1 font-semibold tracking-tight", hero ? "text-5xl" : "text-3xl")}>{value}</p>
+    <div className={cn("card relative overflow-hidden p-5", hero && "ring-gold-line", className)}>
+      {/* A short gold hairline over every tile ties the row together. */}
+      <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-primary/70 via-primary/30 to-transparent" />
+      <p className="eyebrow">{label}</p>
+      <p className={cn("mt-2 font-display font-semibold tabular tracking-tight", hero ? "text-5xl" : "text-[2rem] leading-tight")}>{value}</p>
       {sub && <p className="mt-1 text-sm text-fg-muted">{sub}</p>}
       {delta && <DeltaLine delta={delta} />}
     </div>

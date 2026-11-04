@@ -10,7 +10,8 @@ import { toast } from "@/components/ui/toast";
 import { useNow } from "@/hooks/use-now";
 import { useStaffSocket } from "@/hooks/use-staff-socket";
 import { useT } from "@/i18n";
-import { ApiClientError, api } from "@/lib/api";
+import { translateError } from "@/i18n/errors";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
 
@@ -86,7 +87,7 @@ export default function FeedbackPage() {
       });
       window.dispatchEvent(new CustomEvent("feedback-count-changed"));
     } catch (e) {
-      toast.error(e instanceof ApiClientError ? e.message : t("errors.generic"));
+      toast.error(translateError(e, t));
     } finally {
       setBusy(null);
     }
@@ -95,7 +96,7 @@ export default function FeedbackPage() {
   return (
     <div>
       <div>
-        <h1 className="text-3xl font-semibold">{t("admin.feedback.title")}</h1>
+        <h1 className="text-[2.1rem] font-semibold leading-tight">{t("admin.feedback.title")}</h1>
         <p className="mt-1 max-w-2xl text-fg-muted">{t("admin.feedback.subtitle")}</p>
       </div>
 
@@ -154,7 +155,7 @@ function FeedbackCard({ f, fresh, busy, onSet }: { f: FeedbackDTO; fresh: boolea
       exit={{ opacity: 0, x: 30 }}
       className={cn(
         "rounded-card bg-surface p-5 shadow-soft ring-1",
-        handled ? "ring-line/60" : "ring-danger/30",
+        handled ? "ring-line" : "ring-danger/30",
         fresh && "animate-pulse-ring",
       )}
     >
@@ -174,7 +175,7 @@ function FeedbackCard({ f, fresh, busy, onSet }: { f: FeedbackDTO; fresh: boolea
       <p className={cn("mt-3 whitespace-pre-wrap text-[15px] leading-relaxed", !f.comment && "italic text-fg-muted")}>
         {f.comment || t("admin.feedback.noComment")}
       </p>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line/70 pt-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
         <p className="text-xs text-fg-muted">
           {handled && f.handledBy && f.handledAt ? t("admin.feedback.handledBy", { name: f.handledBy, time: formatRelative(Date.parse(f.handledAt), now) }) : ""}
         </p>

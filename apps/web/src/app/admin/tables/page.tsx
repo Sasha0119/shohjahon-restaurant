@@ -25,12 +25,13 @@ import { toast } from "@/components/ui/toast";
 import { useNow } from "@/hooks/use-now";
 import { useStaffSocket } from "@/hooks/use-staff-socket";
 import { useT } from "@/i18n";
-import { ApiClientError, api } from "@/lib/api";
+import { translateError } from "@/i18n/errors";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
 
 const STATUS_STYLE: Record<TableStatusDTO, { dot: string; ring: string; tone: "muted" | "primary" | "warning" | "danger" }> = {
-  free: { dot: "bg-fg/25", ring: "ring-line/60", tone: "muted" },
+  free: { dot: "bg-fg/25", ring: "ring-line", tone: "muted" },
   seated: { dot: "bg-primary", ring: "ring-primary/40", tone: "primary" },
   ordered: { dot: "bg-warning", ring: "ring-warning/50", tone: "warning" },
   billRequested: { dot: "bg-danger", ring: "ring-danger/50", tone: "danger" },
@@ -39,13 +40,6 @@ const STATUS_STYLE: Record<TableStatusDTO, { dot: string; ring: string; tone: "m
 const field =
   "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
-const errorText = (e: unknown, fallback: string) => {
-  if (e instanceof ApiClientError) {
-    const first = Array.isArray(e.details) ? (e.details[0] as { message?: string } | undefined) : undefined;
-    return first?.message ?? e.message;
-  }
-  return fallback;
-};
 
 export default function TablesAdminPage() {
   const t = useT();
@@ -237,7 +231,7 @@ function TableSheet({
       }
       setConfirm(null);
     } catch (e) {
-      toast.error(errorText(e, t("errors.generic")));
+      toast.error(translateError(e, t));
     } finally {
       setBusy(false);
     }
@@ -290,7 +284,7 @@ function TableSheet({
         </Link>
       </div>
 
-      <div className="mt-6 space-y-1 border-t border-line/70 pt-4">
+      <div className="mt-6 space-y-1 border-t border-line pt-4">
         <button
           type="button"
           onClick={() => onEdit(shown)}
@@ -383,7 +377,7 @@ function TableForm({
       toast.success(state.mode === "create" ? t("admin.tables.created", { number: table.number }) : t("admin.tables.saved"));
       onClose();
     } catch (err) {
-      setError(errorText(err, t("errors.generic")));
+      setError(translateError(err, t));
     } finally {
       setBusy(false);
     }

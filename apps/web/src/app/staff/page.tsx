@@ -75,7 +75,7 @@ function PinLogin() {
                       type="button"
                       whileTap={{ scale: 0.96 }}
                       onClick={() => setSelected(s)}
-                      className="flex h-full min-h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl bg-muted/60 p-3 text-center ring-1 ring-line/70 transition-colors hover:bg-muted"
+                      className="flex h-full min-h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl bg-muted/60 p-3 text-center ring-1 ring-line transition-colors hover:bg-muted"
                     >
                       <span className="grid size-12 place-items-center rounded-full bg-primary text-lg font-semibold text-on-primary shadow-glow">
                         {s.name.charAt(0).toUpperCase()}

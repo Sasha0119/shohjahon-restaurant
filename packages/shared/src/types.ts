@@ -29,9 +29,17 @@ export type Allergen = (typeof ALLERGENS)[number];
 
 export type Station = "kitchen" | "bar";
 
+/**
+ * Text in other languages, keyed by language code: `{ en: { name: "Plov" }, ru: { name: "Плов" } }`.
+ * The plain fields (name, description …) hold the restaurant's default language;
+ * anything missing here falls back to them.
+ */
+export type TextTranslations<F extends string = string> = Partial<Record<string, Partial<Record<F, string>>>>;
+
 export interface ModifierOption {
   id: string;
   name: string;
+  translations?: TextTranslations<"name">;
   /** Extra price added per unit when selected. */
   priceDelta: Money;
   /** Pre-selected when the item sheet opens. */
@@ -41,6 +49,7 @@ export interface ModifierOption {
 export interface ModifierGroup {
   id: string;
   name: string;
+  translations?: TextTranslations<"name">;
   /** min >= 1 means the guest must choose. */
   minSelect: number;
   /** 1 = single choice (radio), > 1 = multi choice (checkbox). */
@@ -54,6 +63,7 @@ export interface MenuItem {
   categoryId: string;
   name: string;
   description: string;
+  translations?: TextTranslations<"name" | "description" | "imageAlt">;
   price: Money;
   image: string;
   imageAlt: string;
@@ -79,6 +89,7 @@ export interface Category {
   slug: string;
   name: string;
   description?: string;
+  translations?: TextTranslations<"name" | "description">;
   station: Station;
   sortOrder: number;
   availability?: AvailabilityWindow[];
@@ -90,6 +101,7 @@ export type UpsellRule =
       id: string;
       kind: "combo";
       name: string;
+      translations?: TextTranslations<"name">;
       itemIds: string[];
       /** Fixed discount when every item in the combo is ordered together. */
       discount: Money;

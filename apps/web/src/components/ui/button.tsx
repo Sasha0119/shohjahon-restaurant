@@ -5,24 +5,31 @@ import Link from "next/link";
 import { forwardRef, type ComponentProps, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "glass" | "danger";
+type Variant = "primary" | "secondary" | "outline" | "ghost" | "glass" | "danger";
 type Size = "md" | "lg" | "sm";
 
+/*
+ * Buttons grow with their text (min-height, not a fixed height) so long
+ * Uzbek/Russian labels wrap onto two lines instead of spilling out.
+ */
 const base =
-  "relative inline-flex items-center justify-center gap-2 rounded-full font-semibold select-none whitespace-nowrap transition-[background-color,box-shadow,opacity,color] duration-200 disabled:opacity-45 disabled:pointer-events-none";
+  "relative inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-[0.01em] select-none text-center leading-tight text-balance transition-[background-color,box-shadow,opacity,color,filter] duration-200 disabled:opacity-40 disabled:pointer-events-none";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-primary text-on-primary shadow-glow hover:brightness-[1.06]",
-  secondary: "bg-muted text-fg hover:bg-[color-mix(in_oklab,var(--surface-muted-color)_85%,var(--text-color))]",
+  primary:
+    "bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.28),var(--shadow-glow)] hover:brightness-[1.07]",
+  secondary:
+    "bg-muted text-fg ring-1 ring-inset ring-line hover:bg-[color-mix(in_oklab,var(--surface-muted-color)_82%,var(--text-color))]",
+  outline: "text-primary ring-1 ring-inset ring-gold-line hover:bg-primary/8",
   ghost: "text-fg hover:bg-muted",
-  glass: "glass-dark hover:bg-black/40",
-  danger: "bg-danger/10 text-danger hover:bg-danger/15",
+  glass: "glass-dark hover:bg-black/45",
+  danger: "bg-danger/12 text-danger ring-1 ring-inset ring-danger/25 hover:bg-danger/18",
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-10 px-4 text-sm",
-  md: "h-12 px-5 text-[15px]",
-  lg: "h-14 px-6 text-base",
+  sm: "min-h-10 px-4 py-1.5 text-sm",
+  md: "min-h-12 px-5 py-2 text-[15px]",
+  lg: "min-h-14 px-7 py-2.5 text-base",
 };
 
 export function buttonClasses(variant: Variant = "primary", size: Size = "md", className?: string) {
@@ -43,8 +50,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <motion.button
       ref={ref}
       type={type}
-      whileTap={{ scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+      whileTap={{ scale: 0.965 }}
+      transition={{ type: "spring", stiffness: 520, damping: 30 }}
       className={buttonClasses(variant, size, className)}
       {...props}
     />
@@ -57,12 +64,7 @@ interface LinkButtonProps extends ComponentProps<typeof Link> {
 }
 
 export function LinkButton({ variant = "primary", size = "md", className, ...props }: LinkButtonProps) {
-  return (
-    <Link
-      className={cn(buttonClasses(variant, size, className), "active:scale-[0.97] transition-transform")}
-      {...props}
-    />
-  );
+  return <Link className={cn(buttonClasses(variant, size, className), "pressable")} {...props} />;
 }
 
 interface IconButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
@@ -86,8 +88,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       className={cn(
         "inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40",
         variant === "plain" && "text-fg hover:bg-muted",
-        variant === "muted" && "bg-muted text-fg",
-        variant === "surface" && "bg-surface text-fg shadow-soft",
+        variant === "muted" && "bg-muted text-fg ring-1 ring-inset ring-line",
+        variant === "surface" && "bg-surface text-fg shadow-soft ring-1 ring-inset ring-line",
         variant === "glass" && "glass-dark",
         className,
       )}

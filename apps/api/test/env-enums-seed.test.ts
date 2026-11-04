@@ -138,13 +138,13 @@ describe("buildSeedPlan", () => {
     });
   });
 
-  it("converts enums and keeps prices in cents", () => {
-    const wings = plan.items.find((i) => i.slug === "smoky-chicken-wings")!;
-    expect(wings.tags).toEqual(["HALAL", "GLUTEN_FREE", "SPICY"]);
-    expect(wings.priceCents).toBe(1250);
-    const prawns = plan.items.find((i) => i.slug === "garlic-prawn-spaghetti")!;
-    expect(prawns.inStock).toBe(false);
-    expect(prawns.allergens).toContain("CRUSTACEANS");
+  it("converts enums and keeps prices in the currency's minor units (whole so'm)", () => {
+    const lagman = plan.items.find((i) => i.slug === "hand-pulled-lagman")!;
+    expect(lagman.tags).toEqual(["HALAL", "SPICY"]);
+    expect(lagman.priceCents).toBe(76_000);
+    const halva = plan.items.find((i) => i.slug === "walnut-halva")!;
+    expect(halva.allergens).toContain("TREE_NUTS");
+    expect(halva.translations).toMatchObject({ en: { name: "Walnut & date halva" } });
   });
 
   it("orders items within each category", () => {

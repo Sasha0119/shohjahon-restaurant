@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { E2E_STAFF } from "./playwright.config";
-import { staffPage, tableLink, closeContexts } from "./helpers";
+import { staffPage, tableLink, closeContexts, useEnglish } from "./helpers";
 
+test.beforeEach(async ({ context }) => useEnglish(context));
 test.afterEach(async ({ browser }) => closeContexts(browser));
 
 test("staff screens are role-gated in the browser and on the API", async ({ browser, page }) => {

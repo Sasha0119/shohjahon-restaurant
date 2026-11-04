@@ -2,7 +2,8 @@
 
 import type { Menu, MenuItem } from "@app/shared";
 import { useCallback, useEffect, useMemo } from "react";
-import { useMenuStore } from "@/store/menu-store";
+import { useI18n } from "@/i18n";
+import { localizeMenu, useMenuStore } from "@/store/menu-store";
 
 export interface MenuState {
   menu: Menu | null;
@@ -15,11 +16,14 @@ export interface MenuState {
 const REFRESH_MS = 5 * 60_000;
 
 /**
- * The live menu from the API. Refreshes on mount, every few minutes, when the
- * tab becomes visible again, and whenever the server pushes `menu:updated`.
+ * The live menu from the API, in the guest's language. Refreshes on mount,
+ * every few minutes, when the tab becomes visible again, and whenever the
+ * server pushes `menu:updated`.
  */
 export function useMenu(): MenuState {
-  const menu = useMenuStore((s) => s.menu);
+  const { locale } = useI18n();
+  const raw = useMenuStore((s) => s.menu);
+  const menu = useMemo(() => (raw ? localizeMenu(raw, locale) : null), [raw, locale]);
   const error = useMenuStore((s) => s.error);
   const load = useMenuStore((s) => s.load);
 

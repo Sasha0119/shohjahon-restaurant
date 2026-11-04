@@ -3,6 +3,7 @@ import {
   allocateProportionally,
   applyPercent,
   clampCustomAmount,
+  currencyDigits,
   computeBill,
   formatMoney,
   parseMoney,
@@ -28,6 +29,16 @@ describe("money", () => {
   it("formats with the currency's minor units", () => {
     expect(formatMoney(123456, "USD", "en-US")).toBe("$1,234.56");
     expect(formatMoney(1500, "JPY", "en-US")).toBe("¥1,500");
+  });
+
+  it("treats so'm as whole numbers (tiyin are not used)", () => {
+    expect(currencyDigits("UZS")).toBe(0);
+    expect(formatMoney(85000, "UZS", "uz-Latn-UZ").replace(/\s/gu, " ")).toBe("85 000 soʻm");
+    expect(parseMoney("85000", "UZS")).toBe(85000);
+    expect(parseMoney("85 000", "UZS")).toBe(85000);
+    expect(parseMoney("85,000", "UZS")).toBe(85000);
+    expect(parseMoney("1.250.000", "UZS")).toBe(1250000);
+    expect(parseMoney("85.5", "UZS")).toBeNull();
   });
 
   it("parses user-typed amounts", () => {

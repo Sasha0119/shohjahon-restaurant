@@ -2,9 +2,10 @@
 
 import { brand } from "@app/config";
 import { motion } from "framer-motion";
-import { ArrowLeftRight, CloudOff, Heart, Loader2, QrCode, ReceiptText, Users, type LucideIcon } from "lucide-react";
+import { ArrowLeftRight, CloudOff, Heart, QrCode, ReceiptText, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { BrandLoader } from "@/components/brand/brand-loader";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n";
@@ -46,14 +47,15 @@ function Screen({ icon: Icon, title, body, children, tone = "primary" }: {
           <div
             className={
               tone === "primary"
-                ? "relative grid size-20 place-items-center rounded-[1.75rem] bg-primary text-on-primary shadow-glow"
-                : "relative grid size-20 place-items-center rounded-[1.75rem] bg-surface text-primary shadow-soft ring-1 ring-line/70"
+                ? "relative grid size-20 place-items-center rounded-full bg-primary text-on-primary shadow-glow ring-4 ring-gold-line"
+                : "relative grid size-20 place-items-center rounded-full bg-surface text-primary shadow-soft ring-1 ring-gold-line"
             }
           >
             <Icon className="size-9" strokeWidth={1.7} aria-hidden />
           </div>
         </div>
-        <h1 className="text-[1.75rem] font-semibold leading-tight">{title}</h1>
+        <h1 className="text-[1.9rem] font-semibold leading-tight">{title}</h1>
+        <span aria-hidden className="gold-rule mt-4 w-16" />
         {body && <p className="mt-3 text-[15px] leading-relaxed text-fg-muted">{body}</p>}
         {children && <div className="mt-8 flex w-full flex-col gap-3">{children}</div>}
       </motion.div>
@@ -74,19 +76,7 @@ export function JoinScreen({
 
   switch (phase.kind) {
     case "joining":
-      return (
-        <main className="grid min-h-svh place-items-center" role="status" aria-live="polite">
-          <div className="flex flex-col items-center gap-5">
-            <motion.div animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 1.6, repeat: Infinity }}>
-              <Logo size={64} />
-            </motion.div>
-            <p className="flex items-center gap-2 text-sm font-medium text-fg-muted">
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-              {t("join.connecting")}
-            </p>
-          </div>
-        </main>
-      );
+      return <BrandLoader label={t("join.connecting")} />;
     case "occupied":
       return (
         <Screen

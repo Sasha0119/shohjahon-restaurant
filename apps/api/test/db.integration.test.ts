@@ -17,18 +17,23 @@ describe.skipIf(!TEST_DATABASE_URL)("database schema (integration)", () => {
   beforeAll(async () => {
     t = await createTestDb();
     db = t.db;
-    // Seeding a second time must be harmless.
-    execSync("npx tsx prisma/seed.ts", {
-      cwd: apiDir,
-      env: {
-        ...process.env,
-        DATABASE_URL: t.url,
-        SEED_DEMO_STAFF: "true",
-        SEED_MANAGER_EMAIL: TEST_MANAGER.email,
-        SEED_MANAGER_PASSWORD: TEST_MANAGER.password,
-      },
-      stdio: "pipe",
-    });
+    // This file checks the real demo seed: drop the test fixture menu, then seed
+    // twice — seeding a second time must be harmless.
+    await db.$transaction([db.menuItem.deleteMany(), db.comboDeal.deleteMany(), db.category.deleteMany()]);
+    const seed = () =>
+      execSync("npx tsx prisma/seed.ts", {
+        cwd: apiDir,
+        env: {
+          ...process.env,
+          DATABASE_URL: t.url,
+          SEED_DEMO_STAFF: "true",
+          SEED_MANAGER_EMAIL: TEST_MANAGER.email,
+          SEED_MANAGER_PASSWORD: TEST_MANAGER.password,
+        },
+        stdio: "pipe",
+      });
+    seed();
+    seed();
   }, 180_000);
 
   afterAll(async () => {
@@ -39,14 +44,19 @@ describe.skipIf(!TEST_DATABASE_URL)("database schema (integration)", () => {
     expect(await db.category.count()).toBe(5);
     expect(await db.menuItem.count()).toBe(25);
     expect(await db.diningTable.count()).toBe(12);
-    expect(await db.comboDealItem.count()).toBe(5);
+    expect(await db.comboDealItem.count()).toBe(6);
     expect(await db.staff.count({ where: { role: "MANAGER" } })).toBe(1);
-    const burger = await db.menuItem.findUniqueOrThrow({
-      where: { slug: "double-smash-burger" },
+    const shashlik = await db.menuItem.findUniqueOrThrow({
+      where: { slug: "lamb-shashlik" },
       include: { modifierGroups: { include: { options: true }, orderBy: { sortOrder: "asc" } } },
     });
-    expect(burger.tags).toEqual(["HALAL"]);
-    expect(burger.modifierGroups.map((g) => g.options.length)).toEqual([3, 4]);
+    expect(shashlik.tags).toEqual(["HALAL", "GLUTEN_FREE"]);
+    expect(shashlik.priceCents).toBe(79_000); // whole so'm
+    expect(shashlik.modifierGroups.map((g) => g.options.length)).toEqual([2, 1]);
+    // Uzbek in the plain columns, English and Russian stored alongside (UTF-8 intact).
+    expect(shashlik.name).toBe("Qoʻy goʻshtidan shashlik");
+    expect(shashlik.translations).toMatchObject({ en: { name: "Lamb shashlik" }, ru: { name: "Шашлык из баранины" } });
+    expect(shashlik.modifierGroups[0]!.translations).toMatchObject({ ru: { name: "Порция" } });
   });
 
   it("allows only one OPEN session per table", async () => {
@@ -102,7 +112,7 @@ describe.skipIf(!TEST_DATABASE_URL)("database schema (integration)", () => {
   it("refuses to delete a menu item that appears on an order", async () => {
     const table = await db.diningTable.findUniqueOrThrow({ where: { number: 3 } });
     const session = await db.tableSession.create({ data: { tableId: table.id } });
-    const item = await db.menuItem.findFirstOrThrow({ where: { slug: "flat-white" } });
+    const item = await db.menuItem.findFirstOrThrow({ where: { slug: "cappuccino" } });
     await db.order.create({
       data: {
         sessionId: session.id,

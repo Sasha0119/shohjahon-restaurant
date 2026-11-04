@@ -34,18 +34,51 @@ window) to be a guest. Staff sign in at `/staff` (PIN) or `/staff/manager` (emai
 
 ## Rebrand in one file: `config/brand.ts`
 
-Name, welcome line, logo (monogram by default), hero photo, theme preset, light/dark
-mode, currency, tax %, service charge %, tip options, languages, Wi-Fi, review links,
-opening hours and contact details.
+The demo brand is **Shohjahon**, a premium modern Uzbek restaurant. Everything below lives in
+`config/brand.ts`: name, tagline / welcome line / cuisine (in uz, en and ru), the wordmark logo
+(a serif letter in a thin gold circle plus the name), hero photo, light/dark mode, currency
+(UZS, shown as whole so'm: "85 000 soʻm"), tax %, service charge %, tip options, languages,
+Wi-Fi, review links, opening hours and contact details. Hours, contact and Wi-Fi are demo values.
 
-**Theme presets** — set `theme.preset` to `"warm-bistro"`, `"fresh-cafe"` or
-`"modern-dark"`. Fine-tune with `theme.overrides` (any colour) and `theme.fonts`.
-Colours become CSS variables (`--primary-color`, `--secondary-color`, `--bg-color`,
-`--font-family`, …); components only use those tokens. A test checks every preset
-for WCAG AA contrast.
+**Signature theme**: dark first (charcoal, warm gold, soft ivory) with a matching light mode,
+Playfair Display headings and Inter body text (both include Cyrillic and Uzbek ʻ ʼ letters).
+Colours are in `config/themes.ts` and become CSS variables (`--primary-color`, `--bg-color`,
+`--font-family`, …). Components only use those tokens, so changing one value restyles the app.
+A test checks every colour pair for WCAG AA contrast.
 
-**Photos** — `apps/web/public/images` (see `CREDITS.md` there). **Menu data** —
-`packages/shared/src/seed/menu.ts`. **UI text** — `apps/web/src/i18n/en.ts`.
+**Languages**: Uzbek (Latin, default), English and Russian. Guests and staff switch language in
+the header, and the choice is remembered on the device. Text lives in `apps/web/src/i18n/`
+(`uz.ts`, `en.ts`, `ru.ts`). A test checks that all three have the same keys and placeholders,
+that Uzbek contains no Cyrillic letters, and that every Russian plural has all its forms.
+Server errors are shown by error code in the current language.
+
+**Logo & icons**: `components/brand/logo.tsx` (`<Logo />` mark, `<Wordmark />` mark + name). The
+favicon, Apple icon and PWA icons (including a maskable one) are drawn from the same mark at
+build time. The icon font is bundled in `apps/web/src/assets/fonts` (SIL Open Font License).
+
+**Photos**: `apps/web/public/images` (see `CREDITS.md` there). **Menu data**:
+`packages/shared/src/seed/menu.ts`.
+
+**Menu in three languages**: the main columns hold Uzbek; English and Russian sit in a
+`translations` JSON column on categories, items, modifier groups/options and combos (migration
+`20261104000000_menu_translations`, additive only). In the admin item editor and the category and
+combo sheets, an **Editing language** bar switches the text fields between the languages. Empty
+translations fall back to Uzbek. Guests, the kitchen display and the dashboard show dish names in
+their own language. Order tickets and receipts keep the name as it was ordered.
+
+**Guest screens** (Step 2): a full-screen hero, a menu with sticky underlined category tabs, search
+(ignores ʻ ʼ apostrophes) and a "sold out" seal, an item sheet, a cart with who-added-what avatars
+and a floating bar, an order progress bar, a bill/split screen showing who pays what, and a gold
+success animation after sending or paying.
+
+**Staff screens** (Step 3): an admin sidebar with the wordmark, gold KPI tiles and serif chart
+titles, a kitchen display with large 64px buttons and dish names in the cook's language, waiter
+call cards with ringed icons, an ivory paper receipt with the logo and gold rules, and printable
+QR table cards in the same style.
+
+**Formatting without browser data**: Chrome ships no Uzbek number or date data. Prices, counts,
+dates ("4-noyabr, 2026") and relative times ("5 daqiqa oldin") are built by hand for Uzbek in
+`apps/web/src/lib/format.ts`, and tests cover them.
 
 ## Database (Phase 2)
 
@@ -146,7 +179,7 @@ links for tables 1–3; managers print all codes from **Admin → Tables → Pri
 - **Exactly-once**: every payment needs an `Idempotency-Key`; payments for one table are serialised,
   so two people paying the full bill at once can't both be charged.
 - **Providers**: `PaymentProvider` interface (`apps/api/src/billing/provider.ts`). The built-in mock
-  approves everything except totals ending in **.13** (e.g. $20.13), which it declines — use that to
+  approves everything except amounts ending in **13** (e.g. 85 013 soʻm), which it declines — use that to
   try the failure flow. A Stripe adapter implements the same interface.
 - **Cash**: reserves the amount and alerts the waiter ("Paying cash $19.65" → *Cash received*).
 - **Receipts**: `/receipt/<token>` (unguessable link, printable) + "Email me this receipt" when

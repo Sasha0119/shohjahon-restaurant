@@ -61,7 +61,7 @@ export default function AuditPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold">{t("admin.audit.title")}</h1>
+      <h1 className="text-[2.1rem] font-semibold leading-tight">{t("admin.audit.title")}</h1>
       <p className="mt-1 text-fg-muted">{t("admin.audit.subtitle")}</p>
 
       <div className="mt-6 space-y-4">
@@ -92,7 +92,7 @@ export default function AuditPage() {
         ) : (
           <div className={cn("transition-opacity", loading && data.page === 1 && "opacity-60")} aria-busy={loading}>
             <p className="mb-3 text-sm text-fg-muted">{t("admin.audit.count", { count: data.total })}</p>
-            <ol className="divide-y divide-line/60 overflow-hidden rounded-card bg-surface shadow-soft ring-1 ring-line/60">
+            <ol className="divide-y divide-line overflow-hidden card">
               {data.entries.map((e) => {
                 const Icon = e.actor.type === "staff" ? UserCog : e.actor.type === "guest" ? User : Bot;
                 const details = e.data && typeof e.data === "object" && Object.keys(e.data).length > 0 ? JSON.stringify(e.data, null, 2) : null;

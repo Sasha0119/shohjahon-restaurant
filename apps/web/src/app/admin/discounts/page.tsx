@@ -11,7 +11,7 @@ import { toast } from "@/components/ui/toast";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { formatPrice } from "@/lib/format";
+import { formatDate, formatPrice } from "@/lib/format";
 
 interface Discount {
   id: string;
@@ -26,7 +26,7 @@ interface Discount {
   minSubtotalCents: number | null;
 }
 
-const fmtDate = (iso: string) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(iso));
+const fmtDate = (iso: string) => formatDate(new Date(iso), { dateStyle: "medium" });
 
 export default function DiscountsPage() {
   const t = useT();
@@ -52,7 +52,7 @@ export default function DiscountsPage() {
       setList((l) => (l ?? []).map((x) => (x.id === d.id ? discount : x)));
       toast.success(t("admin.discounts.updated"));
     } catch (e) {
-      toast.error(apiMessage(e, t("errors.generic")));
+      toast.error(apiMessage(e, t));
     } finally {
       setBusy(null);
     }
@@ -62,7 +62,7 @@ export default function DiscountsPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">{t("admin.discounts.title")}</h1>
+          <h1 className="text-[2.1rem] font-semibold leading-tight">{t("admin.discounts.title")}</h1>
           <p className="mt-1 text-fg-muted">{t("admin.discounts.subtitle")}</p>
         </div>
         <Button onClick={() => setCreating(true)}>
@@ -90,11 +90,11 @@ export default function DiscountsPage() {
                   layout
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={cn("relative overflow-hidden rounded-card bg-surface p-5 shadow-soft ring-1 ring-line/60", !d.active && "opacity-60")}
+                  className={cn("relative overflow-hidden card p-5", !d.active && "opacity-60")}
                 >
                   {/* Ticket-style notches */}
-                  <span aria-hidden className="absolute -left-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line/60" />
-                  <span aria-hidden className="absolute -right-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line/60" />
+                  <span aria-hidden className="absolute -left-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line" />
+                  <span aria-hidden className="absolute -right-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line" />
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-mono text-xl font-bold tracking-wider">{d.code}</p>
@@ -177,9 +177,9 @@ function CreateSheet({ open, onClose, onCreated }: { open: boolean; onClose: () 
       toast.success(t("admin.discounts.created", { code: discount.code }));
       onClose();
     } catch (err) {
-      const f = fieldErrors(err);
+      const f = fieldErrors(err, t);
       setErrors(f);
-      if (!Object.keys(f).length) toast.error(apiMessage(err, t("errors.generic")));
+      if (!Object.keys(f).length) toast.error(apiMessage(err, t));
     } finally {
       setBusy(false);
     }

@@ -25,24 +25,23 @@ export default function WifiPage() {
       <PageHeader title={t("wifi.title")} subtitle={t("wifi.subtitle")} />
 
       <div className="space-y-4 px-4 pt-5">
-        <section className="relative overflow-hidden rounded-card bg-primary p-6 text-on-primary shadow-glow">
-          <div aria-hidden className="absolute -right-10 -top-12 size-48 rounded-full bg-on-primary/10" />
-          <div aria-hidden className="absolute -bottom-16 right-12 size-40 rounded-full bg-on-primary/5" />
+        <section className="card relative overflow-hidden p-6 ring-1 ring-gold-line">
+          <div aria-hidden className="absolute -right-12 -top-14 size-52 rounded-full border border-gold-line" />
+          <div aria-hidden className="absolute -right-4 -top-6 size-36 rounded-full border border-gold-line/60" />
           <motion.div
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }}
-            className="relative grid size-14 place-items-center rounded-2xl bg-on-primary/15"
+            className="relative grid size-14 place-items-center rounded-full text-primary ring-1 ring-gold-line"
           >
-            <Wifi className="size-7" aria-hidden />
+            <Wifi className="size-7" strokeWidth={1.6} aria-hidden />
           </motion.div>
-          <p className="relative mt-5 text-sm font-semibold uppercase tracking-[0.16em] opacity-80">
-            {t("wifi.network")}
-          </p>
-          <p className="relative mt-1 break-all font-display text-[1.75rem] font-semibold leading-tight">{wifi.ssid}</p>
+          <p className="eyebrow relative mt-5">{t("wifi.network")}</p>
+          <p className="relative mt-1.5 break-all font-display text-[2rem] font-semibold leading-tight">{wifi.ssid}</p>
+          <span aria-hidden className="gold-rule relative mt-4 block w-24" />
         </section>
 
-        <section className="divide-y divide-line/70 overflow-hidden rounded-card bg-surface shadow-soft ring-1 ring-line/60">
+        <section className="card divide-y divide-line overflow-hidden">
           <CopyRow icon={Wifi} label={t("wifi.network")} value={wifi.ssid} />
           {open ? (
             <div className="flex min-h-16 items-center gap-3.5 px-5 py-4">
@@ -56,9 +55,9 @@ export default function WifiPage() {
 
         <section
           aria-labelledby="wifi-qr"
-          className="flex flex-col items-center rounded-card bg-surface p-6 text-center shadow-soft ring-1 ring-line/60"
+          className="card flex flex-col items-center p-6 text-center"
         >
-          <h2 id="wifi-qr" className="flex items-center gap-2 text-lg font-semibold">
+          <h2 id="wifi-qr" className="flex items-center gap-2 font-display text-xl font-semibold">
             <ScanLine className="size-5 text-primary" aria-hidden />
             {t("wifi.scan")}
           </h2>
@@ -68,7 +67,7 @@ export default function WifiPage() {
             initial={{ opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15, duration: 0.4 }}
-            className="mt-5 rounded-3xl bg-white p-5 shadow-soft ring-1 ring-black/5"
+            className="mt-5 rounded-3xl bg-white p-5 shadow-soft ring-4 ring-gold-line"
           >
             <QRCodeSVG
               value={wifiQrPayload(wifi)}
@@ -115,9 +114,9 @@ function CopyRow({
 
   return (
     <div className="flex min-h-[4.5rem] items-center gap-3.5 px-5 py-3">
-      <Icon className="size-5 shrink-0 text-fg-muted" aria-hidden />
+      <Icon className="size-5 shrink-0 text-primary" strokeWidth={1.8} aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">{label}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fg-muted">{label}</p>
         <p className={mono ? "select-all break-all font-mono text-[17px] font-semibold" : "select-all break-all text-[17px] font-semibold"}>
           {value}
         </p>
@@ -127,7 +126,7 @@ function CopyRow({
         whileTap={{ scale: 0.92 }}
         onClick={copy}
         aria-label={t("wifi.copy", { label })}
-        className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-primary/12 px-4 text-sm font-semibold text-primary"
+        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary ring-1 ring-gold-line hover:bg-primary/10"
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.span

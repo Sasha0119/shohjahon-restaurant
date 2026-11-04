@@ -6,7 +6,8 @@ import { ArrowLeft, ImagePlus, Loader2, Plus, SearchX, Trash2, X } from "lucide-
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Field, MoneyField, Switch, ToggleChip, apiMessage, fieldErrors, inputClass, slugify, textareaClass } from "@/components/admin/form";
+import { brand, type LocaleCode } from "@app/config";
+import { EditLanguageBar, Field, MoneyField, Switch, ToggleChip, apiMessage, fieldErrors, inputClass, slugify, textIn, textareaClass, withText } from "@/components/admin/form";
 import { tagIcons } from "@/components/guest/dietary-tags";
 import { Button, LinkButton } from "@/components/ui/button";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
@@ -41,6 +42,7 @@ function blank(categoryId: string): EditorForm {
     categoryId,
     name: "",
     description: "",
+    translations: {},
     priceCents: null,
     imageUrl: "",
     imageAlt: "",
@@ -64,6 +66,9 @@ export default function ItemEditorPage() {
   const item = menu?.items.find((i) => i.id === params.id);
 
   const [form, setForm] = useState<EditorForm | null>(null);
+  /** Which language the text fields edit (the main one = the plain fields). */
+  const [lang, setLang] = useState<LocaleCode>(brand.defaultLanguage);
+  const main = lang === brand.defaultLanguage;
   const [slugTouched, setSlugTouched] = useState(!isNew);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -110,7 +115,7 @@ export default function ItemEditorPage() {
       set("imageUrl", body.url);
       setErrors((e) => ({ ...e, imageUrl: "" }));
     } catch (e) {
-      toast.error(apiMessage(e, t("errors.generic")));
+      toast.error(apiMessage(e, t));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -158,9 +163,9 @@ export default function ItemEditorPage() {
         await reload();
       }
     } catch (err) {
-      const fields = fieldErrors(err);
+      const fields = fieldErrors(err, t);
       setErrors(fields);
-      toast.error(Object.keys(fields).length ? t("admin.menu.item.fixFields") : apiMessage(err, t("errors.generic")));
+      toast.error(Object.keys(fields).length ? t("admin.menu.item.fixFields") : apiMessage(err, t));
     } finally {
       setBusy(false);
     }
@@ -171,7 +176,7 @@ export default function ItemEditorPage() {
       await api("POST", "/api/admin/upsells", { itemId: params.id, suggestItemId });
       await reload();
     } catch (e) {
-      toast.error(apiMessage(e, t("errors.generic")));
+      toast.error(apiMessage(e, t));
     }
   };
   const removePairing = async (id: string) => {
@@ -179,11 +184,11 @@ export default function ItemEditorPage() {
       await api("DELETE", `/api/admin/upsells/${id}`);
       await reload();
     } catch (e) {
-      toast.error(apiMessage(e, t("errors.generic")));
+      toast.error(apiMessage(e, t));
     }
   };
 
-  const card = "rounded-card bg-surface p-5 shadow-soft ring-1 ring-line/60 sm:p-6";
+  const card = "card p-5 sm:p-6";
 
   return (
     <form onSubmit={save} className="pb-28">
@@ -191,26 +196,30 @@ export default function ItemEditorPage() {
         <ArrowLeft className="size-4" aria-hidden />
         {t("admin.menu.item.back")}
       </LinkButton>
-      <h1 className="mt-2 text-3xl font-semibold">{isNew ? t("admin.menu.item.newTitle") : form.name || t("admin.menu.item.editTitle")}</h1>
+      <h1 className="mt-2 text-[2.1rem] font-semibold leading-tight">{isNew ? t("admin.menu.item.newTitle") : form.name || t("admin.menu.item.editTitle")}</h1>
+      <EditLanguageBar value={lang} onChange={setLang} className="mt-5 max-w-xl" />
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-5">
           {/* Basics */}
           <section className={card} aria-labelledby="sec-basics">
-            <h2 id="sec-basics" className="text-lg font-semibold">{t("admin.menu.item.basics")}</h2>
+            <h2 id="sec-basics" className="font-display text-xl font-semibold">{t("admin.menu.item.basics")}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field label={t("admin.menu.item.name")} htmlFor="f-name" error={errors.name} className="sm:col-span-2">
                 <input
                   id="f-name"
+                  lang={lang}
                   className={inputClass}
-                  value={form.name}
+                  value={textIn(lang, form.name, form.translations, "name")}
+                  placeholder={main ? undefined : form.name}
                   maxLength={80}
                   aria-invalid={!!errors.name}
                   onChange={(e) => {
+                    if (!main) return set("translations", withText(form.translations, lang, "name", e.target.value));
                     set("name", e.target.value);
                     if (!slugTouched) set("slug", slugify(e.target.value));
                   }}
-                  required
+                  required={main}
                 />
               </Field>
               <Field label={t("admin.menu.item.category")} htmlFor="f-cat" error={errors.categoryId}>
@@ -228,11 +237,17 @@ export default function ItemEditorPage() {
               <Field label={t("admin.menu.item.description")} htmlFor="f-desc" error={errors.description} className="sm:col-span-2">
                 <textarea
                   id="f-desc"
+                  lang={lang}
                   rows={3}
                   maxLength={400}
                   className={textareaClass}
-                  value={form.description}
-                  onChange={(e) => set("description", e.target.value)}
+                  value={textIn(lang, form.description, form.translations, "description")}
+                  placeholder={main ? undefined : form.description}
+                  onChange={(e) =>
+                    main
+                      ? set("description", e.target.value)
+                      : set("translations", withText(form.translations, lang, "description", e.target.value))
+                  }
                 />
               </Field>
               <Field label={t("admin.menu.item.slug")} htmlFor="f-slug" error={errors.slug} hint={t("admin.menu.category.slugHint")}>
@@ -255,7 +270,7 @@ export default function ItemEditorPage() {
 
           {/* Dietary & allergens */}
           <section className={card} aria-labelledby="sec-diet">
-            <h2 id="sec-diet" className="text-lg font-semibold">{t("admin.menu.item.dietary")}</h2>
+            <h2 id="sec-diet" className="font-display text-xl font-semibold">{t("admin.menu.item.dietary")}</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {DIETARY_TAGS.map((tag) => {
                 const Icon = tagIcons[tag];
@@ -267,7 +282,7 @@ export default function ItemEditorPage() {
                 );
               })}
             </div>
-            <h2 className="mt-6 text-lg font-semibold">{t("admin.menu.item.allergens")}</h2>
+            <h2 className="mt-6 font-display text-xl font-semibold">{t("admin.menu.item.allergens")}</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {ALLERGENS.map((a) => (
                 <ToggleChip key={a} on={form.allergens.includes(a)} onClick={() => set("allergens", toggle(form.allergens, a))}>
@@ -279,14 +294,24 @@ export default function ItemEditorPage() {
 
           {/* Options */}
           <section className={card} aria-labelledby="sec-options">
-            <h2 id="sec-options" className="text-lg font-semibold">{t("admin.menu.item.options")}</h2>
+            <h2 id="sec-options" className="font-display text-xl font-semibold">{t("admin.menu.item.options")}</h2>
             <p className="text-sm text-fg-muted">{t("admin.menu.item.optionsHint")}</p>
             <AnimatePresence initial={false}>
               {form.modifierGroups.map((g, gi) => (
                 <motion.div key={g.key} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }} className="mt-4 rounded-2xl ring-1 ring-line">
-                  <div className="flex flex-wrap items-end gap-3 border-b border-line/70 p-4">
+                  <div className="flex flex-wrap items-end gap-3 border-b border-line p-4">
                     <Field label={t("admin.menu.item.groupName")} className="min-w-48 flex-1" error={errors[`modifierGroups.${gi}.name`]}>
-                      <input className={inputClass} value={g.name} maxLength={80} aria-invalid={!!errors[`modifierGroups.${gi}.name`]} onChange={(e) => setGroup(gi, { name: e.target.value })} />
+                      <input
+                        lang={lang}
+                        className={inputClass}
+                        value={textIn(lang, g.name, g.translations, "name")}
+                        placeholder={main ? undefined : g.name}
+                        maxLength={80}
+                        aria-invalid={!!errors[`modifierGroups.${gi}.name`]}
+                        onChange={(e) =>
+                          setGroup(gi, main ? { name: e.target.value } : { translations: withText(g.translations, lang, "name", e.target.value) })
+                        }
+                      />
                     </Field>
                     <Field label={t("admin.menu.item.maxChoices")} className="w-28" error={errors[`modifierGroups.${gi}.maxSelect`]}>
                       <input
@@ -307,10 +332,21 @@ export default function ItemEditorPage() {
                     </button>
                   </div>
                   {errors[`modifierGroups.${gi}.minSelect`] && <p className="px-4 pt-2 text-sm text-danger">{errors[`modifierGroups.${gi}.minSelect`]}</p>}
-                  <ul className="divide-y divide-line/60">
+                  <ul className="divide-y divide-line">
                     {g.options.map((o, oi) => (
                       <li key={o.key} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                        <input className={cn(inputClass, "min-w-40 flex-1")} placeholder={t("admin.menu.item.optionName")} aria-label={t("admin.menu.item.optionName")} aria-invalid={!!errors[`modifierGroups.${gi}.options.${oi}.name`]} value={o.name} maxLength={80} onChange={(e) => setOption(gi, oi, { name: e.target.value })} />
+                        <input
+                          lang={lang}
+                          className={cn(inputClass, "min-w-40 flex-1")}
+                          placeholder={main ? t("admin.menu.item.optionName") : o.name}
+                          aria-label={t("admin.menu.item.optionName")}
+                          aria-invalid={!!errors[`modifierGroups.${gi}.options.${oi}.name`]}
+                          value={textIn(lang, o.name, o.translations, "name")}
+                          maxLength={80}
+                          onChange={(e) =>
+                            setOption(gi, oi, main ? { name: e.target.value } : { translations: withText(o.translations, lang, "name", e.target.value) })
+                          }
+                        />
                         <MoneyField className="w-32" aria-label={t("admin.menu.item.extraPrice")} cents={o.priceDeltaCents} onChange={(v) => setOption(gi, oi, { priceDeltaCents: v ?? 0 })} />
                         <ToggleChip on={o.isDefault} onClick={() => setOption(gi, oi, { isDefault: !o.isDefault })}>
                           {t("admin.menu.item.default")}
@@ -325,7 +361,7 @@ export default function ItemEditorPage() {
                     ))}
                   </ul>
                   <div className="p-3">
-                    <Button variant="ghost" size="sm" onClick={() => setGroup(gi, { options: [...g.options, { key: k(), name: "", priceDeltaCents: 0, isDefault: false, active: true } as Option] })}>
+                    <Button variant="ghost" size="sm" onClick={() => setGroup(gi, { options: [...g.options, { key: k(), name: "", translations: {}, priceDeltaCents: 0, isDefault: false, active: true } as Option] })}>
                       <Plus className="size-4" aria-hidden />
                       {t("admin.menu.item.addOption")}
                     </Button>
@@ -340,7 +376,7 @@ export default function ItemEditorPage() {
               onClick={() =>
                 set("modifierGroups", [
                   ...form.modifierGroups,
-                  { key: k(), name: "", minSelect: 0, maxSelect: 1, options: [{ key: k(), name: "", priceDeltaCents: 0, isDefault: false, active: true } as Option] },
+                  { key: k(), name: "", translations: {}, minSelect: 0, maxSelect: 1, options: [{ key: k(), name: "", translations: {}, priceDeltaCents: 0, isDefault: false, active: true } as Option] },
                 ] as EditorForm["modifierGroups"])
               }
             >
@@ -353,7 +389,7 @@ export default function ItemEditorPage() {
         {/* Side column */}
         <div className="space-y-5">
           <section className={card} aria-labelledby="sec-photo">
-            <h2 id="sec-photo" className="text-lg font-semibold">{t("admin.menu.item.photo")}</h2>
+            <h2 id="sec-photo" className="font-display text-xl font-semibold">{t("admin.menu.item.photo")}</h2>
             <div className={cn("relative mt-3 aspect-[4/3] overflow-hidden rounded-2xl bg-muted", errors.imageUrl && "ring-2 ring-danger")}>
               {form.imageUrl ? (
                 <Image src={form.imageUrl} alt={form.imageAlt || form.name} fill sizes="320px" className="object-cover" />
@@ -387,7 +423,7 @@ export default function ItemEditorPage() {
           </section>
 
           <section className={card} aria-labelledby="sec-pair">
-            <h2 id="sec-pair" className="text-lg font-semibold">{t("admin.menu.item.pairings")}</h2>
+            <h2 id="sec-pair" className="font-display text-xl font-semibold">{t("admin.menu.item.pairings")}</h2>
             <p className="text-sm text-fg-muted">{t("admin.menu.item.pairingsHint")}</p>
             {isNew ? (
               <p className="mt-3 text-sm text-fg-muted">{t("admin.menu.item.saveFirst")}</p>
@@ -433,7 +469,7 @@ export default function ItemEditorPage() {
       </div>
 
       {/* Sticky save bar */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line/60 glass md:left-64">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line glass md:left-64">
         <div className="mx-auto flex max-w-5xl items-center justify-end gap-3 px-4 py-3 md:px-10">
           <LinkButton href="/admin/menu" variant="ghost">
             {t("admin.tables.cancel")}

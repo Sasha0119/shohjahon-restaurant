@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/misc";
 import { useT } from "@/i18n";
 import { cn } from "@/lib/cn";
+import { formatDate } from "@/lib/format";
 import { inputClass } from "./form";
 
 export type RangePreset = "today" | "7" | "30" | "90" | "custom";
@@ -29,12 +30,12 @@ export const rangeQuery = (r: DateRange) => `from=${r.from}&to=${r.to}`;
 
 /** Local date "2026-11-03" → "Nov 3, 2026" (no time-zone shifting). */
 export function formatLocalDate(d: string, opts: Intl.DateTimeFormatOptions = { dateStyle: "medium" }): string {
-  return new Intl.DateTimeFormat(brand.currency.locale, { ...opts, timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
+  return formatDate(new Date(`${d}T12:00:00Z`), { ...opts, timeZone: "UTC" });
 }
 
 /** A timestamp shown in the restaurant's time zone. */
 export function formatStamp(iso: string, opts: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short" }): string {
-  return new Intl.DateTimeFormat(brand.currency.locale, { ...opts, timeZone: brand.timezone }).format(new Date(iso));
+  return formatDate(new Date(iso), { ...opts, timeZone: brand.timezone });
 }
 
 /** Presets first, custom range behind one more tap. Applies to everything below it. */

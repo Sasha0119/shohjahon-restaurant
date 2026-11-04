@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyCombos, wifiQrPayload } from "../src";
-import { seedMenu } from "../src/seed";
+import { seedMenu } from "./fixtures/classic-menu";
 
 describe("wifiQrPayload", () => {
   it("builds the standard payload", () => {

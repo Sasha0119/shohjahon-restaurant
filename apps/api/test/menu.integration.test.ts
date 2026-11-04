@@ -226,6 +226,45 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
       expect(await db.menuItem.count({ where: { id: itemId } })).toBe(1); // kept for order history
     });
 
+    it("stores dish, option and category texts in other languages", async () => {
+      const res = await asManager.post("/api/admin/items", {
+        ...baseItem,
+        slug: "osh-test",
+        name: "Toshkent oshi",
+        translations: { en: { name: "Tashkent plov", description: "Slow-steamed rice." }, ru: { name: "Ташкентский плов", description: "" } },
+        modifierGroups: [
+          {
+            name: "Qoʻshimcha",
+            translations: { ru: { name: "Добавить" } },
+            minSelect: 0,
+            maxSelect: 1,
+            options: [{ name: "Qazi", translations: { en: { name: "Horse sausage" } }, priceDeltaCents: 35_000 }],
+          },
+        ],
+      });
+      expect(res.status).toBe(201);
+      const item = (await publicMenu()).items.find((i) => i.id === res.body.id)!;
+      expect(item.name).toBe("Toshkent oshi");
+      // Empty strings are dropped, so a blank Russian description falls back to the default language.
+      expect(item.translations).toEqual({ en: { name: "Tashkent plov", description: "Slow-steamed rice." }, ru: { name: "Ташкентский плов" } });
+      expect(item.modifierGroups[0]!.translations).toEqual({ ru: { name: "Добавить" } });
+      expect(item.modifierGroups[0]!.options[0]!.translations).toEqual({ en: { name: "Horse sausage" } });
+      expect((await adminMenu()).items.find((i) => i.id === res.body.id)!.translations.en?.name).toBe("Tashkent plov");
+
+      const cat = (await adminMenu()).categories.find((c) => c.id === "cat-desserts")!;
+      await asManager.put(`/api/admin/categories/${cat.id}`, {
+        slug: cat.slug, name: cat.name, station: cat.station, availability: [],
+        translations: { ru: { name: "Сладкое" } },
+      });
+      expect((await publicMenu()).categories.find((c) => c.id === cat.id)!.translations).toEqual({ ru: { name: "Сладкое" } });
+
+      // Only 2-letter language codes and known fields are accepted.
+      const bad = await asManager.post("/api/admin/items", { ...baseItem, slug: "osh-bad", translations: { english: { name: "x" } } });
+      expect(bad.status).toBe(400);
+      const extra = await asManager.post("/api/admin/items", { ...baseItem, slug: "osh-bad2", translations: { en: { price: "1" } } });
+      expect(extra.status).toBe(400);
+    });
+
     it("validates input", async () => {
       expect((await asManager.post("/api/admin/items", { ...baseItem, slug: "lemon-tart" })).body.error.code).toBe("SLUG_TAKEN");
       expect((await asManager.post("/api/admin/items", { ...baseItem, slug: "x1", categoryId: "nope" })).body.error.code).toBe(

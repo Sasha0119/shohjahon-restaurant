@@ -29,7 +29,7 @@ export function resolveTheme(brand: Pick<BrandConfig, "theme">): ResolvedTheme {
 const SERIF_FALLBACK = 'ui-serif, Georgia, Cambria, "Times New Roman", serif';
 const SANS_FALLBACK =
   'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-const SERIF_FONTS: FontKey[] = ["fraunces", "dm-serif-display"];
+const SERIF_FONTS: FontKey[] = ["playfair-display"];
 
 /** CSS custom property that next/font sets for a font key, e.g. `--ff-fraunces`. */
 export const fontVar = (key: FontKey) => `--ff-${key}`;

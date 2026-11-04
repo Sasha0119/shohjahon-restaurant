@@ -12,11 +12,16 @@ import { EmptyState, Skeleton } from "@/components/ui/misc";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/cn";
 
+/**
+ * Search-friendly text: lowercase, no accents, and no apostrophes — Uzbek
+ * guests type "oʻ" as o', o`, o’ or just o, and all should match.
+ */
 const normalize = (s: string) =>
   s
     .toLowerCase()
     .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[ʻʼ'‘’`´]/g, "");
 
 export default function MenuPage() {
   const { t } = useI18n();
@@ -86,7 +91,7 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
         onChange={(e) => onChange(e.target.value)}
         placeholder={t("menu.searchPlaceholder")}
         aria-label={t("menu.searchLabel")}
-        className="h-13 w-full rounded-full bg-surface pl-12 pr-12 shadow-soft ring-1 ring-line/70 placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-primary [&::-webkit-search-cancel-button]:hidden"
+        className="h-13 w-full rounded-full bg-surface pl-12 pr-12 shadow-soft ring-1 ring-line placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-primary [&::-webkit-search-cancel-button]:hidden"
       />
       <AnimatePresence>
         {value && (
@@ -167,9 +172,9 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
     <>
       <nav
         aria-label={t("menu.categories")}
-        className="sticky top-16 z-20 mt-3 border-b border-line/40 glass"
+        className="sticky top-16 z-20 mt-3 border-b border-gold-line/50 glass"
       >
-        <div ref={chipsRef} className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-2.5">
+        <div ref={chipsRef} className="no-scrollbar flex gap-1 overflow-x-auto px-2">
           {categories.map((c) => {
             const isActive = c.slug === active;
             return (
@@ -180,18 +185,19 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
                 onClick={() => goTo(c.slug)}
                 aria-current={isActive ? "true" : undefined}
                 className={cn(
-                  "relative h-10 shrink-0 rounded-full px-4 text-sm font-semibold transition-colors",
-                  isActive ? "text-on-primary" : "bg-muted text-fg-muted hover:text-fg",
+                  "pressable relative min-h-12 shrink-0 whitespace-nowrap px-3.5 text-[13px] font-semibold uppercase tracking-[0.12em] transition-colors",
+                  isActive ? "text-primary" : "text-fg-muted hover:text-fg",
                 )}
               >
+                <span className="relative">{c.name}</span>
                 {isActive && (
                   <motion.span
-                    layoutId="chip-active"
-                    className="absolute inset-0 rounded-full bg-primary shadow-glow"
-                    transition={{ type: "spring", stiffness: 500, damping: 38 }}
+                    layoutId="tab-underline"
+                    aria-hidden
+                    className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-primary"
+                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
                   />
                 )}
-                <span className="relative">{c.name}</span>
               </button>
             );
           })}
@@ -203,10 +209,16 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
           const catItems = items.filter((i) => i.categoryId === c.id);
           return (
             <section key={c.id} id={c.slug} aria-labelledby={`h-${c.slug}`} className="scroll-mt-[8.5rem]">
-              <h2 id={`h-${c.slug}`} className="text-[1.75rem] font-semibold leading-tight">
+              <div className="flex items-center gap-3">
+                <span aria-hidden className="h-px w-8 bg-primary" />
+                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+                  {t("home.dishes", { count: catItems.length })}
+                </span>
+              </div>
+              <h2 id={`h-${c.slug}`} className="mt-2.5 text-[1.9rem] font-semibold leading-tight">
                 {c.name}
               </h2>
-              {c.description && <p className="mt-1 text-[15px] text-fg-muted">{c.description}</p>}
+              {c.description && <p className="mt-1.5 text-[15px] italic text-fg-muted">{c.description}</p>}
               <div className="mt-5 grid gap-5 md:grid-cols-2">
                 {catItems.map((item) => (
                   <FoodCard key={item.id} item={item} priority={cardIndex++ < 2} />
@@ -240,9 +252,9 @@ function SearchResults({ items, query }: { items: MenuItem[]; query: string }) {
 function MenuSkeleton() {
   return (
     <div aria-busy="true">
-      <div className="mt-3 flex gap-2 overflow-hidden px-4 py-2.5">
-        {["w-20", "w-18", "w-28", "w-24", "w-18"].map((w, i) => (
-          <Skeleton key={i} className={cn("h-10 shrink-0 rounded-full", w)} />
+      <div className="mt-3 flex gap-5 overflow-hidden px-5 py-4">
+        {["w-20", "w-24", "w-16", "w-24", "w-20"].map((w, i) => (
+          <Skeleton key={i} className={cn("h-4 shrink-0 rounded-full", w)} />
         ))}
       </div>
       <div className="space-y-5 px-4 pt-6">

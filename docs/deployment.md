@@ -111,7 +111,7 @@ The containers restart automatically after a crash or a server reboot (`restart:
 ## 6. Taking real payments
 
 The app ships with the **mock** payment provider: guests see the full flow, but no money
-moves. Card amounts ending in `.13` are declined, so you can test that path. To take real
+moves. Card amounts ending in `13` (e.g. 85 013 soʻm) are declined, so you can test that path. To take real
 payments, the Stripe provider in `apps/api/src/billing/provider.ts` must be implemented.
 The interface, webhook route, idempotency and audit log are already in place. Then set
 `PAYMENT_PROVIDER=stripe`, `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`. The API rejects

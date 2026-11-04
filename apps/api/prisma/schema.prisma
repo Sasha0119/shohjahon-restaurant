@@ -121,6 +121,8 @@ model Category {
   slug        String   @unique
   name        String
   description String?
+  /// Texts in other languages: { "en": { "name": "…" }, "ru": { … } }. The plain columns hold the default language.
+  translations Json @default("{}")
   /// Where this category's items are prepared (KDS station filter).
   station     Station  @default(KITCHEN)
   sortOrder   Int      @default(0) @map("sort_order")
@@ -157,6 +159,8 @@ model MenuItem {
   categoryId  String       @map("category_id")
   name        String
   description String       @default("")
+  /// Texts in other languages: { "en": { "name": "…" }, "ru": { … } }. The plain columns hold the default language.
+  translations Json @default("{}")
   priceCents  Int          @map("price_cents")
   imageUrl    String       @map("image_url")
   imageAlt    String       @default("") @map("image_alt")
@@ -188,6 +192,8 @@ model ModifierGroup {
   id        String @id @default(cuid())
   itemId    String @map("item_id")
   name      String
+  /// Texts in other languages: { "en": { "name": "…" }, "ru": { … } }. The plain columns hold the default language.
+  translations Json @default("{}")
   /// minSelect >= 1 → required.
   minSelect Int    @default(0) @map("min_select")
   /// 1 → single choice, > 1 → multi choice.
@@ -205,6 +211,8 @@ model ModifierOption {
   id              String  @id @default(cuid())
   groupId         String  @map("group_id")
   name            String
+  /// Texts in other languages: { "en": { "name": "…" }, "ru": { … } }. The plain columns hold the default language.
+  translations Json @default("{}")
   priceDeltaCents Int     @default(0) @map("price_delta_cents")
   isDefault       Boolean @default(false) @map("is_default")
   active          Boolean @default(true)
@@ -234,6 +242,9 @@ model UpsellSuggestion {
 model ComboDeal {
   id            String   @id @default(cuid())
   name          String
+  /// Texts in other languages: { "en": { "name": "…" }, "ru": { … } }. The plain columns hold the default language.
+  translations Json @default("{}")
+
   discountCents Int      @map("discount_cents")
   active        Boolean  @default(true)
   sortOrder     Int      @default(0) @map("sort_order")

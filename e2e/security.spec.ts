@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { tableLink, closeContexts } from "./helpers";
+import { tableLink, closeContexts, useEnglish } from "./helpers";
 
+test.beforeEach(async ({ context }) => useEnglish(context));
 test.afterEach(async ({ browser }) => closeContexts(browser));
 
 test("pages ship a strict, per-request Content-Security-Policy", async ({ page, browser }) => {

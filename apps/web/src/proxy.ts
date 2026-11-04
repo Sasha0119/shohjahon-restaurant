@@ -23,7 +23,7 @@ export const config = {
   matcher: [
     {
       // Pages only — not the proxied API, sockets, uploads or static build files.
-      source: "/((?!api/|socket\\.io/|uploads/|_next/static|_next/image|favicon\\.ico|icon|apple-icon|manifest\\.webmanifest).*)",
+      source: "/((?!api/|socket\\.io/|uploads/|_next/static|_next/image|favicon\\.ico|icon|apple-icon|maskable-icon|manifest\\.webmanifest).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

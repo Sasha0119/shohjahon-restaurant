@@ -3,6 +3,12 @@ import { addToCart, guestPage, staffPage, tableLink, closeContexts } from "./hel
 
 test.afterEach(async ({ browser }) => closeContexts(browser));
 
+/** English name → pattern for the kitchen ticket (stored in Uzbek, the default language). */
+const DISHES: Record<string, string> = {
+  "Tashkent plov": "Toshkent oshi|Tashkent plov",
+  Cappuccino: "Kapuchino|Cappuccino",
+};
+
 /**
  * The main promise of the app, end to end:
  * scan → order → kitchen cooks (live) → call a server → pay by card → rate.
@@ -22,19 +28,21 @@ test("a guest orders, the kitchen and waiter react live, the guest pays and rate
   // Order a burger (kitchen) and a flat white (bar).
   await guest.goto(`${link}/menu`);
   await expect(guest.getByRole("heading", { name: "Starters" })).toBeVisible();
-  await addToCart(guest, "Double Smash Burger");
-  await addToCart(guest, "Flat White");
+  // A kitchen dish and a bar drink (two tickets), neither needs a choice.
+  await addToCart(guest, "Tashkent plov");
+  await addToCart(guest, "Cappuccino");
   await guest.goto(`${link}/cart`);
   await guest.getByRole("button", { name: /Send to kitchen/ }).click();
   await expect(guest.getByText("Round 1")).toBeVisible();
 
   // Both tickets reach the kitchen display without a refresh.
-  const card = (dish: string) => kds.locator("article", { hasText: dish });
-  await expect(card("Double Smash Burger")).toBeVisible();
-  await expect(card("Flat White")).toBeVisible();
+  // Tickets keep the name as ordered (Uzbek, the default language), so match either.
+  const card = (dish: string) => kds.locator("article", { hasText: new RegExp(DISHES[dish]!) });
+  await expect(card("Tashkent plov")).toBeVisible();
+  await expect(card("Cappuccino")).toBeVisible();
   const round = guest.locator("article header", { hasText: "Round 1" });
 
-  for (const dish of ["Double Smash Burger", "Flat White"]) await card(dish).getByRole("button", { name: "Start" }).click();
+  for (const dish of ["Tashkent plov", "Cappuccino"]) await card(dish).getByRole("button", { name: "Start" }).click();
   await expect(round.getByText("Preparing", { exact: true })).toBeVisible();
 
   // Call server → the waiter sees it live and handles it.
@@ -46,9 +54,9 @@ test("a guest orders, the kitchen and waiter react live, the guest pays and rate
   await waiter.getByRole("button", { name: /Done: Table 4/ }).click();
   await expect(waiter.getByText("No one is waiting")).toBeVisible();
 
-  for (const dish of ["Double Smash Burger", "Flat White"]) await card(dish).getByRole("button", { name: "Ready", exact: true }).click();
+  for (const dish of ["Tashkent plov", "Cappuccino"]) await card(dish).getByRole("button", { name: "Ready", exact: true }).click();
   await expect(round.getByText("Ready", { exact: true })).toBeVisible();
-  for (const dish of ["Double Smash Burger", "Flat White"]) await card(dish).getByRole("button", { name: "Served", exact: true }).click();
+  for (const dish of ["Tashkent plov", "Cappuccino"]) await card(dish).getByRole("button", { name: "Served", exact: true }).click();
   await expect(round.getByText("Served", { exact: true })).toBeVisible();
   await expect(kds.getByText("All clear")).toBeVisible();
 
@@ -56,13 +64,13 @@ test("a guest orders, the kitchen and waiter react live, the guest pays and rate
   await guest.goto(`${link}/bill`);
   await expect(guest.getByText("Your order")).toBeVisible();
   await guest.getByRole("radio", { name: "No tip" }).click();
-  await guest.getByRole("button", { name: /^Pay \$/ }).click();
+  await guest.getByRole("button", { name: /^Pay \d/ }).click();
   await expect(guest.getByText("Thanks for visiting!")).toBeVisible();
 
   // 5 stars → offered the public review link.
   await guest.getByRole("radio", { name: /5 stars/ }).click();
   await guest.getByRole("button", { name: "Send", exact: true }).click();
-  await expect(guest.getByRole("link", { name: /Leave a public review/ })).toBeVisible();
+  await expect(guest.getByRole("link", { name: /Review us on Google/ })).toBeVisible();
 
   expect(errors).toEqual([]);
 });
@@ -74,13 +82,13 @@ test("an unhappy rating goes to the manager's private feedback log, not to publi
   const { page: guest } = await guestPage(browser, errors);
 
   await guest.goto(`${link}/menu`);
-  await addToCart(guest, "Truffle Parmesan Fries");
+  await addToCart(guest, "Achichuk tomato salad");
   await guest.goto(`${link}/cart`);
   await guest.getByRole("button", { name: /Send to kitchen/ }).click();
   await expect(guest.getByText("Round 1")).toBeVisible();
   await guest.goto(`${link}/bill`);
   await guest.getByRole("radio", { name: "No tip" }).click();
-  await guest.getByRole("button", { name: /^Pay \$/ }).click();
+  await guest.getByRole("button", { name: /^Pay \d/ }).click();
   await expect(guest.getByText("Thanks for visiting!")).toBeVisible();
 
   await mgr.goto("/admin/feedback");
@@ -88,7 +96,7 @@ test("an unhappy rating goes to the manager's private feedback log, not to publi
   await guest.getByLabel(/What could we do better/).fill("E2E: fries were cold");
   await guest.getByRole("button", { name: "Send", exact: true }).click();
   await expect(guest.getByText("the manager reads every message")).toBeVisible();
-  await expect(guest.getByRole("link", { name: /Leave a public review/ })).toHaveCount(0);
+  await expect(guest.getByRole("link", { name: /Review us on Google/ })).toHaveCount(0);
   await expect(mgr.getByText("E2E: fries were cold")).toBeVisible(); // arrives live
 
   expect(errors).toEqual([]);

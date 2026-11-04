@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { brand } from "@app/config";
-import { isAvailableAt, type AvailabilityWindow } from "@app/shared";
+import { isAvailableAt, type AvailabilityWindow, type TextTranslations } from "@app/shared";
 import type { AdminMenuDTO, MenuDTO } from "@app/shared/api";
 import type { Db } from "../db.ts";
 import type { Weekday } from "../generated/prisma/enums.ts";
@@ -14,6 +14,11 @@ export const minutesToHhmm = (m: number) => {
   return `${pad(Math.floor(v / 60))}:${pad(v % 60)}`;
 };
 const toWire = (d: Weekday) => d.toLowerCase() as Day;
+
+/** A JSON column → translations (anything malformed reads as "none"). */
+export function tr<F extends string>(value: unknown): TextTranslations<F> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as TextTranslations<F>) : {};
+}
 
 export function windowsOf(rows: { days: Weekday[]; fromMinute: number; toMinute: number }[]): AvailabilityWindow[] {
   return rows.map((w) => ({
@@ -63,6 +68,7 @@ export async function buildPublicMenu(db: Db, now = new Date(), timeZone = brand
         categoryId: i.categoryId,
         name: i.name,
         description: i.description,
+        translations: tr(i.translations),
         priceCents: i.priceCents,
         imageUrl: i.imageUrl,
         imageAlt: i.imageAlt,
@@ -75,11 +81,12 @@ export async function buildPublicMenu(db: Db, now = new Date(), timeZone = brand
           .map((g) => ({
             id: g.id,
             name: g.name,
+            translations: tr(g.translations),
             minSelect: g.minSelect,
             maxSelect: g.maxSelect,
             options: g.options
               .filter((o) => o.active)
-              .map((o) => ({ id: o.id, name: o.name, priceDeltaCents: o.priceDeltaCents, isDefault: o.isDefault })),
+              .map((o) => ({ id: o.id, name: o.name, translations: tr(o.translations), priceDeltaCents: o.priceDeltaCents, isDefault: o.isDefault })),
           }))
           .filter((g) => g.options.length > 0),
       })),
@@ -92,6 +99,7 @@ export async function buildPublicMenu(db: Db, now = new Date(), timeZone = brand
       slug: c.slug,
       name: c.name,
       description: c.description,
+      translations: tr(c.translations),
       station: enums.station.fromDb(c.station),
       sortOrder: c.sortOrder,
     })),
@@ -101,7 +109,7 @@ export async function buildPublicMenu(db: Db, now = new Date(), timeZone = brand
       .map((s) => ({ itemId: s.itemId, suggestItemId: s.suggestItemId })),
     combos: combos
       .filter((c) => c.items.length > 1 && c.items.every((i) => visible.has(i.itemId)))
-      .map((c) => ({ id: c.id, name: c.name, discountCents: c.discountCents, itemIds: c.items.map((i) => i.itemId) })),
+      .map((c) => ({ id: c.id, name: c.name, translations: tr(c.translations), discountCents: c.discountCents, itemIds: c.items.map((i) => i.itemId) })),
   };
   return { version: menuVersion(content), ...content };
 }
@@ -119,6 +127,7 @@ export async function buildAdminMenu(db: Db): Promise<AdminMenuDTO> {
       slug: c.slug,
       name: c.name,
       description: c.description,
+      translations: tr(c.translations),
       station: enums.station.fromDb(c.station),
       sortOrder: c.sortOrder,
       active: c.active,
@@ -136,6 +145,7 @@ export async function buildAdminMenu(db: Db): Promise<AdminMenuDTO> {
         categoryId: i.categoryId,
         name: i.name,
         description: i.description,
+        translations: tr(i.translations),
         priceCents: i.priceCents,
         imageUrl: i.imageUrl,
         imageAlt: i.imageAlt,
@@ -149,11 +159,13 @@ export async function buildAdminMenu(db: Db): Promise<AdminMenuDTO> {
         modifierGroups: i.modifierGroups.map((g) => ({
           id: g.id,
           name: g.name,
+          translations: tr(g.translations),
           minSelect: g.minSelect,
           maxSelect: g.maxSelect,
           options: g.options.map((o) => ({
             id: o.id,
             name: o.name,
+            translations: tr(o.translations),
             priceDeltaCents: o.priceDeltaCents,
             isDefault: o.isDefault,
             active: o.active,
@@ -165,6 +177,7 @@ export async function buildAdminMenu(db: Db): Promise<AdminMenuDTO> {
     combos: combos.map((c) => ({
       id: c.id,
       name: c.name,
+      translations: tr(c.translations),
       discountCents: c.discountCents,
       itemIds: c.items.map((i) => i.itemId),
       active: c.active,

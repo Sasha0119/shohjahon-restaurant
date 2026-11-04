@@ -1,3 +1,4 @@
+import { brand } from "@app/config";
 import { pino } from "pino";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -11,12 +12,13 @@ const ORIGIN = "http://localhost:3000";
 const at = (iso: string) => new Date(iso);
 
 /**
- * Hand-made history (restaurant time zone: America/New_York, EST = UTC−5):
+ * Hand-made history (restaurant time zone: Asia/Tashkent, UTC+5, no daylight saving).
+ * Dishes come from the test fixture menu; amounts are in the currency's minor units.
  *  Table 1, Mon 2 Nov 18:30 local: burger ×2 (kitchen) + flat white ×1 (bar) — one round, two tickets.
- *          Paid 47.50 + 5.00 tip at 21:30 local Mon (02:30 UTC Tue!). Rated 5.
+ *          Paid 4750 + 500 tip at 00:30 local Tue (still 19:30 UTC Mon!). Rated 5.
  *  Table 2, Tue 3 Nov 12:00 local: fries ×3. A second round (burger ×5) was cancelled.
- *          Paid 10.00 + 15.00 (two guests); one failed payment of 99.99. Rated 2.
- *  Table 3, Sun 1 Nov 11:00 local: previous period — paid 20.00.
+ *          Paid 1000 + 1500 (two guests); one failed payment of 9999. Rated 2.
+ *  Table 3, Sun 1 Nov 11:00 local: previous period — paid 2000.
  */
 async function seedHistory(db: Db) {
   const table = (n: number) => db.diningTable.findUniqueOrThrow({ where: { number: n } });
@@ -40,23 +42,23 @@ async function seedHistory(db: Db) {
       data: { sessionId, guestId, amountCents: amount, tipCents: tip, method: "CARD", splitMode: "CUSTOM", status, provider: "mock", idempotencyKey: `k-${sessionId}-${amount}-${completedAt.getTime()}`, completedAt },
     });
 
-  const t1 = await visit(1, at("2026-11-02T23:00:00Z"), ["Sam"]);
-  await ticket(t1.s.id, 1, "KITCHEN", at("2026-11-02T23:30:00Z"), [{ itemId: "item-double-smash-burger", name: "Double Smash Burger", qty: 2, price: 1850, note: "=HYPERLINK(\"http://evil\")" }]);
-  await ticket(t1.s.id, 1, "BAR", at("2026-11-02T23:30:00Z"), [{ itemId: "item-flat-white", name: "Flat White", qty: 1, price: 450 }]);
-  await pay(t1.s.id, t1.gs[0]!.id, 4750, 500, at("2026-11-03T02:30:00Z"));
-  await db.review.create({ data: { sessionId: t1.s.id, guestId: t1.gs[0]!.id, rating: 5, status: "HANDLED", createdAt: at("2026-11-03T03:00:00Z") } });
+  const t1 = await visit(1, at("2026-11-02T13:00:00Z"), ["Sam"]);
+  await ticket(t1.s.id, 1, "KITCHEN", at("2026-11-02T13:30:00Z"), [{ itemId: "item-double-smash-burger", name: "Double Smash Burger", qty: 2, price: 1850, note: "=HYPERLINK(\"http://evil\")" }]);
+  await ticket(t1.s.id, 1, "BAR", at("2026-11-02T13:30:00Z"), [{ itemId: "item-flat-white", name: "Flat White", qty: 1, price: 450 }]);
+  await pay(t1.s.id, t1.gs[0]!.id, 4750, 500, at("2026-11-02T19:30:00Z"));
+  await db.review.create({ data: { sessionId: t1.s.id, guestId: t1.gs[0]!.id, rating: 5, status: "HANDLED", createdAt: at("2026-11-02T20:00:00Z") } });
 
-  const t2 = await visit(2, at("2026-11-03T16:45:00Z"), ["Ana", "Ben"]);
-  await ticket(t2.s.id, 1, "KITCHEN", at("2026-11-03T17:00:00Z"), [{ itemId: "item-parmesan-fries", name: "Truffle Parmesan Fries", qty: 3, price: 750 }]);
-  await ticket(t2.s.id, 2, "KITCHEN", at("2026-11-03T17:30:00Z"), [{ itemId: "item-double-smash-burger", name: "Double Smash Burger", qty: 5, price: 1850 }], "CANCELLED");
-  await pay(t2.s.id, t2.gs[0]!.id, 1000, 0, at("2026-11-03T18:00:00Z"));
-  await pay(t2.s.id, t2.gs[1]!.id, 1500, 0, at("2026-11-03T18:05:00Z"));
-  await pay(t2.s.id, t2.gs[1]!.id, 9999, 0, at("2026-11-03T18:06:00Z"), "FAILED");
-  await db.review.create({ data: { sessionId: t2.s.id, guestId: t2.gs[0]!.id, rating: 2, comment: "Slow", createdAt: at("2026-11-03T19:00:00Z") } });
+  const t2 = await visit(2, at("2026-11-03T06:45:00Z"), ["Ana", "Ben"]);
+  await ticket(t2.s.id, 1, "KITCHEN", at("2026-11-03T07:00:00Z"), [{ itemId: "item-parmesan-fries", name: "Truffle Parmesan Fries", qty: 3, price: 750 }]);
+  await ticket(t2.s.id, 2, "KITCHEN", at("2026-11-03T07:30:00Z"), [{ itemId: "item-double-smash-burger", name: "Double Smash Burger", qty: 5, price: 1850 }], "CANCELLED");
+  await pay(t2.s.id, t2.gs[0]!.id, 1000, 0, at("2026-11-03T08:00:00Z"));
+  await pay(t2.s.id, t2.gs[1]!.id, 1500, 0, at("2026-11-03T08:05:00Z"));
+  await pay(t2.s.id, t2.gs[1]!.id, 9999, 0, at("2026-11-03T08:06:00Z"), "FAILED");
+  await db.review.create({ data: { sessionId: t2.s.id, guestId: t2.gs[0]!.id, rating: 2, comment: "Slow", createdAt: at("2026-11-03T09:00:00Z") } });
 
-  const t3 = await visit(3, at("2026-11-01T15:30:00Z"), ["Old"]);
-  await ticket(t3.s.id, 1, "KITCHEN", at("2026-11-01T16:00:00Z"), [{ itemId: "item-margherita-pizza", name: "Margherita", qty: 1, price: 2000 }]);
-  await pay(t3.s.id, t3.gs[0]!.id, 2000, 0, at("2026-11-01T16:30:00Z"));
+  const t3 = await visit(3, at("2026-11-01T05:30:00Z"), ["Old"]);
+  await ticket(t3.s.id, 1, "KITCHEN", at("2026-11-01T06:00:00Z"), [{ itemId: "item-margherita-pizza", name: "Margherita", qty: 1, price: 2000 }]);
+  await pay(t3.s.id, t3.gs[0]!.id, 2000, 0, at("2026-11-01T06:30:00Z"));
 }
 
 describe.skipIf(!TEST_DATABASE_URL)("dashboard, order history & audit (integration)", () => {
@@ -85,7 +87,7 @@ describe.skipIf(!TEST_DATABASE_URL)("dashboard, order history & audit (integrati
     it("computes the headline numbers", async () => {
       const res = await get(`/api/admin/analytics?${range}`);
       expect(res.status).toBe(200);
-      expect(res.body.range).toEqual({ from: "2026-11-02", to: "2026-11-03", days: 2, timezone: "America/New_York" });
+      expect(res.body.range).toEqual({ from: "2026-11-02", to: "2026-11-03", days: 2, timezone: "Asia/Tashkent" });
       expect(res.body.kpis).toEqual({
         revenueCents: 4750 + 1000 + 1500, // failed payment excluded
         tipsCents: 500,
@@ -102,10 +104,10 @@ describe.skipIf(!TEST_DATABASE_URL)("dashboard, order history & audit (integrati
 
     it("buckets sales by the restaurant's calendar day", async () => {
       const res = await get(`/api/admin/analytics?${range}`);
-      // Table 1 paid at 02:30 UTC on the 3rd, which is 21:30 on the 2nd in New York.
+      // Table 1 ordered on the 2nd but paid at 00:30 on the 3rd in Tashkent — 19:30 UTC on the 2nd.
       expect(res.body.salesByDay).toEqual([
-        { date: "2026-11-02", revenueCents: 4750, orders: 1 },
-        { date: "2026-11-03", revenueCents: 2500, orders: 1 },
+        { date: "2026-11-02", revenueCents: 0, orders: 1 },
+        { date: "2026-11-03", revenueCents: 4750 + 2500, orders: 1 },
       ]);
     });
 
@@ -155,17 +157,17 @@ describe.skipIf(!TEST_DATABASE_URL)("dashboard, order history & audit (integrati
       expect(res.headers["content-type"]).toContain("text/csv");
       expect(res.headers["content-disposition"]).toContain("orders_2026-11-02_to_2026-11-03.csv");
       const lines = res.text.replace(/^﻿/, "").trim().split("\r\n");
-      expect(lines[0]).toBe("date,time,table,round,station,status,item,options,note,quantity,unit_price_USD,line_total_USD,added_by,order_id");
+      expect(lines[0]).toBe("date,time,table,round,station,status,item,options,note,quantity,unit_price_UZS,line_total_UZS,added_by,order_id");
       expect(lines).toHaveLength(1 + 4);
       expect(lines[1]).toMatch(/^2026-11-02,18:30,1,1,(kitchen|bar),served,/);
       expect(res.text).toContain(`"'=HYPERLINK(""http://evil"")"`); // formula neutralised
-      expect(res.text).toContain("Truffle Parmesan Fries,,,3,7.50,22.50,Sam");
+      expect(res.text).toContain("Truffle Parmesan Fries,,,3,750,2250,Sam"); // so'm have no decimals
     });
   });
 
   describe("audit log", () => {
     it("shows who did what, filterable by action", async () => {
-      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+      const today = new Intl.DateTimeFormat("en-CA", { timeZone: brand.timezone }).format(new Date());
       const res = await get(`/api/admin/audit?from=${today}&to=${today}&action=staff.login`);
       expect(res.status).toBe(200);
       expect(res.body.entries.length).toBeGreaterThan(0);

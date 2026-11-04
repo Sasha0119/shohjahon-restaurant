@@ -18,11 +18,16 @@ import {
   validateSelection,
   type MenuItem,
 } from "../src";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { seedMenu } from "../src/seed";
-import { brand } from "@app/config";
+import { seedMenu as classicMenu } from "./fixtures/classic-menu";
+import type { OpeningHours } from "@app/config";
 
-const byId = new Map(seedMenu.items.map((i) => [i.id, i]));
-const get = (slug: string) => seedMenu.items.find((i) => i.slug === slug) as MenuItem;
+/** Logic tests use a fixed fixture menu, so they don't change when the demo menu does. */
+const byId = new Map(classicMenu.items.map((i) => [i.id, i]));
+const get = (slug: string) => classicMenu.items.find((i) => i.slug === slug) as MenuItem;
+const seedById = new Map(seedMenu.items.map((i) => [i.id, i]));
 
 describe("seed menu", () => {
   it("has 25 items across 5 categories", () => {
@@ -49,11 +54,42 @@ describe("seed menu", () => {
     }
     for (const rule of seedMenu.upsells) {
       if (rule.kind === "suggest") {
-        expect(byId.has(rule.itemId)).toBe(true);
-        expect(byId.has(rule.suggestItemId)).toBe(true);
+        expect(seedById.has(rule.itemId)).toBe(true);
+        expect(seedById.has(rule.suggestItemId)).toBe(true);
       } else {
-        rule.itemIds.forEach((id) => expect(byId.has(id)).toBe(true));
+        rule.itemIds.forEach((id) => expect(seedById.has(id)).toBe(true));
       }
+    }
+  });
+
+  it("is written in Uzbek with English and Russian for every text", () => {
+    const check = (base: string, t: Record<string, Record<string, string | undefined> | undefined> | undefined, field: string, where: string) => {
+      expect(base.trim(), where).not.toBe("");
+      expect(base, where).not.toMatch(/[Ѐ-ӿ]/); // the base text is Uzbek (Latin)
+      expect(t?.en?.[field]?.trim(), `${where} (en)`).toBeTruthy();
+      expect(t?.ru?.[field], `${where} (ru)`).toMatch(/[Ѐ-ӿ]/); // Russian is Cyrillic
+    };
+    for (const c of seedMenu.categories) {
+      check(c.name, c.translations, "name", c.id);
+      check(c.description ?? "", c.translations, "description", c.id);
+    }
+    for (const item of seedMenu.items) {
+      check(item.name, item.translations, "name", item.id);
+      check(item.description, item.translations, "description", item.id);
+      for (const g of item.modifierGroups) {
+        check(g.name, g.translations, "name", `${item.id}/${g.id}`);
+        for (const o of g.options) check(o.name, o.translations, "name", `${item.id}/${g.id}/${o.id}`);
+      }
+    }
+    for (const rule of seedMenu.upsells) if (rule.kind === "combo") check(rule.name, rule.translations, "name", rule.id);
+  });
+
+  it("prices whole so'm and has a photo for every dish", () => {
+    const publicDir = fileURLToPath(new URL("../../../apps/web/public", import.meta.url));
+    for (const item of seedMenu.items) {
+      expect(item.price % 1000, item.id).toBe(0); // realistic so'm prices
+      expect(item.price, item.id).toBeGreaterThanOrEqual(5_000);
+      expect(existsSync(publicDir + item.image), item.image).toBe(true);
     }
   });
 
@@ -124,14 +160,14 @@ describe("modifiers", () => {
 
 describe("upsells", () => {
   it("suggests in-stock pairings for an item", () => {
-    const names = suggestionsForItem("item-double-smash-burger", seedMenu.upsells, byId).map((i) => i.slug);
+    const names = suggestionsForItem("item-double-smash-burger", classicMenu.upsells, byId).map((i) => i.slug);
     expect(names).toEqual(["parmesan-fries", "house-iced-tea"]);
   });
 
   it("does not suggest what is already in the cart", () => {
     const out = suggestionsForCart(
       ["item-double-smash-burger", "item-parmesan-fries"],
-      seedMenu.upsells,
+      classicMenu.upsells,
       byId,
     ).map((i) => i.slug);
     expect(out).toContain("house-iced-tea");
@@ -139,20 +175,31 @@ describe("upsells", () => {
   });
 });
 
+/** Fixed timetable for the opening-hours tests (independent of the brand's demo hours). */
+const HOURS: OpeningHours = {
+  mon: [{ open: "11:30", close: "22:00" }],
+  tue: [{ open: "11:30", close: "22:00" }],
+  wed: [{ open: "11:30", close: "22:00" }],
+  thu: [{ open: "11:30", close: "23:00" }],
+  fri: [{ open: "11:30", close: "00:30" }],
+  sat: [{ open: "10:00", close: "00:30" }],
+  sun: [{ open: "10:00", close: "21:00" }],
+};
+
 describe("opening hours & time-based menus", () => {
   // 2026-11-02 is a Monday.
   const at = (day: number, hh: number, mm = 0) => new Date(2026, 10, 2 + day, hh, mm);
 
   it("knows when the venue is open", () => {
-    expect(openState(brand.openingHours, at(0, 12))).toEqual({ isOpen: true, until: "22:00" });
-    expect(openState(brand.openingHours, at(0, 9))).toEqual({ isOpen: false, until: "11:30", nextDay: "mon" });
-    expect(openState(brand.openingHours, at(0, 22, 30))).toEqual({ isOpen: false, until: "11:30", nextDay: "tue" });
+    expect(openState(HOURS, at(0, 12))).toEqual({ isOpen: true, until: "22:00" });
+    expect(openState(HOURS, at(0, 9))).toEqual({ isOpen: false, until: "11:30", nextDay: "mon" });
+    expect(openState(HOURS, at(0, 22, 30))).toEqual({ isOpen: false, until: "11:30", nextDay: "tue" });
   });
 
   it("handles closing after midnight", () => {
     // Friday 11:30–00:30 → Saturday 00:15 is still open.
-    expect(openState(brand.openingHours, at(5, 0, 15))).toEqual({ isOpen: true, until: "00:30" });
-    expect(openState(brand.openingHours, at(4, 23, 45)).isOpen).toBe(true);
+    expect(openState(HOURS, at(5, 0, 15))).toEqual({ isOpen: true, until: "00:30" });
+    expect(openState(HOURS, at(4, 23, 45)).isOpen).toBe(true);
   });
 
   it("filters time-based menus", () => {

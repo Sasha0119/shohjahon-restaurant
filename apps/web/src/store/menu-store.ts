@@ -1,6 +1,6 @@
 "use client";
 
-import type { Menu, MenuItem, UpsellRule } from "@app/shared";
+import type { Menu, MenuItem, TextTranslations, UpsellRule } from "@app/shared";
 import type { MenuDTO } from "@app/shared/api";
 import { create } from "zustand";
 
@@ -12,6 +12,7 @@ export function menuFromDTO(dto: MenuDTO): Menu {
     categoryId: i.categoryId,
     name: i.name,
     description: i.description,
+    translations: i.translations,
     price: i.priceCents,
     image: i.imageUrl,
     imageAlt: i.imageAlt || i.name,
@@ -23,11 +24,13 @@ export function menuFromDTO(dto: MenuDTO): Menu {
     modifierGroups: i.modifierGroups.map((g) => ({
       id: g.id,
       name: g.name,
+      translations: g.translations,
       minSelect: g.minSelect,
       maxSelect: g.maxSelect,
       options: g.options.map((o) => ({
         id: o.id,
         name: o.name,
+        translations: o.translations,
         priceDelta: o.priceDeltaCents,
         ...(o.isDefault ? { isDefault: true } : {}),
       })),
@@ -40,7 +43,14 @@ export function menuFromDTO(dto: MenuDTO): Menu {
       itemId: s.itemId,
       suggestItemId: s.suggestItemId,
     })),
-    ...dto.combos.map((c) => ({ id: c.id, kind: "combo" as const, name: c.name, itemIds: c.itemIds, discount: c.discountCents })),
+    ...dto.combos.map((c) => ({
+      id: c.id,
+      kind: "combo" as const,
+      name: c.name,
+      translations: c.translations,
+      itemIds: c.itemIds,
+      discount: c.discountCents,
+    })),
   ];
   return {
     categories: dto.categories.map((c) => ({
@@ -48,11 +58,44 @@ export function menuFromDTO(dto: MenuDTO): Menu {
       slug: c.slug,
       name: c.name,
       ...(c.description ? { description: c.description } : {}),
+      translations: c.translations,
       station: c.station,
       sortOrder: c.sortOrder,
     })),
     items,
     upsells,
+  };
+}
+
+/** A text in `lang`, falling back to the default-language value. */
+function pick<F extends string>(base: string, t: TextTranslations<F> | undefined, field: F, lang: string): string {
+  return t?.[lang]?.[field]?.trim() || base;
+}
+
+/**
+ * The menu with every name, description and option in `lang` (anything not
+ * translated stays in the restaurant's default language). Ids and prices are
+ * untouched, so carts and orders work the same in every language.
+ */
+export function localizeMenu(menu: Menu, lang: string): Menu {
+  return {
+    categories: menu.categories.map((c) => ({
+      ...c,
+      name: pick(c.name, c.translations, "name", lang),
+      ...(c.description ? { description: pick(c.description, c.translations, "description", lang) } : {}),
+    })),
+    items: menu.items.map((i) => ({
+      ...i,
+      name: pick(i.name, i.translations, "name", lang),
+      description: pick(i.description, i.translations, "description", lang),
+      imageAlt: pick(i.imageAlt, i.translations, "imageAlt", lang),
+      modifierGroups: i.modifierGroups.map((g) => ({
+        ...g,
+        name: pick(g.name, g.translations, "name", lang),
+        options: g.options.map((o) => ({ ...o, name: pick(o.name, o.translations, "name", lang) })),
+      })),
+    })),
+    upsells: menu.upsells.map((u) => (u.kind === "combo" ? { ...u, name: pick(u.name, u.translations, "name", lang) } : u)),
   };
 }
 

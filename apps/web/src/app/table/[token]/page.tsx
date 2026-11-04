@@ -3,10 +3,11 @@
 import { brand, localize } from "@app/config";
 import { WEEKDAYS, localParts, openState } from "@app/shared";
 import { motion, type Variants } from "framer-motion";
-import { ArrowRight, Clock, MapPin, Phone, Wifi } from "lucide-react";
+import { ArrowRight, ChevronDown, Clock, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Logo } from "@/components/brand/logo";
+import { LanguageSwitcher } from "@/components/brand/language-switcher";
+import { Wordmark } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/brand/theme-toggle";
 import { FeatureCard } from "@/components/guest/food-card";
 import { useGuest } from "@/components/guest/guest-context";
@@ -21,11 +22,11 @@ import { formatClock, weekdayName } from "@/lib/format";
 
 const stagger: Variants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } },
+  show: { transition: { staggerChildren: 0.1, delayChildren: 0.25 } },
 };
 const rise: Variants = {
   hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
 };
 
 export default function HomePage() {
@@ -36,22 +37,15 @@ export default function HomePage() {
 
   return (
     <main>
-      {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="relative isolate flex h-[78svh] min-h-[540px] max-h-[820px] flex-col overflow-hidden text-white md:mx-4 md:mt-4 md:rounded-[2rem]">
+      {/* ── Hero: full-screen photo, logo, tagline, one clear action ─────────── */}
+      <section className="relative isolate flex h-svh min-h-[600px] max-h-[960px] flex-col overflow-hidden text-white">
         <motion.div
           className="absolute inset-0 -z-10"
-          initial={{ scale: 1.12 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ scale: 1.14 }}
+          animate={{ scale: 1.02 }}
+          transition={{ duration: 2.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <Image
-            src={brand.heroImage.src}
-            alt={brand.heroImage.alt}
-            fill
-            priority
-            sizes="(min-width: 768px) 768px, 100vw"
-            className="object-cover"
-          />
+          <Image src={brand.heroImage.src} alt={brand.heroImage.alt} fill priority sizes="100vw" className="object-cover" />
         </motion.div>
         <div aria-hidden className="absolute inset-0 -z-10" style={{ background: "var(--hero-tint)" }} />
         <div
@@ -59,17 +53,14 @@ export default function HomePage() {
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(180deg, rgba(0,0,0,.50) 0%, rgba(0,0,0,0) 26%, rgba(0,0,0,.08) 48%, rgba(0,0,0,.78) 82%, rgba(0,0,0,.88) 100%)",
+              "linear-gradient(180deg, rgba(8,7,5,.72) 0%, rgba(8,7,5,.12) 28%, rgba(8,7,5,.18) 52%, rgba(8,7,5,.86) 80%, var(--bg-color) 100%)",
           }}
         />
 
-        <div className="flex items-center justify-between gap-3 px-4 pt-[max(env(safe-area-inset-top),1rem)]">
-          <div className="flex items-center gap-2.5">
-            <Logo size={42} onImage />
-            <span className="text-sm font-semibold tracking-wide text-white/90 drop-shadow">{brand.name}</span>
-          </div>
+        <div className="flex items-center justify-between gap-2 px-4 pt-[max(env(safe-area-inset-top),1rem)]">
+          <TablePill onImage />
           <div className="flex items-center gap-2">
-            <TablePill onImage />
+            <LanguageSwitcher onImage />
             <ThemeToggle onImage />
           </div>
         </div>
@@ -78,56 +69,67 @@ export default function HomePage() {
           variants={stagger}
           initial="hidden"
           animate="show"
-          className="mt-auto px-5 pb-14 sm:px-8"
+          className="mt-auto flex flex-col items-center px-6 pb-[max(env(safe-area-inset-bottom),2.5rem)] text-center"
         >
           <motion.div variants={rise}>
+            <Wordmark size={76} layout="stack" onImage />
+          </motion.div>
+          <motion.span variants={rise} aria-hidden className="gold-rule mt-6 w-24" />
+          <motion.p
+            variants={rise}
+            className="mt-5 max-w-sm font-display text-[clamp(1.35rem,5.5vw,1.85rem)] italic leading-snug text-white/95"
+          >
+            {localize(brand.tagline, locale, brand.defaultLanguage)}
+          </motion.p>
+          <motion.p variants={rise} className="mt-3 text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
+            {localize(brand.cuisine, locale, brand.defaultLanguage)}
+          </motion.p>
+          <motion.div variants={rise} className="mt-6">
             <OpenStatus />
           </motion.div>
-          <motion.p variants={rise} className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-white/75">
-            {t("home.welcomeTo")}
-          </motion.p>
-          <motion.h1
-            variants={rise}
-            className="mt-2 text-[clamp(2.6rem,11vw,4.5rem)] font-semibold leading-[0.95] drop-shadow-sm"
-          >
-            {brand.name}
-          </motion.h1>
-          <motion.p variants={rise} className="mt-4 max-w-md text-[17px] leading-relaxed text-white/85">
-            {localize(brand.welcomeLine, locale)}
-          </motion.p>
-          <motion.div variants={rise} className="mt-7 flex flex-wrap gap-3">
-            <LinkButton href={`${base}/menu`} size="lg" className="pr-5">
+          <motion.div variants={rise} className="mt-7 w-full max-w-xs">
+            <LinkButton href={`${base}/menu`} size="lg" className="w-full">
               {t("home.viewMenu")}
               <ArrowRight className="size-5" aria-hidden />
             </LinkButton>
-            <LinkButton href={`${base}/wifi`} size="lg" variant="glass">
-              <Wifi className="size-5" aria-hidden />
-              {t("home.wifi")}
-            </LinkButton>
           </motion.div>
+          <motion.a
+            variants={rise}
+            href="#picks"
+            aria-label={t("home.chefsPicks")}
+            className="mt-6 grid size-11 place-items-center rounded-full text-white/70 hover:text-white"
+          >
+            <motion.span animate={{ y: [0, 5, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}>
+              <ChevronDown className="size-6" aria-hidden />
+            </motion.span>
+          </motion.a>
         </motion.div>
       </section>
 
-      {/* ── Content sheet overlapping the hero ───────────────── */}
-      <div className="relative -mt-6 rounded-t-[1.75rem] bg-bg pt-6 md:mt-6 md:rounded-none md:pt-0">
-        <div className="px-4">
+      {/* ── Below the fold ───────────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-3xl pb-6">
+        <p className="px-6 text-center text-[15px] leading-relaxed text-fg-muted">
+          {localize(brand.welcomeLine, locale, brand.defaultLanguage)}
+        </p>
+
+        <div className="mt-8 px-4">
           <NicknameCard />
         </div>
 
-        <section className="mt-10" aria-labelledby="picks">
-          <SectionTitle id="picks" title={t("home.chefsPicks")} subtitle={t("home.chefsPicksSub")} className="px-5" />
-          <div className="no-scrollbar mt-4 flex snap-x snap-mandatory scroll-px-4 gap-3.5 overflow-x-auto px-4 pb-2">
+        <section className="mt-12 scroll-mt-6" id="picks" aria-labelledby="picks-title">
+          <SectionTitle id="picks-title" eyebrow title={t("home.chefsPicks")} subtitle={t("home.chefsPicksSub")} className="px-5" />
+          <div className="no-scrollbar mt-5 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2">
             {menu
               ? featured.map((item, i) => <FeatureCard key={item.id} item={item} priority={i < 2} />)
               : Array.from({ length: 3 }, (_, i) => (
-                  <Skeleton key={i} className="aspect-[4/5] w-[68vw] max-w-[260px] shrink-0 rounded-card" />
+                  <Skeleton key={i} className="aspect-[4/5] w-[70vw] max-w-[280px] shrink-0 rounded-card" />
                 ))}
           </div>
         </section>
 
-        <section className="mt-10 px-4" aria-labelledby="explore">
-          <SectionTitle id="explore" title={t("home.explore")} className="px-1" />
-          <div className="mt-4 grid grid-cols-2 gap-3">
+        <section className="mt-12 px-4" aria-labelledby="explore">
+          <SectionTitle id="explore" eyebrow title={t("home.explore")} className="px-1" />
+          <div className="mt-5 grid grid-cols-2 gap-3">
             {menu
               ? menu.categories.map((cat, i) => {
                   const items = menu.items.filter((it) => it.categoryId === cat.id);
@@ -137,7 +139,7 @@ export default function HomePage() {
                       key={cat.id}
                       href={`${base}/menu#${cat.slug}`}
                       className={cn(
-                        "group relative isolate flex overflow-hidden rounded-card bg-muted p-4 text-white shadow-soft transition-transform active:scale-[0.98]",
+                        "pressable group relative isolate flex overflow-hidden rounded-card bg-muted p-4 text-white shadow-soft ring-1 ring-gold-line/60",
                         i === 0 ? "col-span-2 aspect-[2/1]" : "aspect-square",
                       )}
                     >
@@ -147,13 +149,15 @@ export default function HomePage() {
                           alt=""
                           fill
                           sizes={i === 0 ? "(min-width: 768px) 740px, 100vw" : "(min-width: 768px) 370px, 50vw"}
-                          className="-z-10 object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="-z-10 object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
                         />
                       )}
-                      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/25 to-black/5" />
-                      <div className="mt-auto">
+                      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/30 to-black/5" />
+                      <div className="mt-auto min-w-0">
                         <p className="font-display text-xl font-semibold leading-tight">{cat.name}</p>
-                        <p className="mt-0.5 text-sm text-white/80">{t("home.dishes", { count: items.length })}</p>
+                        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/75">
+                          {t("home.dishes", { count: items.length })}
+                        </p>
                       </div>
                     </Link>
                   );
@@ -164,7 +168,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-10 px-4" aria-labelledby="info">
+        <section className="mt-12 px-4" aria-labelledby="info">
           <h2 id="info" className="sr-only">
             {t("home.hours")}
           </h2>
@@ -191,7 +195,7 @@ function OpenStatus() {
     label = t("home.closedOpensOn", { day: weekdayName(state.nextDay), time: formatClock(state.until) });
   }
   return (
-    <span className="inline-flex h-8 items-center gap-2 rounded-full glass-dark px-3 text-sm font-semibold">
+    <span className="inline-flex min-h-8 items-center gap-2 rounded-full glass-dark px-3.5 py-1 text-[13px] font-semibold">
       <span className="relative flex size-2">
         {state.isOpen && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
         <span className={cn("relative inline-flex size-2 rounded-full", state.isOpen ? "bg-emerald-400" : "bg-rose-400")} />
@@ -202,17 +206,18 @@ function OpenStatus() {
 }
 
 function OpeningHoursCard() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const now = useNow(60_000);
   const todayKey = now === null ? null : WEEKDAYS[localParts(new Date(now), brand.timezone).dayIdx];
   const order = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
   return (
-    <div className="rounded-card bg-surface p-5 shadow-soft ring-1 ring-line/60">
-      <p className="flex items-center gap-2 font-semibold">
+    <div className="card p-5">
+      <p className="flex items-center gap-2 font-display text-lg font-semibold">
         <Clock className="size-4.5 text-primary" aria-hidden />
         {t("home.hours")}
       </p>
-      <dl className="mt-3 space-y-1.5 text-sm">
+      <span aria-hidden className="gold-rule mt-3 block w-full opacity-60" />
+      <dl className="mt-3 space-y-1 text-sm">
         {order.map((day) => {
           const slots = brand.openingHours[day];
           const isToday = day === todayKey;
@@ -220,12 +225,12 @@ function OpeningHoursCard() {
             <div
               key={day}
               className={cn(
-                "flex justify-between gap-4 rounded-lg px-2 py-1",
-                isToday ? "bg-primary/10 font-semibold text-fg" : "text-fg-muted",
+                "flex justify-between gap-4 rounded-lg px-2.5 py-1.5",
+                isToday ? "bg-primary/10 font-semibold text-fg ring-1 ring-inset ring-gold-line" : "text-fg-muted",
               )}
             >
-              <dt>
-                {weekdayName(day, "long", locale)}
+              <dt className="capitalize">
+                {weekdayName(day, "long")}
                 {isToday && <span className="sr-only"> ({t("home.today")})</span>}
               </dt>
               <dd className="tabular">
@@ -261,24 +266,25 @@ function ContactCard() {
 
   if (rows.length === 0) return null;
   return (
-    <div className="rounded-card bg-surface p-5 shadow-soft ring-1 ring-line/60">
-      <p className="flex items-center gap-2 font-semibold">
+    <div className="card p-5">
+      <p className="flex items-center gap-2 font-display text-lg font-semibold">
         <MapPin className="size-4.5 text-primary" aria-hidden />
         {t("home.findUs")}
       </p>
-      <ul className="mt-3 space-y-2">
+      <span aria-hidden className="gold-rule mt-3 block w-full opacity-60" />
+      <ul className="mt-3 space-y-1.5">
         {rows.map(({ icon: Icon, label, href, action }) => (
           <li key={label}>
             <a
               href={href}
-              className="flex min-h-12 items-center gap-3 rounded-xl px-2 py-2 text-sm transition-colors hover:bg-muted"
+              className="pressable flex min-h-12 items-center gap-3 rounded-xl px-2 py-2 text-sm hover:bg-muted"
               {...(href?.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}
             >
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full ring-1 ring-gold-line text-primary">
                 <Icon className="size-4" aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{label}</span>
+                <span className="block font-medium">{label}</span>
                 <span className="block text-xs text-fg-muted">{action}</span>
               </span>
             </a>

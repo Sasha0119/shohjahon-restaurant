@@ -1,6 +1,7 @@
 "use client";
 
 import type { AdminMenuDTO } from "@app/shared/api";
+import { useI18n } from "@/i18n";
 import { useCallback, useEffect, useState } from "react";
 import { useStaffSocket } from "@/hooks/use-staff-socket";
 import { api } from "@/lib/api";
@@ -38,6 +39,7 @@ export function itemToInput(item: AdminItem) {
     categoryId: item.categoryId,
     name: item.name,
     description: item.description,
+    translations: item.translations ?? {},
     priceCents: item.priceCents,
     imageUrl: item.imageUrl,
     imageAlt: item.imageAlt,
@@ -51,11 +53,13 @@ export function itemToInput(item: AdminItem) {
     modifierGroups: item.modifierGroups.map((g) => ({
       id: g.id,
       name: g.name,
+      translations: g.translations ?? {},
       minSelect: g.minSelect,
       maxSelect: g.maxSelect,
       options: g.options.map((o) => ({
         id: o.id,
         name: o.name,
+        translations: o.translations ?? {},
         priceDeltaCents: o.priceDeltaCents,
         isDefault: o.isDefault,
         active: o.active,
@@ -69,6 +73,7 @@ export function categoryToInput(c: AdminCategory) {
     slug: c.slug,
     name: c.name,
     description: c.description ?? undefined,
+    translations: c.translations ?? {},
     station: c.station,
     sortOrder: c.sortOrder,
     active: c.active,
@@ -83,4 +88,11 @@ export function moved<T extends { id: string }>(list: T[], index: number, delta:
   if (target < 0 || target >= ids.length) return ids;
   [ids[index], ids[target]] = [ids[target]!, ids[index]!];
   return ids;
+}
+
+/** A menu entry's name in the admin's UI language (falls back to the main language). */
+export function useNameIn() {
+  const { locale } = useI18n();
+  return (x: { name: string; translations?: Partial<Record<string, { name?: string }>> }) =>
+    x.translations?.[locale]?.name?.trim() || x.name;
 }

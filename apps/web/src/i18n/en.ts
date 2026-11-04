@@ -1,7 +1,8 @@
 /**
- * English UI text. To add a language: copy this file (e.g. `fr.ts`), translate
- * the values, register it in `i18n/index.tsx`, and add the code to
- * `languages` in config/brand.ts.
+ * English UI text — the reference file: Uzbek (uz.ts) and Russian (ru.ts) must
+ * have exactly the same keys (a test checks this). To add a language: copy
+ * this file, translate the values, register it in `i18n/index.tsx`, and add
+ * the code to `languages` in config/brand.ts.
  *
  * {placeholders} are filled in at runtime. Objects with `one` / `other` are
  * plural forms chosen by the `count` variable.
@@ -18,6 +19,7 @@ export const en = {
     you: "You",
     guest: "Guest",
     home: "Home",
+    loading: "Loading…",
   },
   nav: {
     label: "Main navigation",
@@ -34,6 +36,7 @@ export const en = {
   },
   language: {
     label: "Language",
+    changed: "Language changed",
   },
   home: {
     welcomeTo: "Welcome to",
@@ -94,6 +97,7 @@ export const en = {
     combo: "Combo deal",
     comboBody: "Order {items} together and save {amount}.",
     add: "Add {quantity} · {price}",
+    addButton: "Add to order",
     soldOut: "Sold out for today",
     quantity: "Quantity",
     decrease: "Decrease quantity",
@@ -169,6 +173,7 @@ export const en = {
     comboSavings: "Combo savings",
     serviceCharge: "Service charge ({percent})",
     tax: "Tax ({percent})",
+    vatIncluded: "Prices include VAT",
     tip: "Tip",
     total: "Total",
     paid: "Paid",
@@ -187,7 +192,7 @@ export const en = {
     fewerPeople: "Fewer people",
     morePeople: "More people",
     eachPays: "Each person pays",
-    unevenNote: "To add up exactly, {count} of the shares are 1 cent more.",
+    unevenNote: "To add up exactly, {count} of the shares are slightly higher.",
     selectItems: "Tick what you're paying for",
     includesExtras: "Includes your share of service, tax and tip.",
     customLabel: "Amount to pay",
@@ -333,6 +338,7 @@ export const en = {
     emailUnavailable: "Email receipts aren't available here.",
     print: "Print",
     notFound: "This receipt doesn't exist.",
+    thanks: "Thank you — come back soon",
     splitModes: { full: "Full bill", even: "Split evenly", items: "By item", custom: "Custom amount" },
   },
   landing: {
@@ -407,6 +413,7 @@ export const en = {
   },
   admin: {
     title: "Admin",
+    fieldInvalid: "Please check this value.",
     nav: { overview: "Overview", tables: "Tables", orders: "Orders", menu: "Menu", discounts: "Discounts", feedback: "Feedback", audit: "Audit log", staff: "Staff" },
     feedback: {
       title: "Feedback",
@@ -456,6 +463,9 @@ export const en = {
       subtitle: "Dishes, prices, options and pairings — changes go live instantly.",
       tabs: { items: "Items", categories: "Categories", combos: "Combos" },
       newItem: "New item",
+      editLanguage: "Editing language",
+      mainLanguage: "{language} · main",
+      translationHint: "Fields left empty show the main language ({language}).",
       search: "Search items",
       all: "All",
       showArchived: "Show archived",
@@ -776,6 +786,51 @@ export const en = {
     invalidSelection: "The options for this item changed. Please choose again.",
     cartChanged: "Someone at your table just changed the order — please check it and send again.",
     tooLate: "The kitchen has already started — please ask a member of staff.",
+    /** Messages for error codes sent by the server (keyed by code). */
+    codes: {
+      ACCOUNT_LOCKED: "Too many failed attempts. Try again later.",
+      ALREADY_HANDLED: "Someone has already taken this one.",
+      ALREADY_REVIEWED: "Thanks — you've already rated this visit.",
+      AMOUNT_CHANGED: "The bill changed. Please check the amount and try again.",
+      CALL_COOLDOWN: "We've already let the team know. You can call again shortly.",
+      CART_CHANGED: "The order changed while you were looking at it. Please check it and send again.",
+      CODE_MIN_SUBTOTAL: "Your order isn't big enough for this code yet.",
+      CODE_USED_UP: "This code has been fully used.",
+      EMAIL_FAILED: "We couldn't send the email. Please try again later.",
+      EMAIL_NOT_CONFIGURED: "Email receipts aren't available here yet.",
+      FORBIDDEN: "You don't have access to this.",
+      IMAGE_TOO_LARGE: "That image is too large.",
+      IMAGE_TOO_SMALL: "That image is too small. Please use a bigger photo.",
+      INTERNAL: "Something went wrong. Please try again.",
+      INVALID_CODE: "That code isn't valid.",
+      INVALID_CREDENTIALS: "Those details don't match. Please try again.",
+      INVALID_QR: "This QR code isn't valid. Please scan the code on your table again.",
+      INVALID_SELECTION: "The options for this item changed. Please choose again.",
+      INVALID_TRANSITION: "This order has already moved on. Refreshing.",
+      ITEMS_ALREADY_PAID: "Someone has just paid for one of those items.",
+      ITEM_UNAVAILABLE: "This item can't be ordered right now.",
+      NOTHING_TO_PAY: "There's nothing left to pay.",
+      NOT_FOUND: "We couldn't find that.",
+      NO_SESSION: "Scan the QR code on your table to start.",
+      OTHER_TABLE: "You're already seated at another table.",
+      OUT_OF_STOCK: "Sorry — that just sold out.",
+      PAYLOAD_TOO_LARGE: "That's too much to send at once.",
+      PAYMENTS_STARTED: "Codes can't be changed once payment has started.",
+      PAYMENT_REQUIRED: "You can rate your visit after paying.",
+      QR_REPLACED: "This QR code has been replaced. Please ask a member of staff.",
+      RANGE_TOO_LONG: "Please choose a shorter date range (at most a year).",
+      RATE_LIMITED: "Too many requests. Please wait a moment and try again.",
+      SESSION_CLOSED: "This visit has ended.",
+      STALE_STATUS: "Someone else just updated this order. Refreshing.",
+      TABLE_OCCUPIED: "Someone at this table has already started an order.",
+      TABLE_UNAVAILABLE: "This table isn't taking orders right now.",
+      TOO_LATE_TO_CANCEL: "The kitchen has already started this order, so it can't be cancelled. Please ask a member of staff.",
+      TOO_MANY_LOGIN_ATTEMPTS: "Too many attempts. Please wait a minute.",
+      UNAUTHORIZED: "Please sign in again.",
+      UNSUPPORTED_IMAGE: "That file isn't a supported image (JPEG, PNG, WebP or AVIF).",
+      VALIDATION_ERROR: "Please check the highlighted details.",
+      WRONG_CREDENTIAL_TYPE: "Please use the other sign-in method for this account.",
+    },
   },
   notFound: {
     title: "This page isn't on the menu",

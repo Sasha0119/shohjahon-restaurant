@@ -17,7 +17,8 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Logo } from "@/components/brand/logo";
+import { Logo, Wordmark } from "@/components/brand/logo";
+import { LanguageSwitcher } from "@/components/brand/language-switcher";
 import { ThemeToggle } from "@/components/brand/theme-toggle";
 import { useStaffSession } from "@/components/staff/staff-session";
 import { IconButton } from "@/components/ui/button";
@@ -71,12 +72,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
               href={href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative flex h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold transition-colors",
+                "pressable relative flex h-11 items-center gap-3 whitespace-nowrap rounded-xl px-3 text-[15px] font-semibold transition-colors",
                 active ? "text-primary" : "text-fg-muted hover:bg-muted hover:text-fg",
               )}
             >
               {active && (
-                <motion.span layoutId="admin-nav" className="absolute inset-0 rounded-xl bg-primary/10" aria-hidden />
+                <motion.span
+                  layoutId="admin-nav"
+                  className="absolute inset-0 rounded-xl bg-primary/10 ring-1 ring-inset ring-gold-line"
+                  aria-hidden
+                  transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                />
               )}
               <Icon className="relative size-5" aria-hidden />
               <span className="relative">{t(`admin.nav.${key}`)}</span>
@@ -96,24 +102,23 @@ export function AdminShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="min-h-svh md:grid md:grid-cols-[16rem_1fr] print:block">
+    <div className="min-h-svh md:grid md:grid-cols-[17rem_1fr] print:block">
       {/* Sidebar (tablet / desktop) */}
-      <aside className="sticky top-0 hidden h-svh print:!hidden flex-col border-r border-line/60 bg-surface px-4 py-5 md:flex">
-        <div className="flex items-center gap-3 px-1">
-          <Logo size={40} />
-          <div className="min-w-0">
-            <p className="line-clamp-2 font-display text-lg font-semibold leading-tight">{brand.name}</p>
-            <p className="text-xs font-semibold uppercase tracking-wider text-fg-muted">{t("admin.title")}</p>
-          </div>
-          <div className="ml-auto">
-            <ThemeToggle />
-          </div>
+      <aside className="sticky top-0 hidden h-svh print:!hidden flex-col border-r border-gold-line/60 bg-surface px-4 py-6 md:flex">
+        <div className="px-2">
+          <Wordmark size={40} />
+          <p className="eyebrow mt-3">{t("admin.title")}</p>
+          <span aria-hidden className="gold-rule mt-4 block w-full opacity-70" />
         </div>
-        <nav className="mt-8 flex-1" aria-label={t("admin.title")}>
+        <nav className="no-scrollbar mt-5 flex-1 overflow-y-auto" aria-label={t("admin.title")}>
           {nav}
         </nav>
-        <div className="flex items-center gap-2 rounded-2xl bg-muted/60 p-2">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-on-primary" aria-hidden>
+        <div className="mb-3 flex items-center justify-between gap-2 px-1">
+          <LanguageSwitcher placement="above-start" />
+          <ThemeToggle />
+        </div>
+        <div className="flex items-center gap-2 rounded-2xl bg-muted/60 p-2 ring-1 ring-inset ring-line">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary font-display text-sm font-semibold text-on-primary" aria-hidden>
             {me.name.charAt(0).toUpperCase()}
           </span>
           <div className="min-w-0 flex-1">
@@ -127,10 +132,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Top bar (phone) */}
-      <header className="sticky top-0 z-20 border-b border-line/60 glass md:hidden print:hidden">
-        <div className="flex h-16 items-center gap-3 px-4">
-          <Logo size={36} />
-          <p className="min-w-0 flex-1 truncate font-display text-lg font-semibold">{brand.name}</p>
+      <header className="sticky top-0 z-20 border-b border-gold-line/60 glass md:hidden print:hidden">
+        <div className="flex h-16 items-center gap-2 px-4">
+          <Logo size={34} />
+          {/* Tighter than the sidebar wordmark so the full name fits beside the buttons on a phone. */}
+          <p className="min-w-0 flex-1 truncate font-display text-base font-semibold uppercase tracking-[0.1em]">{brand.name}</p>
+          <LanguageSwitcher />
           <ThemeToggle />
           <IconButton label={t("staff.signOut")} onClick={signOut}>
             <LogOut className="size-5" aria-hidden />

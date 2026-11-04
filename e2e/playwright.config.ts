@@ -73,7 +73,7 @@ export default defineConfig({
       command: `npm run build -w @app/web && npm run start -w @app/web -- -p ${WEB_PORT}`,
       cwd: "..",
       url: BASE_URL,
-      env: { API_INTERNAL_URL: `http://localhost:${API_PORT}`, NEXT_TELEMETRY_DISABLED: "1" },
+      env: { API_INTERNAL_URL: `http://127.0.0.1:${API_PORT}`, NEXT_TELEMETRY_DISABLED: "1" },
       timeout: 600_000,
       reuseExistingServer: false,
     },

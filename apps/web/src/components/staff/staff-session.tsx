@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { BrandLoader } from "@/components/brand/brand-loader";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useT } from "@/i18n";
@@ -64,14 +64,7 @@ export function StaffGate({ roles, children }: { roles: StaffRole[]; children: R
   }, [me, router]);
 
   if (!me) {
-    return (
-      <div className="grid min-h-svh place-items-center text-fg-muted" role="status">
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-          {t("staff.checking")}
-        </span>
-      </div>
-    );
+    return <BrandLoader label={t("staff.checking")} />;
   }
   return <StaffSessionContext.Provider value={{ me, signOut }}>{children}</StaffSessionContext.Provider>;
 }

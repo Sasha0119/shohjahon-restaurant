@@ -9,6 +9,7 @@ import "dotenv/config";
 import { seedMenu } from "@app/shared/seed";
 import { hashSecret } from "../src/auth/hash.ts";
 import { createPrisma } from "../src/db.ts";
+import { writeMenu } from "../src/seed-menu.ts";
 import { buildSeedPlan } from "../src/seed-plan.ts";
 import { createQrToken, guestTableUrl } from "../src/tables/qr-token.ts";
 
@@ -26,7 +27,7 @@ async function main() {
   const plan = buildSeedPlan(seedMenu);
 
   try {
-    // Menu text contains accents and symbols (é, ñ, —): the database must be UTF-8.
+    // Menu text is in Uzbek and Russian (oʻ, ʼ, Cyrillic): the database must be UTF-8.
     const [{ server_encoding: encoding } = { server_encoding: "?" }] =
       await db.$queryRaw<{ server_encoding: string }[]>`SHOW server_encoding`;
     if (encoding.toUpperCase() !== "UTF8") {
@@ -36,41 +37,7 @@ async function main() {
     }
 
     // ── Menu ────────────────────────────────────────────────────────────────
-    for (const { availability, ...c } of plan.categories) {
-      await db.category.upsert({ where: { id: c.id }, create: c, update: c });
-      await db.categoryAvailability.deleteMany({ where: { categoryId: c.id } });
-      if (availability.length) {
-        await db.categoryAvailability.createMany({
-          data: availability.map((w) => ({ ...w, categoryId: c.id })),
-        });
-      }
-    }
-
-    for (const { groups, ...item } of plan.items) {
-      await db.menuItem.upsert({ where: { id: item.id }, create: item, update: item });
-      for (const { options, ...g } of groups) {
-        const group = { ...g, itemId: item.id };
-        await db.modifierGroup.upsert({ where: { id: g.id }, create: group, update: group });
-        for (const o of options) {
-          const option = { ...o, groupId: g.id };
-          await db.modifierOption.upsert({ where: { id: o.id }, create: option, update: option });
-        }
-      }
-    }
-
-    for (const s of plan.suggestions) {
-      await db.upsellSuggestion.upsert({
-        where: { itemId_suggestItemId: { itemId: s.itemId, suggestItemId: s.suggestItemId } },
-        create: s,
-        update: { sortOrder: s.sortOrder },
-      });
-    }
-
-    for (const { itemIds, ...combo } of plan.combos) {
-      await db.comboDeal.upsert({ where: { id: combo.id }, create: combo, update: combo });
-      await db.comboDealItem.deleteMany({ where: { comboId: combo.id } });
-      await db.comboDealItem.createMany({ data: itemIds.map((itemId) => ({ comboId: combo.id, itemId })) });
-    }
+    await writeMenu(db, plan);
 
     // ── Tables ──────────────────────────────────────────────────────────────
     for (const t of plan.tables) {

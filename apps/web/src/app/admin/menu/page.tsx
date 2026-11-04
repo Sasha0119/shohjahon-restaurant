@@ -1,5 +1,6 @@
 "use client";
 
+import { brand, type LocaleCode } from "@app/config";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDown,
@@ -17,7 +18,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Field, MoneyField, Switch, ToggleChip, apiMessage, inputClass, slugify } from "@/components/admin/form";
+import { apiMessage, EditLanguageBar, Field, inputClass, MoneyField, slugify, Switch, textIn, ToggleChip, withText } from "@/components/admin/form";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Badge, EmptyState, Segmented, Skeleton } from "@/components/ui/misc";
 import { Sheet } from "@/components/ui/sheet";
@@ -31,6 +32,7 @@ import {
   type AdminCategory,
   type AdminCombo,
   type AdminItem,
+  useNameIn,
 } from "@/lib/admin-menu";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -47,7 +49,7 @@ export default function MenuAdminPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">{t("admin.menu.title")}</h1>
+          <h1 className="text-[2.1rem] font-semibold leading-tight">{t("admin.menu.title")}</h1>
           <p className="mt-1 text-fg-muted">{t("admin.menu.subtitle")}</p>
         </div>
         <LinkButton href="/admin/menu/items/new">
@@ -87,18 +89,19 @@ export default function MenuAdminPage() {
 
 // ── Items ──────────────────────────────────────────────────────────────────
 function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categories: AdminCategory[]; reload: () => Promise<void> }) {
+  const nameIn = useNameIn();
   const t = useT();
   const [cat, setCat] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [archived, setArchived] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
 
-  const catName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
+  const catName = useMemo(() => new Map(categories.map((c) => [c.id, nameIn(c)])), [categories, nameIn]);
   const visible = items.filter(
     (i) =>
       (archived || !i.archived) &&
       (cat === "all" || i.categoryId === cat) &&
-      (!query.trim() || i.name.toLowerCase().includes(query.trim().toLowerCase())),
+      (!query.trim() || nameIn(i).toLowerCase().includes(query.trim().toLowerCase()) || i.name.toLowerCase().includes(query.trim().toLowerCase())),
   );
   const canReorder = cat !== "all" && !query.trim() && !archived;
 
@@ -109,7 +112,7 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
       toast.success(t("admin.menu.stockChanged", { name: item.name, state: !item.inStock ? t("admin.menu.inStock") : t("admin.menu.soldOut") }));
       await reload();
     } catch (e) {
-      toast.error(apiMessage(e, t("errors.generic")));
+      toast.error(apiMessage(e, t));
     } finally {
       setBusy(null);
     }
@@ -121,7 +124,7 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
       await api("PUT", "/api/admin/menu/order", { items: { categoryId: cat, itemIds: ids } });
       await reload();
     } catch (e) {
-      toast.error(apiMessage(e, t("errors.generic")));
+      toast.error(apiMessage(e, t));
     }
   };
 
@@ -131,7 +134,7 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
         <div className="relative min-w-56 flex-1">
           <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-fg-muted" aria-hidden />
           <input
-            className={cn(inputClass, "bg-surface pl-12 ring-1 ring-line/70")}
+            className={cn(inputClass, "bg-surface pl-12 ring-1 ring-line")}
             placeholder={t("admin.menu.search")}
             aria-label={t("admin.menu.search")}
             value={query}
@@ -148,7 +151,7 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
         </ToggleChip>
         {categories.map((c) => (
           <ToggleChip key={c.id} on={cat === c.id} onClick={() => setCat(c.id)}>
-            {c.name}
+            {nameIn(c)}
           </ToggleChip>
         ))}
       </div>
@@ -156,15 +159,15 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
       {visible.length === 0 ? (
         <EmptyState icon={UtensilsCrossed} title={t("admin.menu.empty")} />
       ) : (
-        <ul className="mt-4 overflow-hidden rounded-card bg-surface shadow-soft ring-1 ring-line/60">
+        <ul className="mt-4 overflow-hidden card">
           {visible.map((item, i) => (
-            <motion.li layout key={item.id} className={cn("flex items-center gap-3 border-b border-line/60 px-4 py-3 last:border-b-0", item.archived && "opacity-55")}>
+            <motion.li layout key={item.id} className={cn("flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0", item.archived && "opacity-55")}>
               <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
                 <Image src={item.imageUrl} alt="" fill sizes="64px" className={cn("object-cover", !item.inStock && "grayscale")} />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-2 font-semibold">
-                  <span className="truncate">{item.name}</span>
+                  <span className="truncate">{nameIn(item)}</span>
                   {item.featured && (
                     <Badge tone="secondary">
                       <Sparkles className="size-3" aria-hidden />
@@ -220,6 +223,7 @@ type Window = AdminCategory["availability"][number];
 
 function CategoriesTab({ categories, reload }: { categories: AdminCategory[]; reload: () => Promise<void> }) {
   const t = useT();
+  const nameIn = useNameIn();
   const [editing, setEditing] = useState<AdminCategory | "new" | null>(null);
 
   const move = async (index: number, delta: number) => {
@@ -227,7 +231,7 @@ function CategoriesTab({ categories, reload }: { categories: AdminCategory[]; re
       await api("PUT", "/api/admin/menu/order", { categoryIds: moved(categories, index, delta) });
       await reload();
     } catch (e) {
-      toast.error(apiMessage(e, t("errors.generic")));
+      toast.error(apiMessage(e, t));
     }
   };
 
@@ -239,9 +243,9 @@ function CategoriesTab({ categories, reload }: { categories: AdminCategory[]; re
           {t("admin.menu.category.new")}
         </Button>
       </div>
-      <ul className="mt-4 overflow-hidden rounded-card bg-surface shadow-soft ring-1 ring-line/60">
+      <ul className="mt-4 overflow-hidden card">
         {categories.map((c, i) => (
-          <motion.li layout key={c.id} className={cn("flex items-center gap-3 border-b border-line/60 px-4 py-3 last:border-b-0", !c.active && "opacity-55")}>
+          <motion.li layout key={c.id} className={cn("flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0", !c.active && "opacity-55")}>
             <div className="flex flex-col">
               <button type="button" disabled={i === 0} onClick={() => void move(i, -1)} aria-label={t("admin.menu.moveUp", { name: c.name })} className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30">
                 <ArrowUp className="size-4" aria-hidden />
@@ -252,7 +256,7 @@ function CategoriesTab({ categories, reload }: { categories: AdminCategory[]; re
             </div>
             <div className="min-w-0 flex-1">
               <p className="flex flex-wrap items-center gap-2 font-semibold">
-                {c.name}
+                {nameIn(c)}
                 {!c.active && <Badge>{t("admin.menu.hidden")}</Badge>}
               </p>
               <p className="text-sm text-fg-muted">
@@ -287,6 +291,8 @@ function CategorySheet({
   const t = useT();
   const existing = target && target !== "new" ? target : null;
   const [form, setForm] = useState(() => blankCategory(nextSort));
+  const [lang, setLang] = useState<LocaleCode>(brand.defaultLanguage);
+  const main = lang === brand.defaultLanguage;
   const [slugTouched, setSlugTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -316,7 +322,7 @@ function CategorySheet({
       await onSaved();
       onClose();
     } catch (err) {
-      setError(apiMessage(err, t("errors.generic")));
+      setError(apiMessage(err, t));
     } finally {
       setBusy(false);
     }
@@ -331,7 +337,7 @@ function CategorySheet({
       await onSaved();
       onClose();
     } catch (err) {
-      setError(apiMessage(err, t("errors.generic")));
+      setError(apiMessage(err, t));
     } finally {
       setBusy(false);
     }
@@ -340,14 +346,18 @@ function CategorySheet({
   return (
     <Sheet open={!!target} onClose={onClose} title={existing ? t("admin.menu.category.edit") : t("admin.menu.category.new")}>
       <form onSubmit={save} className="mt-5 space-y-4">
+        <EditLanguageBar value={lang} onChange={setLang} />
         <Field label={t("admin.menu.category.name")} htmlFor="cat-name">
           <input
             id="cat-name"
+            lang={lang}
             className={inputClass}
-            value={form.name}
+            value={textIn(lang, form.name, form.translations, "name")}
+            placeholder={main ? undefined : form.name}
             maxLength={60}
-            required
+            required={main}
             onChange={(e) => {
+              if (!main) return set("translations", withText(form.translations, lang, "name", e.target.value));
               set("name", e.target.value);
               if (!slugTouched) set("slug", slugify(e.target.value));
             }}
@@ -357,7 +367,17 @@ function CategorySheet({
           <input id="cat-slug" className={cn(inputClass, "font-mono text-sm")} value={form.slug} onChange={(e) => { setSlugTouched(true); set("slug", e.target.value); }} required />
         </Field>
         <Field label={t("admin.menu.category.description")} htmlFor="cat-desc">
-          <input id="cat-desc" className={inputClass} value={form.description} maxLength={200} onChange={(e) => set("description", e.target.value)} />
+          <input
+            id="cat-desc"
+            lang={lang}
+            className={inputClass}
+            value={textIn(lang, form.description ?? "", form.translations, "description")}
+            placeholder={main ? undefined : form.description}
+            maxLength={200}
+            onChange={(e) =>
+              main ? set("description", e.target.value) : set("translations", withText(form.translations, lang, "description", e.target.value))
+            }
+          />
         </Field>
         <Field label={t("admin.menu.category.station")}>
           <Segmented
@@ -428,6 +448,7 @@ function blankCategory(sortOrder: number) {
     slug: "",
     name: "",
     description: "",
+    translations: {} as Partial<Record<string, { name?: string; description?: string }>>,
     station: "kitchen" as "kitchen" | "bar",
     sortOrder,
     active: true,
@@ -438,6 +459,7 @@ function blankCategory(sortOrder: number) {
 // ── Combos ─────────────────────────────────────────────────────────────────
 function CombosTab({ combos, items, reload }: { combos: AdminCombo[]; items: AdminItem[]; reload: () => Promise<void> }) {
   const t = useT();
+  const nameIn = useNameIn();
   const [editing, setEditing] = useState<AdminCombo | "new" | null>(null);
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
 
@@ -455,22 +477,22 @@ function CombosTab({ combos, items, reload }: { combos: AdminCombo[]; items: Adm
         <ul className="mt-4 grid gap-4 sm:grid-cols-2">
           {combos.map((c) => (
             <li key={c.id}>
-              <button type="button" onClick={() => setEditing(c)} className={cn("w-full rounded-card bg-surface p-5 text-left shadow-soft ring-1 ring-line/60 transition-shadow hover:shadow-lift", !c.active && "opacity-55")}>
+              <button type="button" onClick={() => setEditing(c)} className={cn("w-full rounded-card bg-surface p-5 text-left shadow-soft ring-1 ring-line transition-shadow hover:shadow-lift", !c.active && "opacity-55")}>
                 <p className="flex items-center justify-between gap-2">
-                  <span className="font-display text-xl font-semibold">{c.name}</span>
+                  <span className="font-display text-xl font-semibold">{nameIn(c)}</span>
                   <Badge tone={c.active ? "success" : "muted"}>{t("admin.menu.combo.saves", { amount: formatPrice(c.discountCents) })}</Badge>
                 </p>
                 <div className="mt-3 flex -space-x-3">
                   {c.itemIds.map((id) => {
                     const it = byId.get(id);
                     return it ? (
-                      <span key={id} className="relative size-12 overflow-hidden rounded-full ring-2 ring-surface" title={it.name}>
+                      <span key={id} className="relative size-12 overflow-hidden rounded-full ring-2 ring-surface" title={nameIn(it)}>
                         <Image src={it.imageUrl} alt="" fill sizes="48px" className="object-cover" />
                       </span>
                     ) : null;
                   })}
                 </div>
-                <p className="mt-2 text-sm text-fg-muted">{c.itemIds.map((id) => byId.get(id)?.name).filter(Boolean).join(" + ")}</p>
+                <p className="mt-2 text-sm text-fg-muted">{c.itemIds.map((id) => byId.get(id)).filter(Boolean).map((x) => nameIn(x!)).join(" + ")}</p>
               </button>
             </li>
           ))}
@@ -493,8 +515,12 @@ function ComboSheet({
   onSaved: () => Promise<void>;
 }) {
   const t = useT();
+  const nameIn = useNameIn();
   const existing = target && target !== "new" ? target : null;
   const [name, setName] = useState("");
+  const [translations, setTranslations] = useState<Partial<Record<string, { name?: string }>>>({});
+  const [lang, setLang] = useState<LocaleCode>(brand.defaultLanguage);
+  const main = lang === brand.defaultLanguage;
   const [discount, setDiscount] = useState<number | null>(null);
   const [itemIds, setItemIds] = useState<string[]>([]);
   const [active, setActive] = useState(true);
@@ -506,6 +532,7 @@ function ComboSheet({
   if (targetKey !== key) {
     setKey(targetKey);
     setName(existing?.name ?? "");
+    setTranslations(existing?.translations ?? {});
     setDiscount(existing?.discountCents ?? null);
     setItemIds(existing?.itemIds ?? []);
     setActive(existing?.active ?? true);
@@ -522,12 +549,12 @@ function ComboSheet({
       await onSaved();
       onClose();
     } catch (err) {
-      setError(apiMessage(err, t("errors.generic")));
+      setError(apiMessage(err, t));
     } finally {
       setBusy(false);
     }
   };
-  const body = { name, discountCents: discount ?? 0, itemIds, active };
+  const body = { name, translations, discountCents: discount ?? 0, itemIds, active };
 
   return (
     <Sheet open={!!target} onClose={onClose} title={existing ? t("admin.menu.combo.edit") : t("admin.menu.combo.new")}>
@@ -541,9 +568,19 @@ function ComboSheet({
           );
         }}
       >
+        <EditLanguageBar value={lang} onChange={setLang} />
         <div className="grid grid-cols-[1fr_9rem] gap-3">
           <Field label={t("admin.menu.combo.name")} htmlFor="combo-name">
-            <input id="combo-name" className={inputClass} value={name} maxLength={60} onChange={(e) => setName(e.target.value)} required />
+            <input
+              id="combo-name"
+              lang={lang}
+              className={inputClass}
+              value={textIn(lang, name, translations, "name")}
+              placeholder={main ? undefined : name}
+              maxLength={60}
+              onChange={(e) => (main ? setName(e.target.value) : setTranslations(withText(translations, lang, "name", e.target.value)))}
+              required={main}
+            />
           </Field>
           <Field label={t("admin.menu.combo.discount")} htmlFor="combo-discount">
             <MoneyField id="combo-discount" cents={discount} onChange={setDiscount} />
@@ -557,7 +594,7 @@ function ComboSheet({
                 on={itemIds.includes(i.id)}
                 onClick={() => setItemIds((ids) => (ids.includes(i.id) ? ids.filter((x) => x !== i.id) : ids.length < 6 ? [...ids, i.id] : ids))}
               >
-                {i.name}
+                {nameIn(i)}
               </ToggleChip>
             ))}
           </div>

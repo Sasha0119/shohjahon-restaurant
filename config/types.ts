@@ -4,13 +4,7 @@
  */
 
 /** Fonts the web app knows how to load (see apps/web/src/app/fonts.ts). */
-export type FontKey =
-  | "fraunces"
-  | "inter"
-  | "dm-serif-display"
-  | "plus-jakarta-sans"
-  | "space-grotesk"
-  | "manrope";
+export type FontKey = "playfair-display" | "inter";
 
 export type ThemeMode = "light" | "dark";
 export type ThemeModeSetting = ThemeMode | "system";
@@ -57,13 +51,16 @@ export interface ThemePreset {
   dark: Palette;
 }
 
-export type ThemePresetId = "warm-bistro" | "fresh-cafe" | "modern-dark";
+export type ThemePresetId = "signature";
 
-/** A piece of brand text in one or more languages, e.g. `{ en: "Hello" }`. */
+/**
+ * A piece of brand text in every language, e.g. `{ uz: "Salom", en: "Hello", ru: "Привет" }`.
+ * English is required as the last-resort fallback.
+ */
 export type LocalizedText = Partial<Record<LocaleCode, string>> & { en: string };
 
 /** Add a code here when you add a translation file in apps/web/src/i18n. */
-export type LocaleCode = "en";
+export type LocaleCode = "uz" | "en" | "ru";
 
 export type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -76,13 +73,19 @@ export interface OpeningSlot {
 export type OpeningHours = Record<Weekday, OpeningSlot[]>;
 
 export type BrandLogo =
+  /** A letter in a thin circle, next to the name set in the display font. */
+  | { type: "wordmark"; /** The letter(s) inside the circle. Defaults to the first letter of `name`. */ monogram?: string }
   | { type: "monogram"; /** Defaults to the initials of `name`. */ text?: string }
   | { type: "image"; src: string; alt: string };
 
 export interface BrandConfig {
   name: string;
-  /** Short welcome line shown on the hero. */
+  /** One short line under the logo, e.g. "Taste of tradition, served with care". */
+  tagline: LocalizedText;
+  /** Longer welcome line (hero subtitle, link previews). */
   welcomeLine: LocalizedText;
+  /** What kind of food, e.g. "Modern Uzbek cuisine". */
+  cuisine: LocalizedText;
   logo: BrandLogo;
   heroImage: { src: string; alt: string };
   theme: {
@@ -97,8 +100,13 @@ export interface BrandConfig {
   currency: {
     /** ISO 4217 code, e.g. "USD", "EUR", "GBP". */
     code: string;
-    /** BCP 47 locale used for number formatting, e.g. "en-US". */
+    /** BCP 47 locale used for number formatting when no UI language applies (e.g. CSV, emails). */
     locale: string;
+    /**
+     * Optional currency word per language, written after the amount: "85 000 soʻm".
+     * Leave out to use the standard symbol for the currency ("$12.50", "12,50 €").
+     */
+    symbol?: LocalizedText;
   };
   /** Percent, e.g. 8.875 for 8.875 %. Applied to the subtotal after discounts. */
   taxPercent: number;
@@ -116,7 +124,7 @@ export interface BrandConfig {
     hidden?: boolean;
   };
   /** External review pages shown after a 4–5 star rating. */
-  reviewLinks: { label: string; url: string }[];
+  reviewLinks: { label: LocalizedText; url: string }[];
   openingHours: OpeningHours;
   /**
    * IANA time zone of the restaurant, e.g. "America/New_York", "Europe/Berlin".
