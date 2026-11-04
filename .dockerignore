@@ -4,14 +4,15 @@
 **/.env
 **/.env.*
 !**/.env.example
-**/uploads
+apps/api/uploads
+# Tests are not needed in the images (and their tools are not installed there).
+apps/*/test
+config/test
+packages/*/test
+e2e
 **/coverage
 **/*.tsbuildinfo
 apps/api/src/generated
-e2e/.auth
-e2e/.results
-e2e/.report
-e2e/.uploads
 .git
 .github
 docs
