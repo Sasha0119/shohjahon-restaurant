@@ -369,5 +369,38 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
       const elsewhere = await request(app).post("/api/admin/categories").set("Origin", ORIGIN).set("Cookie", manager).attach("image", png, "x.png");
       expect(elsewhere.body.error.code).toBe("FORBIDDEN_ORIGIN");
     });
+
+    it("IMAGE_STORE=database keeps photos in Postgres, not on disk", async () => {
+      const env = parseEnv({
+        DATABASE_URL: t.url,
+        CORS_ORIGINS: ORIGIN,
+        PUBLIC_WEB_URL: ORIGIN,
+        QR_TOKEN_SECRET: "q".repeat(40),
+        COOKIE_SECRET: "c".repeat(40),
+        UPLOAD_DIR: uploadDir,
+        IMAGE_STORE: "database",
+      });
+      const dbApp = createApp({ db, env, logger: pino({ level: "silent" }), realtime, disableRateLimits: true }).app;
+      const before = (await readdir(uploadDir)).length;
+      const png = await sharp({ create: { width: 400, height: 300, channels: 3, background: "#1a6" } }).png().toBuffer();
+      const res = await request(dbApp).post("/api/admin/uploads/images").set("Origin", ORIGIN).set("Cookie", manager).attach("image", png, "db.png");
+      expect(res.status).toBe(201);
+      expect(res.body.url).toMatch(/^\/uploads\/[0-9a-f]{32}\.webp$/);
+      expect((await readdir(uploadDir)).length).toBe(before);
+      expect(await db.storedImage.count()).toBe(1);
+
+      const served = await request(dbApp).get(res.body.url).buffer(true).parse((r, cb) => {
+        const chunks: Buffer[] = [];
+        r.on("data", (c: Buffer) => chunks.push(c));
+        r.on("end", () => cb(null, Buffer.concat(chunks)));
+      });
+      expect(served.status).toBe(200);
+      expect(served.headers["content-type"]).toBe("image/webp");
+      expect(served.headers["cache-control"]).toContain("immutable");
+      expect((await sharp(served.body as Buffer).metadata()).width).toBe(400);
+
+      expect((await request(dbApp).get("/uploads/" + "0".repeat(32) + ".webp")).status).toBe(404);
+      expect((await request(dbApp).get("/uploads/..%2Fsecret")).status).toBe(404);
+    });
   });
 });

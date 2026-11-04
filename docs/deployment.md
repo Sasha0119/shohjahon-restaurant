@@ -167,8 +167,8 @@ the database lives on Neon. Everything is in `render.yaml`.
 2. **Render** (render.com, sign in with GitHub): **New → Blueprint**, pick this
    repository, then fill in:
    - `DATABASE_URL`: the Neon string.
-   The manager sign-in (`SEED_MANAGER_EMAIL` / `SEED_MANAGER_PASSWORD`) is set
-   in `render.yaml`; change the password in Admin → Staff after signing in.
+   - `SEED_MANAGER_EMAIL` / `SEED_MANAGER_PASSWORD`: the first manager sign-in
+     (password ≥ 8 characters). Keep them out of `render.yaml`, which is public.
 3. Click **Apply**. The first build takes about 10 minutes. On the API's first
    start, `SEED_IF_EMPTY=true` loads the menu, tables and manager into the empty
    database; later restarts skip it, so menu edits are never overwritten.
@@ -182,9 +182,10 @@ Every push to `main` redeploys automatically.
 **Free-plan limits:**
 - Services sleep after 15 minutes without visitors; the next visit waits about
   a minute while they wake up. Fine for a demo; use a paid plan for a real
-  restaurant.
-- The disk is wiped on every restart and deploy: **photos uploaded in the admin
-  are lost**. The demo menu photos are links and are not affected.
+  restaurant. A free uptime pinger hitting `/api/health` every 10 minutes keeps
+  them awake (one service fits in the free 750 hours/month; two don't).
+- The free disk is wiped on every restart, so `IMAGE_STORE=database` keeps menu
+  photos in Neon. Photos uploaded before this change are gone; upload them again.
 - Live updates use Socket.io long-polling through the website (a little slower
   than WebSockets, but they work).
 - Print table QR codes only once the final URL is settled: they encode it.

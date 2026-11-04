@@ -40,13 +40,17 @@ services:
         value: mock
       - key: SEED_IF_EMPTY
         value: "true"
+      # The first manager sign-in. Entered in the Render dashboard, never in this
+      # public file. Only used when the database is empty (first start).
       - key: SEED_MANAGER_EMAIL
-        value: sasha@gmail.com
-      # Public repo: change this password in Admin → Staff after the first sign-in.
+        sync: false
       - key: SEED_MANAGER_PASSWORD
-        value: sasha0119
+        sync: false
       - key: SEED_DEMO_STAFF
         value: "false"
+      # Render's free disk is wiped on every restart, so keep menu photos in Neon.
+      - key: IMAGE_STORE
+        value: database
 
   - type: web
     name: shohjahon-restaurant-web

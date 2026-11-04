@@ -55,6 +55,8 @@ const schema = z
 
     /** Folder for uploaded menu photos (served at /uploads). Use a persistent volume in production. */
     UPLOAD_DIR: z.string().min(1).default("uploads"),
+    /** "database" keeps photos in Postgres instead (for hosts whose disk is wiped on restart). */
+    IMAGE_STORE: z.enum(["local", "database"]).default("local"),
     MAX_UPLOAD_MB: z.coerce.number().int().min(1).max(20).default(5),
 
     PAYMENT_PROVIDER: z.enum(["mock", "stripe"]).default("mock"),

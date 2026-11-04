@@ -2,16 +2,22 @@ import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import type { Db } from "../db.ts";
 import { ApiError } from "../http/errors.ts";
 
 /**
- * Where uploaded menu photos go. Local disk now; an S3-style store can
- * implement the same interface later without touching the routes.
+ * Where uploaded menu photos go: local disk (served by express.static) or the
+ * database (served by `load`). Both give the same "/uploads/<name>.webp" URLs.
  */
 export interface ImageStore {
   /** Returns the public path, e.g. "/uploads/3f9a….webp". */
   save(file: Buffer): Promise<{ url: string; width: number; height: number; bytes: number }>;
+  /** Stores that aren't plain files on disk serve photos through this. */
+  load?(name: string): Promise<Buffer | null>;
 }
+
+/** Names we hand out: 32 hex chars + ".webp". Anything else is never looked up. */
+export const IMAGE_NAME = /^[0-9a-f]{32}\.webp$/;
 
 export const IMAGE_LIMITS = {
   maxEdge: 1600,
@@ -56,6 +62,23 @@ export function createLocalImageStore(dir: string): ImageStore {
       const name = `${randomBytes(16).toString("hex")}.webp`;
       await writeFile(path.join(root, name), data, { flag: "wx" });
       return { url: `/uploads/${name}`, width, height, bytes: data.length };
+    },
+  };
+}
+
+/** Photos in Postgres: survive restarts on hosts with a throwaway disk. */
+export function createDatabaseImageStore(db: Db): ImageStore {
+  return {
+    async save(file) {
+      const { data, width, height } = await processImage(file);
+      const name = `${randomBytes(16).toString("hex")}.webp`;
+      await db.storedImage.create({ data: { name, data: new Uint8Array(data), width, height, bytes: data.length } });
+      return { url: `/uploads/${name}`, width, height, bytes: data.length };
+    },
+    async load(name) {
+      if (!IMAGE_NAME.test(name)) return null;
+      const row = await db.storedImage.findUnique({ where: { name }, select: { data: true } });
+      return row ? Buffer.from(row.data) : null;
     },
   };
 }

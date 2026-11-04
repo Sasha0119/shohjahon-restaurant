@@ -21,7 +21,7 @@ import { createMockProvider, mockWebhookSecret, type PaymentProvider } from "./b
 import { registerBillingRoutes } from "./billing/routes.ts";
 import { registerReviewRoutes } from "./reviews/routes.ts";
 import { registerReportRoutes } from "./reports/routes.ts";
-import { createLocalImageStore, type ImageStore } from "./uploads/image-store.ts";
+import { createDatabaseImageStore, createLocalImageStore, type ImageStore } from "./uploads/image-store.ts";
 import { registerUploadRoutes } from "./uploads/routes.ts";
 
 export interface AppDeps {
@@ -29,7 +29,7 @@ export interface AppDeps {
   env: Env;
   logger: Logger;
   realtime: Realtime;
-  /** Defaults to local disk at UPLOAD_DIR. */
+  /** Defaults to IMAGE_STORE: local disk at UPLOAD_DIR, or the database. */
   imageStore?: ImageStore;
   /** Defaults to the provider selected by PAYMENT_PROVIDER. */
   paymentProvider?: PaymentProvider;
@@ -84,13 +84,11 @@ export function createApp({ db, env, logger, realtime, imageStore, paymentProvid
 
   const { router, on, mounted } = createRegistrar({ limiters, loadStaff, requireGuest, requireGuestIncludingClosed });
 
+  // A free Neon database sleeps when idle and takes a few seconds to wake, so
+  // retry briefly before reporting it unreachable (no false "unhealthy" alerts).
   on("GET", "/api/health", async (_req, res) => {
-    try {
-      await db.$queryRaw`SELECT 1`;
-      res.json({ status: "ok", db: "ok", time: new Date().toISOString() });
-    } catch {
-      res.status(503).json({ status: "degraded", db: "unreachable" });
-    }
+    if (await dbReachable(db)) res.json({ status: "ok", db: "ok", time: new Date().toISOString() });
+    else res.status(503).json({ status: "degraded", db: "unreachable" });
   });
 
   registerAuthRoutes(on, db, env);
@@ -102,18 +100,45 @@ export function createApp({ db, env, logger, realtime, imageStore, paymentProvid
   registerReviewRoutes(on, db, realtime);
   registerReportRoutes(on, db);
   registerBillingRoutes(on, db, realtime, provider, mailer === undefined ? createSmtpMailer(env.SMTP_URL, env.EMAIL_FROM) : mailer);
-  registerUploadRoutes(on, db, imageStore ?? createLocalImageStore(env.UPLOAD_DIR), env.MAX_UPLOAD_MB);
+  const store =
+    imageStore ?? (env.IMAGE_STORE === "database" ? createDatabaseImageStore(db) : createLocalImageStore(env.UPLOAD_DIR));
+  registerUploadRoutes(on, db, store, env.MAX_UPLOAD_MB);
 
   // Uploaded photos: random file names, never overwritten → cache forever.
   app.use(
     "/uploads",
     express.static(env.UPLOAD_DIR, { index: false, dotfiles: "deny", immutable: true, maxAge: "365d", fallthrough: true }),
   );
+  if (store.load) {
+    const load = store.load.bind(store);
+    app.get("/uploads/:name", async (req, res, next) => {
+      try {
+        const data = await load(req.params.name);
+        if (!data) return next();
+        res.set({ "Content-Type": "image/webp", "Cache-Control": "public, max-age=31536000, immutable" }).send(data);
+      } catch (e) {
+        next(e);
+      }
+    });
+  }
   app.use("/api", router);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
   return { app, mounted };
+}
+
+/** Up to ~10 s of retries, enough for a sleeping Neon database to wake. */
+async function dbReachable(db: Db, attempts = 4): Promise<boolean> {
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      await db.$queryRaw`SELECT 1`;
+      return true;
+    } catch {
+      if (i < attempts) await new Promise((r) => setTimeout(r, 1000 * i));
+    }
+  }
+  return false;
 }
 
 /** The payment provider chosen in .env. */

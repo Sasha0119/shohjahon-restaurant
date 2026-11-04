@@ -682,3 +682,17 @@ model AuditLog {
   @@index([action, createdAt])
   @@map("audit_logs")
 }
+
+/// Uploaded menu photos kept in the database (IMAGE_STORE=database), for hosts
+/// whose disk is wiped on restart, such as Render's free plan.
+model StoredImage {
+  /// The file name in the public URL, e.g. "3f9a….webp".
+  name      String   @id
+  data      Bytes
+  width     Int
+  height    Int
+  bytes     Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("stored_images")
+}
