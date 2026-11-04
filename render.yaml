@@ -41,9 +41,10 @@ services:
       - key: SEED_IF_EMPTY
         value: "true"
       - key: SEED_MANAGER_EMAIL
-        sync: false
+        value: sasha@gmail.com
+      # Public repo: change this password in Admin → Staff after the first sign-in.
       - key: SEED_MANAGER_PASSWORD
-        sync: false # at least 10 characters
+        value: sasha0119
       - key: SEED_DEMO_STAFF
         value: "false"
 

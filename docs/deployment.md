@@ -35,7 +35,7 @@ Edit `.env` and fill in **every** value:
 | `POSTGRES_PASSWORD` | `openssl rand -hex 32` |
 | `QR_TOKEN_SECRET` | `openssl rand -hex 32` |
 | `COOKIE_SECRET` | `openssl rand -hex 32` (different from the one above) |
-| `SEED_MANAGER_EMAIL` / `SEED_MANAGER_PASSWORD` | the first manager login (password ≥ 10 characters) |
+| `SEED_MANAGER_EMAIL` / `SEED_MANAGER_PASSWORD` | the first manager login (password ≥ 8 characters) |
 
 The API refuses to start in production if a secret is missing, too short, still the
 example value, or if `COOKIE_SECURE`/`https` aren't set. The error lists every problem at once.
@@ -167,8 +167,8 @@ the database lives on Neon. Everything is in `render.yaml`.
 2. **Render** (render.com, sign in with GitHub): **New → Blueprint**, pick this
    repository, then fill in:
    - `DATABASE_URL`: the Neon string.
-   - `SEED_MANAGER_EMAIL` / `SEED_MANAGER_PASSWORD`: your manager sign-in
-     (password at least 10 characters).
+   The manager sign-in (`SEED_MANAGER_EMAIL` / `SEED_MANAGER_PASSWORD`) is set
+   in `render.yaml`; change the password in Admin → Staff after signing in.
 3. Click **Apply**. The first build takes about 10 minutes. On the API's first
    start, `SEED_IF_EMPTY=true` loads the menu, tables and manager into the empty
    database; later restarts skip it, so menu edits are never overwritten.

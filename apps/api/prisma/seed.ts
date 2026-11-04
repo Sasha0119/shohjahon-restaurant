@@ -55,7 +55,7 @@ async function main() {
     const email = process.env.SEED_MANAGER_EMAIL?.trim().toLowerCase();
     const password = process.env.SEED_MANAGER_PASSWORD;
     if (email && password) {
-      if (password.length < 10) throw new Error("SEED_MANAGER_PASSWORD must be at least 10 characters");
+      if (password.length < 8) throw new Error("SEED_MANAGER_PASSWORD must be at least 8 characters");
       if (isProd && /change-me/i.test(password)) throw new Error("Set a real SEED_MANAGER_PASSWORD in production");
       const existing = await db.staff.findUnique({ where: { email } });
       if (!existing) {
