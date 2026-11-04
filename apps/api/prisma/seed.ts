@@ -36,6 +36,13 @@ async function main() {
       );
     }
 
+    // `--if-empty` (used by hosts without a shell, e.g. Render): seed a fresh
+    // database only, so restarts never overwrite the manager's menu edits.
+    if (process.argv.includes("--if-empty") && (await db.category.count()) > 0) {
+      console.log("• Database already has a menu: seed skipped");
+      return;
+    }
+
     // ── Menu ────────────────────────────────────────────────────────────────
     await writeMenu(db, plan);
 

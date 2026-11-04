@@ -1,0 +1,63 @@
+# Render Blueprint: the website + the API, on Render's free plan.
+# The database lives on Neon (free); paste its connection string when asked.
+# Guide: docs/deployment.md → "Free hosting: Render + Neon".
+#
+# The two URLs below assume Render gives the services exactly these names.
+# If Render adds a suffix (e.g. shohjahon-api-x1y2.onrender.com), change
+# API_INTERNAL_URL, CORS_ORIGINS and PUBLIC_WEB_URL to the real URLs.
+
+services:
+  - type: web
+    name: shohjahon-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerContext: .
+    dockerfilePath: apps/api/Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: API_PORT
+        value: "4000"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: CORS_ORIGINS
+        value: https://shohjahon.onrender.com
+      - key: PUBLIC_WEB_URL
+        value: https://shohjahon.onrender.com
+      - key: DATABASE_URL
+        sync: false # Neon connection string (the direct one, not "pooled")
+      - key: QR_TOKEN_SECRET
+        generateValue: true
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: PAYMENT_PROVIDER
+        value: mock
+      - key: SEED_IF_EMPTY
+        value: "true"
+      - key: SEED_MANAGER_EMAIL
+        sync: false
+      - key: SEED_MANAGER_PASSWORD
+        sync: false # at least 10 characters
+      - key: SEED_DEMO_STAFF
+        value: "false"
+
+  - type: web
+    name: shohjahon
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerContext: .
+    dockerfilePath: apps/web/Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: "3000"
+      # Baked in at build time (Render passes env vars to the Docker build).
+      - key: API_INTERNAL_URL
+        value: https://shohjahon-api.onrender.com

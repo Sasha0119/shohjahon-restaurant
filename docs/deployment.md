@@ -156,3 +156,35 @@ both processes under a supervisor such as systemd or pm2.
 - [ ] Tax %, service %, currency, opening hours and Wi-Fi details in `config/brand.ts` are correct.
 - [ ] A nightly backup runs **and has been restored once** as a test.
 - [ ] `docker compose logs api` shows no errors after the test order.
+
+## 10. Free hosting: Render + Neon
+
+No server to manage: Render builds both Docker images straight from GitHub, and
+the database lives on Neon. Everything is in `render.yaml`.
+
+1. **Neon** (neon.tech, sign in with GitHub): create a project, then copy the
+   connection string with **connection pooling turned off** (the direct one).
+2. **Render** (render.com, sign in with GitHub): **New → Blueprint**, pick this
+   repository, then fill in:
+   - `DATABASE_URL`: the Neon string.
+   - `SEED_MANAGER_EMAIL` / `SEED_MANAGER_PASSWORD`: your manager sign-in
+     (password at least 10 characters).
+3. Click **Apply**. The first build takes about 10 minutes. On the API's first
+   start, `SEED_IF_EMPTY=true` loads the menu, tables and manager into the empty
+   database; later restarts skip it, so menu edits are never overwritten.
+4. Open `https://shohjahon.onrender.com`. If Render gave a service a different
+   URL (a suffix is added when a name is taken), set `API_INTERNAL_URL` on the
+   web service and `CORS_ORIGINS` + `PUBLIC_WEB_URL` on the API to the real URLs,
+   then redeploy both.
+
+Every push to `main` redeploys automatically.
+
+**Free-plan limits:**
+- Services sleep after 15 minutes without visitors; the next visit waits about
+  a minute while they wake up. Fine for a demo; use a paid plan for a real
+  restaurant.
+- The disk is wiped on every restart and deploy: **photos uploaded in the admin
+  are lost**. The demo menu photos are links and are not affected.
+- Live updates use Socket.io long-polling through the website (a little slower
+  than WebSockets, but they work).
+- Print table QR codes only once the final URL is settled: they encode it.
