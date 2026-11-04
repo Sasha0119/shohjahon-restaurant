@@ -13,7 +13,7 @@ playwright-report
 test-results
 .DS_Store
 apps/api/src/generated
-uploads/
+apps/api/uploads/
 
 # Playwright end-to-end runs
 e2e/.auth/
