@@ -3,12 +3,12 @@
 # Guide: docs/deployment.md → "Free hosting: Render + Neon".
 #
 # The two URLs below assume Render gives the services exactly these names.
-# If Render adds a suffix (e.g. shohjahon-api-x1y2.onrender.com), change
+# If Render adds a suffix (e.g. shohjahon-restaurant-api-x1y2.onrender.com), change
 # API_INTERNAL_URL, CORS_ORIGINS and PUBLIC_WEB_URL to the real URLs.
 
 services:
   - type: web
-    name: shohjahon-api
+    name: shohjahon-restaurant-api
     runtime: docker
     plan: free
     region: frankfurt
@@ -27,9 +27,9 @@ services:
       - key: COOKIE_SECURE
         value: "true"
       - key: CORS_ORIGINS
-        value: https://shohjahon.onrender.com
+        value: https://shohjahon-restaurant-web.onrender.com
       - key: PUBLIC_WEB_URL
-        value: https://shohjahon.onrender.com
+        value: https://shohjahon-restaurant-web.onrender.com
       - key: DATABASE_URL
         sync: false # Neon connection string (the direct one, not "pooled")
       - key: QR_TOKEN_SECRET
@@ -49,7 +49,7 @@ services:
         value: "false"
 
   - type: web
-    name: shohjahon
+    name: shohjahon-restaurant-web
     runtime: docker
     plan: free
     region: frankfurt
@@ -61,4 +61,4 @@ services:
         value: "3000"
       # Baked in at build time (Render passes env vars to the Docker build).
       - key: API_INTERNAL_URL
-        value: https://shohjahon-api.onrender.com
+        value: https://shohjahon-restaurant-api.onrender.com
