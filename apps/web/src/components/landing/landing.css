@@ -243,14 +243,24 @@ body:has(.sj)::before {
 }
 
 /* ── Menu button and overlay ────────────────────────────────────────────── */
-.sj-header {
-  padding-right: calc(var(--sj-margin) + 7.5rem); /* room for the fixed Menu button */
-}
-.sj-menu-button {
+.sj-top-actions {
   position: fixed;
   z-index: var(--sj-z-menu);
   top: max(env(safe-area-inset-top), var(--sj-space-3));
   right: var(--sj-margin);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sj-space-2);
+}
+/* Solid like the Menu button, so it stays readable over photos and the ivory section. */
+.sj-lang > div > button {
+  border: var(--sj-rule) solid var(--sj-line-gold);
+  border-radius: 0;
+  background: var(--sj-ink);
+  color: var(--sj-ivory);
+  box-shadow: none;
+}
+.sj-menu-button {
   display: inline-flex;
   align-items: center;
   gap: var(--sj-space-2);
@@ -263,9 +273,6 @@ body:has(.sj)::before {
   font-size: var(--sj-type-label);
   letter-spacing: var(--sj-tracking-label);
   text-transform: uppercase;
-}
-.sj-menu-button--static {
-  position: static;
 }
 .sj-menu-lines {
   width: 1.1rem;
@@ -705,12 +712,6 @@ html[data-sj-motion] .sj-mask:not(.is-in) > * {
 .sj-footer-cta {
   gap: var(--sj-space-3);
 }
-.sj-footer-staff {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  color: var(--sj-smoke);
-}
 .sj-footer-word {
   margin: var(--sj-space-6) 0 0;
   padding-bottom: 0.18em;
@@ -719,6 +720,12 @@ html[data-sj-motion] .sj-mask:not(.is-in) > * {
   letter-spacing: var(--sj-tracking-display);
   line-height: 1.1;
   white-space: nowrap;
+}
+.sj-footer-legal {
+  margin: var(--sj-space-3) 0 0;
+  padding-top: var(--sj-space-3);
+  border-top: var(--sj-rule) solid var(--sj-line);
+  color: var(--sj-smoke);
 }
 @media (min-width: 48rem) {
   .sj-footer-grid {
@@ -734,6 +741,7 @@ html[data-sj-motion] .sj-mask:not(.is-in) > * {
   .sj-footer-cta {
     grid-column: 10 / -1;
     align-items: flex-end;
+    align-self: end; /* keeps it clear of the fixed Language and Menu buttons */
   }
 }
 

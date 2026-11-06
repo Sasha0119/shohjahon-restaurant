@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RESERVATION_MAX_PARTY } from "../reservations";
+import { RESERVATION_MAX_PARTY, isValidPhone } from "../reservations";
 import { ALLERGENS, DIETARY_TAGS } from "../types";
 
 /**
@@ -69,15 +69,7 @@ export const createReservationBody = z.object({
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   partySize: z.number().int().min(1).max(RESERVATION_MAX_PARTY),
   name: z.string().trim().min(2).max(60),
-  phone: z
-    .string()
-    .trim()
-    .max(24)
-    .regex(/^[+\d\s()-]+$/)
-    .refine((p) => {
-      const digits = p.replace(/\D/g, "").length;
-      return digits >= 7 && digits <= 15;
-    }),
+  phone: z.string().trim().refine(isValidPhone),
 });
 
 export const updateGuestBody = z.object({ nickname: zNickname });

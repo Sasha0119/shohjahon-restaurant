@@ -1,7 +1,7 @@
 "use client";
 
 import { brand } from "@app/config";
-import { RESERVATION_MIN_NOTICE_MINUTES, bookableTimes, reservationDateRange, reservationInstant } from "@app/shared";
+import { RESERVATION_MIN_NOTICE_MINUTES, bookableTimes, isValidPhone, reservationDateRange, reservationInstant } from "@app/shared";
 import { CalendarCheck, Loader2 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { LanguageSwitcher } from "@/components/brand/language-switcher";
@@ -12,7 +12,8 @@ import { CurtainLink } from "@/components/ui/page-curtain";
 import { useMounted } from "@/hooks/use-mounted";
 import { useT } from "@/i18n";
 import { translateError } from "@/i18n/errors";
-import { api } from "@/lib/api";
+import { ApiClientError, api } from "@/lib/api";
+import { cn } from "@/lib/cn";
 import { reservationDay, reservationTimeOf } from "@/lib/format";
 
 interface Booked {
@@ -67,6 +68,8 @@ function Form({ onBooked }: { onBooked: (b: Booked) => void }) {
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState(false);
+  const [phoneError, setPhoneError] = useState(false);
 
   const times = useMemo(() => {
     if (date < range.min || date > range.max) return [];
@@ -80,20 +83,28 @@ function Form({ onBooked }: { onBooked: (b: Booked) => void }) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!chosen) return;
-    setBusy(true);
     setError(null);
+    // Say exactly what to fix, in the guest's language, before sending anything.
+    const badName = name.trim().length < 2;
+    const badPhone = !isValidPhone(phone);
+    setNameError(badName);
+    setPhoneError(badPhone);
+    if (badName || badPhone) return;
+    setBusy(true);
     try {
       const res = await api<{ reservation: Booked }>("POST", "/api/reservations", { date, time: chosen, partySize, name, phone });
       onBooked(res.reservation);
     } catch (err) {
-      setError(translateError(err, t));
+      // The API or database is down: nothing the guest typed is wrong, so give them another way to book.
+      const down = err instanceof ApiClientError && err.status >= 500;
+      setError(down ? t("reserve.unavailable", { phone: brand.contact?.phone ?? "" }) : translateError(err, t));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <form onSubmit={(e) => void submit(e)} className="space-y-4">
+    <form noValidate onSubmit={(e) => void submit(e)} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-sm font-semibold">
           {t("reserve.date")}
@@ -123,7 +134,24 @@ function Form({ onBooked }: { onBooked: (b: Booked) => void }) {
       </label>
       <label className="block text-sm font-semibold">
         {t("reserve.name")}
-        <input required minLength={2} maxLength={60} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className={field} />
+        <input
+          required
+          maxLength={60}
+          autoComplete="name"
+          aria-invalid={nameError}
+          aria-describedby={nameError ? "reserve-name-error" : undefined}
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            setNameError(false);
+          }}
+          className={cn(field, nameError && "ring-2 ring-danger")}
+        />
+        {nameError && (
+          <span id="reserve-name-error" role="alert" className="mt-1.5 block font-normal text-danger">
+            {t("reserve.nameError")}
+          </span>
+        )}
       </label>
       <label className="block text-sm font-semibold">
         {t("reserve.phone")}
@@ -133,10 +161,21 @@ function Form({ onBooked }: { onBooked: (b: Booked) => void }) {
           autoComplete="tel"
           inputMode="tel"
           maxLength={24}
+          placeholder="+998 90 123 45 67"
+          aria-invalid={phoneError}
+          aria-describedby={phoneError ? "reserve-phone-error" : undefined}
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className={field}
+          onChange={(e) => {
+            setPhone(e.target.value);
+            setPhoneError(false);
+          }}
+          className={cn(field, phoneError && "ring-2 ring-danger")}
         />
+        {phoneError && (
+          <span id="reserve-phone-error" role="alert" className="mt-1.5 block font-normal text-danger">
+            {t("reserve.phoneError")}
+          </span>
+        )}
       </label>
       {error && (
         <p role="alert" className="text-sm font-semibold text-danger">

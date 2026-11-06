@@ -345,6 +345,9 @@ export const en = {
     splitModes: { full: "Full bill", even: "Split evenly", items: "By item", custom: "Custom amount" },
   },
   reserve: {
+    nameError: "Please enter your name, at least 2 letters.",
+    phoneError: "Please enter a full phone number, for example +998 90 123 45 67.",
+    unavailable: "We can't take bookings online right now. Please try again shortly, or call us: {phone}",
     cta: "Reserve a table",
     title: "Reserve a table",
     subtitle: "Choose a day and time and we'll keep a table for you.",
@@ -369,6 +372,7 @@ export const en = {
     cancelled: "Reservation cancelled",
   },
   landing: {
+    rights: "All rights reserved.",
     statement: "A qozon does not hurry. Rice, carrot and lamb take their time over the fire, and so should you.",
     statementEnd: "Sit down. Your table is ready.",
     galleryLabel: "Signature dishes",
@@ -392,7 +396,6 @@ export const en = {
     playVideo: "Play video",
     title: "Scan the QR code on your table",
     body: "Point your phone camera at the code on your table to see the menu and order.",
-    staff: "Staff sign in",
   },
   staff: {
     title: "Staff sign in",

@@ -116,9 +116,13 @@ export function Landing() {
 
       <header className="sj-header">
         <span className="sj-wordmark-small">{brand.name}</span>
-        <LanguageSwitcher onImage />
       </header>
-      <MenuOverlay />
+      <div className="sj-top-actions">
+        <div className="sj-lang">
+          <LanguageSwitcher onImage />
+        </div>
+        <MenuOverlay />
+      </div>
 
       <section className="sj-hero" aria-labelledby="sj-hero-title">
         <div className="sj-hero-parallax" data-parallax="media">

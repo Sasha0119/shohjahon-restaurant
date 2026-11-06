@@ -344,6 +344,9 @@ export const uz: Messages = {
     splitModes: { full: "Toʻliq hisob", even: "Teng boʻlingan", items: "Taomlar boʻyicha", custom: "Oʻz summasi" },
   },
   reserve: {
+    nameError: "Ismingizni kiriting, kamida 2 ta harf.",
+    phoneError: "Telefon raqamini toʻliq kiriting, masalan +998 90 123 45 67.",
+    unavailable: "Hozir onlayn band qilib boʻlmayapti. Birozdan soʻng urinib koʻring yoki bizga qoʻngʻiroq qiling: {phone}",
     cta: "Stol band qilish",
     title: "Stol band qilish",
     subtitle: "Kun va vaqtni tanlang, stolni siz uchun saqlab qoʻyamiz.",
@@ -368,6 +371,7 @@ export const uz: Messages = {
     cancelled: "Bandlov bekor qilindi",
   },
   landing: {
+    rights: "Barcha huquqlar himoyalangan.",
     statement: "Qozon shoshilmaydi. Guruch, sabzi va goʻsht olov ustida oʻz vaqtini kutadi, siz ham shoshilmang.",
     statementEnd: "Oʻtiring. Stolingiz tayyor.",
     galleryLabel: "Tanlangan taomlar",
@@ -391,7 +395,6 @@ export const uz: Messages = {
     playVideo: "Videoni qoʻyish",
     title: "Stolingizdagi QR kodni skanerlang",
     body: "Menyuni koʻrish va buyurtma berish uchun telefon kamerasini stoldagi kodga qarating.",
-    staff: "Xodimlar uchun kirish",
   },
   staff: {
     title: "Xodimlar uchun kirish",

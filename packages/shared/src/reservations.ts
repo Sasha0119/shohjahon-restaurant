@@ -46,6 +46,12 @@ export function reservationDateRange(now: Date, timeZone: string): { min: string
   return { min, max: addDays(min, RESERVATION_MAX_DAYS_AHEAD) };
 }
 
+/** A phone number we can actually call: only phone characters, 7 to 15 digits. */
+export function isValidPhone(phone: string): boolean {
+  const digits = phone.replace(/\D/g, "").length;
+  return /^[+\d\s()-]+$/.test(phone.trim()) && phone.trim().length <= 24 && digits >= 7 && digits <= 15;
+}
+
 /** Keeps "+" and digits, so the same number typed two ways counts as one. */
 export function normalizePhone(phone: string): string {
   return phone.replace(/[^\d+]/g, "");

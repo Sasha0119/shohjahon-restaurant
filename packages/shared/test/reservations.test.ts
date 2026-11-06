@@ -1,6 +1,6 @@
 import type { OpeningHours } from "@app/config";
 import { describe, expect, it } from "vitest";
-import { bookableTimes, normalizePhone, reservationDateRange, reservationInstant } from "../src/reservations";
+import { bookableTimes, isValidPhone, normalizePhone, reservationDateRange, reservationInstant } from "../src/reservations";
 
 // 2026-11-09 is a Monday, 2026-11-13 a Friday, 2026-11-15 a Sunday.
 const hours = {
@@ -37,6 +37,15 @@ describe("reservationDateRange", () => {
       min: "2026-11-10",
       max: "2026-12-10",
     });
+  });
+});
+
+describe("isValidPhone", () => {
+  it.each(["+998 90 123 45 67", "+998901234567", "(71) 200-00-00", "1234567"])("accepts %s", (phone) => {
+    expect(isValidPhone(phone)).toBe(true);
+  });
+  it.each(["", "123", "abc", "+998 90 abc 45 67", "1234567890123456"])("refuses %j", (phone) => {
+    expect(isValidPhone(phone)).toBe(false);
   });
 });
 

@@ -222,13 +222,13 @@ export function Footer() {
             {t("landing.orderAtTable")}
             <ArrowUpRight className="size-4" aria-hidden />
           </CurtainLink>
-          <CurtainLink href="/staff" className="sj-label sj-footer-staff">
-            {t("landing.staff")}
-          </CurtainLink>
         </div>
       </div>
       <p className="sj-footer-word" aria-hidden>
         {brand.name}
+      </p>
+      <p className="sj-label sj-footer-legal" suppressHydrationWarning>
+        © {new Date().getFullYear()} {brand.name}. {t("landing.rights")}
       </p>
     </footer>
   );

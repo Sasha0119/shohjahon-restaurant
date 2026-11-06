@@ -130,7 +130,6 @@ export function MenuOverlay() {
         <div className="sj-overlay-foot sj-label">
           {brand.contact.phone && <a href={`tel:${brand.contact.phone.replace(/\s/g, "")}`}>{brand.contact.phone}</a>}
           <span>{brand.contact.address}</span>
-          <CurtainLink href="/staff">{t("landing.staff")}</CurtainLink>
         </div>
       </div>
     </>
