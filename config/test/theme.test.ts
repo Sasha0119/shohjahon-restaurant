@@ -62,7 +62,7 @@ describe("resolveTheme / buildThemeCss", () => {
       expect(css).toContain(v);
     }
     expect(css).toContain(':root[data-theme="dark"]');
-    expect(css).toContain("var(--ff-playfair-display)");
+    expect(css).toContain("var(--ff-piazzolla)");
   });
 
   it("throws on an unknown preset", () => {
