@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Design system — "Signature" (dark first: charcoal, warm gold, ivory).
+ * Design system: near-black, warm ivory, one gold accent (docs/art-direction.md).
  * Raw colour/font values come from config/themes.ts → injected as CSS variables
  * (--primary-color, --bg-color, --font-family …) in app/layout.tsx.
  * Here they are mapped to Tailwind tokens, so components never hard-code colours.
@@ -29,17 +29,24 @@
 
   --font-sans: var(--font-family);
   --font-display: var(--font-display-family);
+  --font-label: var(--ff-ibm-plex-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
 
-  --radius-card: var(--radius);
-  --radius-sheet: calc(var(--radius) + 0.5rem);
+  /* Near-square corners everywhere, like the landing page. Circles (rounded-full) stay circles. */
+  --radius-card: 0.25rem;
+  --radius-sheet: 0.375rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.25rem;
+  --radius-2xl: 0.25rem;
+  --radius-3xl: 0.375rem;
 }
 
 @theme {
   --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.05), 0 8px 24px -10px rgb(0 0 0 / 0.16);
   --shadow-lift: 0 2px 8px rgb(0 0 0 / 0.08), 0 24px 48px -16px rgb(0 0 0 / 0.38);
-  --shadow-glow: 0 12px 32px -10px color-mix(in oklab, var(--primary-color) 60%, transparent);
+  --shadow-glow: 0 0 0 0 transparent;
 
-  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-curtain: cubic-bezier(0.76, 0, 0.24, 1);
 
   --animate-shimmer: shimmer 1.8s ease-in-out infinite;
   --animate-pulse-ring: pulse-ring 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
@@ -47,6 +54,10 @@
   @keyframes shimmer {
     0% { background-position: 150% 0; }
     100% { background-position: -50% 0; }
+  }
+  --animate-turn: turn 2.4s linear infinite;
+  @keyframes turn {
+    to { transform: rotate(360deg); }
   }
   --animate-sheen: sheen 2.2s ease-in-out infinite;
   @keyframes sheen {
@@ -66,17 +77,14 @@
 }
 
 /*
- * -- Liquid glass: change the whole look here --------------------------------
+ * -- Liquid glass: used sparingly, change it here ------------------------------
  * Tints are "how much of the surface colour the glass keeps" (100% = solid).
  * Text contrast on every tint is checked by apps/web/test/glass-contrast.test.ts,
  * which reads these exact values: lower a tint and that test tells you if text
  * stops being readable.
  *
- * Performance: only the "chrome" is truly blurred (headers, navigation, the
- * floating cart pill, sheets/modals, the pay bar), at most 4 blurred layers on
- * any screen. Cards and chips get the same look (tint, inner edge, top
- * highlight, shadow) without backdrop-filter, so long menus stay smooth on
- * budget phones.
+ * Only headers, navigation, sheets and the pay bar are glass. Cards and chips
+ * are flat surfaces with a hairline, so long menus stay smooth on budget phones.
  */
 :root {
   --glass-blur: 24px;
@@ -149,10 +157,7 @@
   body {
     @apply bg-bg text-fg font-sans antialiased;
     min-height: 100svh;
-    font-feature-settings: "cv11", "ss03";
-    /* Playfair defaults to old-style figures ("0" reads like "o"); prices need lining ones. */
     font-variant-numeric: lining-nums;
-    text-rendering: optimizeLegibility;
     /* Long Uzbek/Russian words wrap instead of overflowing narrow screens. */
     overflow-wrap: break-word;
     /* Last line of defence against sideways scrolling (unlike `hidden`, `clip` keeps sticky headers working). */
@@ -168,32 +173,13 @@
   body {
     background-image: url("/images/grain-dark.png");
     background-size: 160px 160px;
-    /* Own stacking context, so the glow layer below paints above the page colour and under everything else. */
-    isolation: isolate;
-  }
-  /*
-   * The colour glows behind the glass: one fixed, GPU-composited layer of
-   * plain radial gradients (no filter: blur), so scrolling never repaints it.
-   */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    transform: translateZ(0);
-    background:
-      radial-gradient(42rem 32rem at 8% -6%, color-mix(in oklab, var(--primary-color) var(--glow-primary), transparent), transparent 70%),
-      radial-gradient(38rem 30rem at 100% 38%, color-mix(in oklab, var(--secondary-color) var(--glow-secondary), transparent), transparent 70%),
-      radial-gradient(36rem 28rem at 30% 108%, color-mix(in oklab, var(--primary-color) calc(var(--glow-primary) * 0.7), transparent), transparent 70%);
   }
   :root[data-theme="light"] body {
     background-image: url("/images/grain-light.png");
   }
   h1, h2, h3, h4 {
     @apply font-display;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
     text-wrap: balance;
     hyphens: auto;
   }
@@ -224,8 +210,124 @@
   }
   @media print {
     body { background-image: none; }
-    body::before { display: none; }
   }
+}
+
+/* Page entrances that run on the compositor, without any animation library. */
+.rise-in {
+  animation: rise-in 700ms var(--ease-spring) calc(var(--i, 0) * 100ms + 250ms) backwards;
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(18px); }
+}
+.hero-settle {
+  animation: hero-settle 2400ms var(--ease-spring) both;
+}
+@keyframes hero-settle {
+  from { transform: scale(1.14); }
+  to { transform: scale(1.02); }
+}
+.bob {
+  display: block;
+  animation: bob 2200ms ease-in-out infinite;
+}
+@keyframes bob {
+  50% { transform: translateY(5px); }
+}
+
+/* Outside any layer on purpose: headings stay light even where a screen asks for font-semibold. */
+h1, h2, h3, h4, .font-display {
+  font-weight: 400;
+}
+
+/* A screen or element arriving. Fills backwards only, so nothing keeps a stacking context afterwards. */
+.enter {
+  animation: enter 320ms var(--ease-spring) backwards;
+}
+@keyframes enter {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+/* The celebration (components/ui/success-burst.tsx). */
+.burst {
+  animation: burst 1900ms linear both;
+}
+@keyframes burst {
+  0% { opacity: 0; }
+  8%, 82% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.burst-ring {
+  animation: burst-ring 1400ms ease-out calc(var(--i) * 220ms + 150ms) both;
+}
+@keyframes burst-ring {
+  from { opacity: 0.7; transform: scale(0.6); }
+  to { opacity: 0; transform: scale(1.9); }
+}
+.burst-mark {
+  animation: burst-mark 420ms var(--ease-spring) both;
+}
+@keyframes burst-mark {
+  from { opacity: 0; transform: scale(0.4); }
+}
+.burst-check {
+  stroke-dasharray: 1;
+  animation: burst-check 450ms var(--ease-curtain) 200ms both;
+}
+@keyframes burst-check {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+/* The bottom sheet (components/ui/sheet.tsx). */
+.sheet-backdrop {
+  transition: opacity 240ms linear;
+}
+.sheet-backdrop[data-state="closed"] {
+  opacity: 0;
+}
+.sheet-panel {
+  transition: transform 340ms var(--ease-spring), opacity 200ms linear;
+}
+.sheet-panel[data-state="closed"] {
+  transform: translateY(100%);
+}
+.sheet-panel[data-dragging] {
+  transition: none;
+}
+@media (min-width: 48rem) {
+  .sheet-panel[data-state="closed"] {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.shake {
+  display: inline-block;
+  animation: shake 400ms linear;
+}
+@keyframes shake {
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.wiggle {
+  display: block;
+  transform-origin: 50% 10%;
+  animation: wiggle 800ms ease-in-out;
+}
+@keyframes wiggle {
+  20% { transform: rotate(-14deg); }
+  40% { transform: rotate(12deg); }
+  60% { transform: rotate(-8deg); }
+  80% { transform: rotate(6deg); }
+}
+/* The cart bar gives a small nudge when something is added. */
+.bump {
+  animation: bump 420ms var(--ease-spring);
+}
+@keyframes bump {
+  35% { transform: scale(1.04); }
+  70% { transform: scale(0.985); }
 }
 
 @utility no-scrollbar {
@@ -238,7 +340,6 @@
   background: color-mix(in oklab, var(--surface-color) var(--glass-tint), transparent);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
-  box-shadow: inset 0 1px 0 var(--glass-highlight);
 }
 
 /* Blurred glass for floating panels: sheets, modals, the pay bar. */
@@ -246,83 +347,69 @@
   background: color-mix(in oklab, var(--surface-color) var(--glass-tint-sheet), transparent);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
-  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-outline), var(--glass-shadow-lift);
+  box-shadow: inset 0 0 0 1px var(--border-color), var(--glass-shadow-lift);
 }
 
 /* Gold glass for the floating cart pill (the one blurred element in brand colour). */
 @utility glass-accent {
-  background: color-mix(in oklab, var(--primary-color) var(--glass-tint-accent), transparent);
+  background: var(--primary-color);
   color: var(--primary-contrast);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), inset 0 0 0 1px rgb(255 255 255 / 0.18), var(--shadow-glow);
 }
 
 /* Glass look without blur: cards and list groups (cheap, safe to use many times). */
 @utility glass-card {
-  background: color-mix(in oklab, var(--surface-color) var(--glass-tint-card), transparent);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-outline), var(--glass-shadow);
+  background: var(--surface-color);
+  box-shadow: inset 0 0 0 1px var(--border-color);
 }
 
 /* Small glass controls: chips, segmented controls, secondary buttons. */
 @utility glass-chip {
-  background: color-mix(in oklab, var(--surface-color) var(--glass-tint-chip), transparent);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-outline), 0 1px 2px rgb(0 0 0 / 0.06);
+  background: var(--surface-color);
+  box-shadow: inset 0 0 0 1px var(--border-color);
 }
 
 /* Smoked glass for chips on top of photos, without blur (there can be dozens on a menu). */
 @utility glass-photo {
-  background: rgb(12 10 7 / 0.55);
+  background: rgb(12 10 7 / 0.72);
   color: #fff;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 0 0 1px rgb(255 255 255 / 0.16);
 }
 
 /* Hover lift for cards (mouse/trackpad only; off under "reduce motion"). */
 @utility lift {
-  transition: translate 280ms var(--ease-spring), box-shadow 280ms ease;
+  transition: box-shadow 200ms linear;
   @media (hover: hover) {
     &:hover {
-      translate: 0 -3px;
-      box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-outline), var(--glass-shadow-lift);
+      box-shadow: inset 0 0 0 1px var(--primary-color);
     }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    &:hover { translate: none; }
   }
 }
 
 /* Blurred glass on top of photos (hero controls, sheet close button): always light text. */
 @utility glass-dark {
-  background: rgb(12 10 7 / 0.42);
+  background: rgb(12 10 7 / 0.55);
   color: #fff;
-  backdrop-filter: blur(16px) saturate(1.3);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), inset 0 0 0 1px rgb(255 255 255 / 0.16);
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    background: rgb(12 10 7 / 0.7);
-  }
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
 }
 
 /* The standard raised surface: cards, panels, list groups. Glass without blur. */
 @utility card {
-  background: color-mix(in oklab, var(--surface-color) var(--glass-tint-card), transparent);
-  border-radius: var(--radius);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-outline), var(--glass-shadow);
+  background: var(--surface-color);
+  border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px var(--border-color);
 }
 
 /* A thin gold rule that fades out at both ends (section dividers). */
 @utility gold-rule {
   height: 1px;
   border: 0;
-  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary-color) 60%, transparent) 20%, color-mix(in oklab, var(--primary-color) 60%, transparent) 80%, transparent);
+  background: color-mix(in oklab, var(--primary-color) 60%, transparent);
 }
 
 /* Small uppercase label above headings ("MENU", "TABLE 12"). */
 @utility eyebrow {
-  font-family: var(--font-family);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
+  font-family: var(--font-label);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--primary-color);
 }
@@ -333,6 +420,17 @@
   &:active:not(:disabled) {
     transform: scale(0.965);
     filter: brightness(0.96);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &:active:not(:disabled) { transform: none; }
+  }
+}
+
+/* The same feedback for large cards, where a full press would look too strong. */
+@utility pressable-soft {
+  transition: transform 160ms var(--ease-spring);
+  &:active:not(:disabled) {
+    transform: scale(0.985);
   }
   @media (prefers-reduced-motion: reduce) {
     &:active:not(:disabled) { transform: none; }

@@ -4,7 +4,7 @@
  */
 
 /** Fonts the web app knows how to load (see apps/web/src/app/fonts.ts). */
-export type FontKey = "playfair-display" | "inter";
+export type FontKey = "playfair-display" | "inter" | "piazzolla" | "onest";
 
 export type ThemeMode = "light" | "dark";
 export type ThemeModeSetting = ThemeMode | "system";

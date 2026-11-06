@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { RESERVATION_MAX_PARTY } from "../reservations";
 import { ALLERGENS, DIETARY_TAGS } from "../types";
 
 /**
@@ -58,6 +59,25 @@ export const joinSessionBody = z.object({
   confirmJoin: z.boolean().default(false),
   /** "You're seated at Table 5 — switch to Table 7?" → yes */
   confirmSwitch: z.boolean().default(false),
+  /** "This table is reserved for 13:00 — continue?" → yes */
+  confirmReserved: z.boolean().default(false),
+});
+
+/** Date and time are the restaurant's local time, so a guest abroad still books the right hour. */
+export const createReservationBody = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  partySize: z.number().int().min(1).max(RESERVATION_MAX_PARTY),
+  name: z.string().trim().min(2).max(60),
+  phone: z
+    .string()
+    .trim()
+    .max(24)
+    .regex(/^[+\d\s()-]+$/)
+    .refine((p) => {
+      const digits = p.replace(/\D/g, "").length;
+      return digits >= 7 && digits <= 15;
+    }),
 });
 
 export const updateGuestBody = z.object({ nickname: zNickname });

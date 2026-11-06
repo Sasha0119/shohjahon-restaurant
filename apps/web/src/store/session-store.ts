@@ -5,21 +5,24 @@
  * Fed by REST responses, `session:sync` snapshots and socket events.
  * Versioned events are applied only in order; a gap asks for a resync.
  */
-import {
-  versionAction,
-  type BillDTO,
-  type CallDTO,
-  type CartLineDTO,
-  type GuestDTO,
-  type OrderTicketDTO,
-  type SessionCloseReasonDTO,
-  type SessionSnapshotDTO,
+import { versionAction } from "@app/shared/api/realtime";
+import type {
+  BillDTO,
+  CallDTO,
+  CartLineDTO,
+  GuestDTO,
+  OrderTicketDTO,
+  SessionCloseReasonDTO,
+  SessionSnapshotDTO,
 } from "@app/shared/api";
 import type { OrderStatus, Station } from "@app/shared";
 import { create } from "zustand";
 
+export type JoinAnswers = { confirmJoin?: boolean; confirmSwitch?: boolean; confirmReserved?: boolean };
+
 export type JoinPhase =
   | { kind: "joining" }
+  | { kind: "reserved"; table: number; startsAt: string; answers: JoinAnswers }
   | { kind: "ready" }
   | { kind: "occupied"; table: number; guestCount: number }
   | { kind: "otherTable"; currentTable: number; newTable: number }

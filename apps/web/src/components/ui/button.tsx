@@ -1,6 +1,5 @@
 "use client";
 
-import { motion, type HTMLMotionProps } from "framer-motion";
 import Link from "next/link";
 import { forwardRef, type ComponentProps, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
@@ -13,13 +12,11 @@ type Size = "md" | "lg" | "sm";
  * Uzbek/Russian labels wrap onto two lines instead of spilling out.
  */
 const base =
-  "relative inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-[0.01em] select-none text-center leading-tight text-balance transition-[background-color,box-shadow,opacity,color,filter,translate] duration-200 disabled:opacity-40 disabled:pointer-events-none";
+  "pressable relative inline-flex items-center justify-center gap-2 rounded-card font-label font-medium select-none text-center leading-tight text-balance disabled:opacity-40 disabled:pointer-events-none";
 
 const variants: Record<Variant, string> = {
-  // Glossy gold: a bright top edge and a faint sheen over the fill.
-  primary:
-    "bg-primary bg-[linear-gradient(180deg,rgb(255_255_255/0.18),transparent_55%)] text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.4),inset_0_0_0_1px_rgb(255_255_255/0.12),var(--shadow-glow)] hover:-translate-y-px hover:brightness-[1.07] motion-reduce:hover:translate-y-0",
-  secondary: "glass-chip text-fg hover:-translate-y-px hover:text-primary motion-reduce:hover:translate-y-0",
+  primary: "bg-primary text-on-primary hover:brightness-110",
+  secondary: "text-fg ring-1 ring-inset ring-line hover:ring-primary hover:text-primary",
   outline: "text-primary ring-1 ring-inset ring-gold-line hover:bg-primary/8",
   ghost: "text-fg hover:bg-muted",
   glass: "glass-dark hover:bg-black/45",
@@ -27,16 +24,16 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "min-h-10 px-4 py-1.5 text-sm",
-  md: "min-h-12 px-5 py-2 text-[15px]",
-  lg: "min-h-14 px-7 py-2.5 text-base",
+  sm: "min-h-10 px-3.5 py-1.5 text-xs",
+  md: "min-h-12 px-5 py-2 text-[13px]",
+  lg: "min-h-14 px-6 py-2.5 text-sm",
 };
 
 export function buttonClasses(variant: Variant = "primary", size: Size = "md", className?: string) {
   return cn(base, variants[variant], sizes[size], className);
 }
 
-interface ButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
+interface ButtonProps extends ComponentProps<"button"> {
   variant?: Variant;
   size?: Size;
   children?: ReactNode;
@@ -47,11 +44,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref,
 ) {
   return (
-    <motion.button
+    <button
       ref={ref}
       type={type}
-      whileTap={{ scale: 0.965 }}
-      transition={{ type: "spring", stiffness: 520, damping: 30 }}
       className={buttonClasses(variant, size, className)}
       {...props}
     />
@@ -64,10 +59,10 @@ interface LinkButtonProps extends ComponentProps<typeof Link> {
 }
 
 export function LinkButton({ variant = "primary", size = "md", className, ...props }: LinkButtonProps) {
-  return <Link className={cn(buttonClasses(variant, size, className), "pressable")} {...props} />;
+  return <Link className={buttonClasses(variant, size, className)} {...props} />;
 }
 
-interface IconButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
+interface IconButtonProps extends ComponentProps<"button"> {
   label: string;
   variant?: "plain" | "glass" | "muted" | "surface";
   children: ReactNode;
@@ -79,14 +74,13 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   ref,
 ) {
   return (
-    <motion.button
+    <button
       ref={ref}
       type={type}
       aria-label={label}
       title={label}
-      whileTap={{ scale: 0.9 }}
       className={cn(
-        "inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40",
+        "pressable inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40",
         variant === "plain" && "text-fg hover:bg-muted",
         variant === "muted" && "glass-chip text-fg",
         variant === "surface" && "glass-card text-fg",
@@ -96,6 +90,6 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       {...props}
     >
       {children}
-    </motion.button>
+    </button>
   );
 });

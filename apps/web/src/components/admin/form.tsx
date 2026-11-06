@@ -13,7 +13,7 @@ import { currencyLabel, parsePrice } from "@/lib/format";
 /** Shared admin form building blocks — one look for every editor. */
 
 export const inputClass =
-  "h-12 w-full rounded-2xl bg-muted px-4 text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-danger";
+  "h-12 w-full rounded-2xl bg-muted px-4 ring-1 ring-inset ring-line text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-danger";
 
 /** Same look as inputClass, for multi-line text. */
 export const textareaClass = inputClass.replace("h-12 ", "") + " resize-none py-3";
@@ -104,7 +104,7 @@ export function ToggleChip({ on, onClick, children }: { on: boolean; onClick: ()
       aria-pressed={on}
       onClick={onClick}
       className={cn(
-        "inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-semibold transition-colors",
+        "inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-card px-3.5 text-sm font-semibold transition-colors",
         on ? "bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]" : "glass-chip text-fg-muted hover:text-fg",
       )}
     >
@@ -218,7 +218,7 @@ export function EditLanguageBar({ value, onChange, className }: { value: LocaleC
   const main = localeNames[brand.defaultLanguage];
   return (
     <div className={cn("rounded-2xl bg-muted/50 p-3 ring-1 ring-inset ring-gold-line", className)}>
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">{t("admin.menu.editLanguage")}</p>
+      <p className="mb-2 text-[11px] font-label uppercase tracking-[0.08em] text-primary">{t("admin.menu.editLanguage")}</p>
       <Segmented<LocaleCode>
         label={t("admin.menu.editLanguage")}
         value={value}

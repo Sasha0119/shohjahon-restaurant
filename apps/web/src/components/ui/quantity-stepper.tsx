@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useT } from "@/i18n";
 import { cn } from "@/lib/cn";
@@ -33,20 +32,19 @@ export function QuantityStepper({
 
   return (
     <div
-      className={cn("glass-chip inline-flex items-center rounded-full p-1", className)}
+      className={cn("glass-chip inline-flex items-center rounded-card p-1", className)}
       role="group"
       aria-label={t("item.quantity")}
     >
-      <motion.button
+      <button
         type="button"
-        whileTap={{ scale: 0.85 }}
-        className={cn(btn, "pressable grid place-items-center rounded-full bg-surface text-fg shadow-sm ring-1 ring-inset ring-line disabled:opacity-40")}
+        className={`pressable ${cn(btn, "pressable grid place-items-center rounded-card bg-surface text-fg shadow-sm ring-1 ring-inset ring-line disabled:opacity-40")}`}
         onClick={() => onChange(value - 1)}
         disabled={!removable && value <= min}
         aria-label={showTrash ? (removeLabel ?? t("item.decrease")) : t("item.decrease")}
       >
         {showTrash ? <Trash2 className="size-4" aria-hidden /> : <Minus className="size-4" aria-hidden />}
-      </motion.button>
+      </button>
       <span
         className={cn(
           "relative overflow-hidden text-center font-semibold tabular",
@@ -54,29 +52,24 @@ export function QuantityStepper({
         )}
         aria-live="polite"
       >
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.span
+        <>
+          <span
             key={value}
-            className="inline-block"
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -10, opacity: 0 }}
-            transition={{ duration: 0.16 }}
+            className="enter inline-block"
           >
             {value}
-          </motion.span>
-        </AnimatePresence>
+          </span>
+        </>
       </span>
-      <motion.button
+      <button
         type="button"
-        whileTap={{ scale: 0.85 }}
-        className={cn(btn, "pressable grid place-items-center rounded-full bg-surface text-fg shadow-sm ring-1 ring-inset ring-line disabled:opacity-40")}
+        className={`pressable ${cn(btn, "pressable grid place-items-center rounded-card bg-surface text-fg shadow-sm ring-1 ring-inset ring-line disabled:opacity-40")}`}
         onClick={() => onChange(value + 1)}
         disabled={value >= max}
         aria-label={t("item.increase")}
       >
         <Plus className="size-4" aria-hidden />
-      </motion.button>
+      </button>
     </div>
   );
 }

@@ -284,6 +284,22 @@ export interface AdminTableDTO {
   /** Signed guest link encoded in the printed QR code. */
   url: string;
   session: { id: string; guestCount: number; openedAt: string; lastActivityAt: string } | null;
+  /** The next reservation, if it starts within 24 hours or has just started. */
+  reservation: ReservationSummaryDTO | null;
+}
+
+export interface ReservationSummaryDTO {
+  startsAt: string;
+  partySize: number;
+  guestName: string;
+}
+
+/** A reservation as staff see it (GET /api/waiter/reservations). */
+export interface ReservationDTO extends ReservationSummaryDTO {
+  id: string;
+  tableId: string;
+  tableNumber: number;
+  guestPhone: string;
 }
 
 /** Standard error body for every non-2xx response. */

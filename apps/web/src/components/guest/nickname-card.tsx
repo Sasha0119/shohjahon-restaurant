@@ -1,7 +1,6 @@
 "use client";
 
 import type { GuestDTO } from "@app/shared/api";
-import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, Pencil, Users } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -41,13 +40,10 @@ export function NicknameCard() {
 
   return (
     <div className="card p-4">
-      <AnimatePresence mode="wait" initial={false}>
+      <>
         {showForm ? (
-          <motion.form
+          <form className="enter"
             key="form"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
             onSubmit={save}
           >
             <div className="flex items-start gap-3">
@@ -70,21 +66,18 @@ export function NicknameCard() {
                 placeholder={t("nickname.placeholder")}
                 autoComplete="nickname"
                 maxLength={24}
-                className="h-12 min-w-0 flex-1 rounded-full bg-muted px-4 ring-1 ring-inset ring-line placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                className="h-12 min-w-0 flex-1 rounded-card bg-muted px-4 ring-1 ring-inset ring-line placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <Button type="submit" disabled={!draft.trim() || busy}>
                 {busy && <Loader2 className="size-4 animate-spin" aria-hidden />}
                 {t("common.save")}
               </Button>
             </div>
-          </motion.form>
+          </form>
         ) : (
-          <motion.div
+          <div
             key="set"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            className="flex items-center gap-3"
+            className="enter flex items-center gap-3"
           >
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary font-semibold text-on-primary" aria-hidden>
               {me.nickname.charAt(0).toUpperCase()}
@@ -101,9 +94,9 @@ export function NicknameCard() {
               <Pencil className="size-4" aria-hidden />
               {t("common.change")}
             </Button>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </>
 
       {guests.length > 1 && (
         <div className="mt-4 flex items-center gap-3 border-t border-line pt-3">

@@ -1,7 +1,6 @@
 "use client";
 
 import { brand, localize, type LocalizedText } from "@app/config";
-import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, Heart, Loader2, Star } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -53,42 +52,41 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
   const shown = hover || rating;
   return (
     <section className={cn("card w-full p-5 text-center ring-1 ring-gold-line", className)} aria-labelledby="rate-title">
-      <AnimatePresence mode="wait" initial={false}>
+      <>
         {phase.kind === "rate" ? (
-          <motion.div key="rate" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <div className="enter" key="rate">
             <h2 id="rate-title" className="font-display text-2xl font-semibold">
               {t("rate.title")}
             </h2>
             <p className="mt-1 text-sm text-fg-muted">{t("rate.subtitle")}</p>
             <div role="radiogroup" aria-labelledby="rate-title" className="mt-4 flex justify-center gap-1" onMouseLeave={() => setHover(0)}>
               {[1, 2, 3, 4, 5].map((n) => (
-                <motion.button
+                <button
                   key={n}
                   type="button"
                   role="radio"
                   aria-checked={rating === n}
                   aria-label={`${t("rate.stars", { count: n })} — ${t(`rate.labels.${String(n) as "1"}`)}`}
-                  whileTap={{ scale: 0.85 }}
                   onMouseEnter={() => setHover(n)}
                   onClick={() => setRating(n)}
-                  className="grid size-12 place-items-center rounded-full"
+                  className="pressable grid size-12 place-items-center rounded-full"
                 >
-                  <motion.span animate={{ scale: n <= shown ? 1.12 : 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}>
+                  <span className={cn("block transition-transform", n <= shown && "scale-110")}>
                     <Star
                       className={cn("size-9 transition-colors", n <= shown ? "fill-primary text-primary" : "text-fg/25")}
                       strokeWidth={1.6}
                       aria-hidden
                     />
-                  </motion.span>
-                </motion.button>
+                  </span>
+                </button>
               ))}
             </div>
             <p className="mt-1 h-5 text-sm font-semibold text-fg-muted" aria-live="polite">
               {shown ? t(`rate.labels.${String(shown) as "1"}`) : ""}
             </p>
-            <AnimatePresence initial={false}>
+            <>
               {rating > 0 && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="-mx-2 overflow-hidden px-2 pb-2 text-left">
+                <div className="enter -mx-2 overflow-hidden px-2 pb-2 text-left">
                   <label htmlFor="rate-comment" className="mt-3 block text-sm font-semibold">
                     {rating <= 3 ? t("rate.privatePrompt") : t("rate.publicPrompt")}
                   </label>
@@ -104,20 +102,17 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
                     {busy && <Loader2 className="size-5 animate-spin" aria-hidden />}
                     {t("rate.send")}
                   </Button>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
-          </motion.div>
+            </>
+          </div>
         ) : (
-          <motion.div key="thanks" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center">
-            <motion.span
-              initial={{ scale: 0.4 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 14 }}
-              className="grid size-14 place-items-center rounded-full bg-primary/12 text-primary ring-1 ring-gold-line"
+          <div key="thanks" className="enter flex flex-col items-center">
+            <span
+              className="enter grid size-14 place-items-center rounded-full bg-primary/12 text-primary ring-1 ring-gold-line"
             >
               <Heart className="size-7 fill-current" aria-hidden />
-            </motion.span>
+            </span>
             <p className="mt-3 font-display text-lg font-semibold" role="status">
               {phase.isPublic ? (phase.publicLinks.length ? t("rate.thanksPublic") : t("rate.thanksPublicNoLinks")) : t("rate.thanksPrivate")}
             </p>
@@ -129,7 +124,7 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
                     href={l.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 font-semibold text-on-primary shadow-glow"
+                    className="pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-card bg-primary px-5 font-semibold text-on-primary shadow-glow"
                   >
                     {localize(l.label, locale, brand.defaultLanguage)}
                     <ExternalLink className="size-4" aria-hidden />
@@ -137,9 +132,9 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
                 ))}
               </div>
             )}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </>
     </section>
   );
 }

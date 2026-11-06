@@ -18,7 +18,7 @@
 export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 export type Role = "manager" | "waiter" | "kitchen";
 export type Access = { kind: "public" } | { kind: "guest" } | { kind: "staff"; roles: Role[] };
-export type RateLimit = "default" | "strict" | "auth";
+export type RateLimit = "default" | "strict" | "auth" | "booking";
 
 export interface RouteDef {
   method: HttpMethod;
@@ -55,7 +55,7 @@ export const routes: RouteDef[] = [
   { method: "GET", path: "/api/auth/me", access: staff("manager", "waiter", "kitchen"), summary: "Current staff member and role", phase: 3 },
 
   // ── Guest: table session (Phase 4) ────────────────────────────────────────
-  { method: "POST", path: "/api/tables/:qrToken/join", access: pub, summary: "Scan QR: verify signed token, join the open session or start one; sets guest cookie. 409 TABLE_OCCUPIED / OTHER_TABLE ask the guest to confirm", input: "joinSessionBody", rateLimit: "strict", emits: ["session:guests", "table:status"], phase: 4 },
+  { method: "POST", path: "/api/tables/:qrToken/join", access: pub, summary: "Scan QR: verify signed token, join the open session or start one; sets guest cookie. 409 TABLE_OCCUPIED / OTHER_TABLE / TABLE_RESERVED ask the guest to confirm", input: "joinSessionBody", rateLimit: "strict", emits: ["session:guests", "table:status"], phase: 4 },
   { method: "GET", path: "/api/session", access: guest, summary: "Full session snapshot (table, guests, cart, orders, bill, version)", phase: 4 },
   { method: "PATCH", path: "/api/session/me", access: guest, summary: "Set my nickname", input: "updateGuestBody", emits: ["session:guests"], phase: 4 },
 
@@ -112,6 +112,11 @@ export const routes: RouteDef[] = [
   { method: "POST", path: "/api/admin/combos", access: MANAGER, summary: "Create combo deal", input: "comboDealInput", emits: ["menu:updated"], phase: 5 },
   { method: "PUT", path: "/api/admin/combos/:comboId", access: MANAGER, summary: "Update combo deal", input: "comboDealInput", emits: ["menu:updated"], phase: 5 },
   { method: "DELETE", path: "/api/admin/combos/:comboId", access: MANAGER, summary: "Delete combo deal", emits: ["menu:updated"], phase: 5 },
+
+  // ── Reservations ──────────────────────────────────────────────────────────
+  { method: "POST", path: "/api/reservations", access: pub, summary: "Book a table online: assigns the smallest free table that fits. 409 NO_TABLE_AVAILABLE, 422 RESERVATION_TIME_INVALID, 429 TOO_MANY_RESERVATIONS", input: "createReservationBody", rateLimit: "booking", emits: ["table:status"], phase: 9 },
+  { method: "GET", path: "/api/waiter/reservations", access: staff("waiter", "manager"), summary: "Upcoming reservations with the guest's name and phone", phase: 9 },
+  { method: "POST", path: "/api/waiter/reservations/:reservationId/cancel", access: staff("waiter", "manager"), summary: "Cancel a reservation and release its table", emits: ["table:status"], phase: 9 },
 
   // ── Admin: tables (Phase 4) ───────────────────────────────────────────────
   { method: "GET", path: "/api/admin/tables", access: MANAGER, summary: "Tables with live status and their signed guest links", phase: 4 },

@@ -47,7 +47,7 @@ export function DietaryTags({ tags, variant = "pills", className }: DietaryTagsP
           <li
             key={tag}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset",
+              "inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 text-xs font-semibold ring-1 ring-inset",
               tag === "spicy" ? "text-danger ring-danger/35" : "text-fg ring-gold-line",
             )}
           >

@@ -2,7 +2,6 @@
 
 import { brand, localize } from "@app/config";
 import { WEEKDAYS, localParts, openState } from "@app/shared";
-import { motion, type Variants } from "framer-motion";
 import { ArrowRight, ChevronDown, Clock, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,14 +19,8 @@ import { useI18n } from "@/i18n";
 import { cn } from "@/lib/cn";
 import { formatClock, weekdayName } from "@/lib/format";
 
-const stagger: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.1, delayChildren: 0.25 } },
-};
-const rise: Variants = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-};
+/** Entrance order of the hero's contents (see .rise-in in globals.css). */
+const order = (i: number) => ({ "--i": i }) as React.CSSProperties;
 
 export default function HomePage() {
   const { t, locale } = useI18n();
@@ -39,14 +32,9 @@ export default function HomePage() {
     <main>
       {/* ── Hero: full-screen photo, logo, tagline, one clear action ─────────── */}
       <section className="relative isolate flex h-svh min-h-[600px] max-h-[960px] flex-col overflow-hidden text-white">
-        <motion.div
-          className="absolute inset-0 -z-10"
-          initial={{ scale: 1.14 }}
-          animate={{ scale: 1.02 }}
-          transition={{ duration: 2.4, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <Image src={brand.heroImage.src} alt={brand.heroImage.alt} fill priority sizes="100vw" className="object-cover" />
-        </motion.div>
+        <div className="hero-settle absolute inset-0 -z-10">
+          <Image src={brand.heroImage.src} alt={brand.heroImage.alt} fill priority sizes="(max-aspect-ratio: 3/2) 150vh, 100vw" className="object-cover" />
+        </div>
         <div aria-hidden className="absolute inset-0 -z-10" style={{ background: "var(--hero-tint)" }} />
         <div
           aria-hidden
@@ -65,45 +53,42 @@ export default function HomePage() {
           </div>
         </div>
 
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
+        <div
           className="mt-auto flex flex-col items-center px-6 pb-[max(env(safe-area-inset-bottom),2.5rem)] text-center"
         >
-          <motion.div variants={rise}>
+          <div className="rise-in" style={order(0)}>
             <Wordmark size={76} layout="stack" onImage />
-          </motion.div>
-          <motion.span variants={rise} aria-hidden className="gold-rule mt-6 w-24" />
-          <motion.p
-            variants={rise}
-            className="mt-5 max-w-sm font-display text-[clamp(1.35rem,5.5vw,1.85rem)] italic leading-snug text-white/95"
+          </div>
+          <span aria-hidden className="rise-in gold-rule mt-6 w-24" style={order(1)} />
+          <p
+            style={order(2)}
+            className="rise-in mt-5 max-w-sm font-display text-[clamp(1.35rem,5.5vw,1.85rem)] italic leading-snug text-white/95"
           >
             {localize(brand.tagline, locale, brand.defaultLanguage)}
-          </motion.p>
-          <motion.p variants={rise} className="mt-3 text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
+          </p>
+          <p style={order(3)} className="rise-in mt-3 text-xs font-label uppercase tracking-[0.08em] text-white/70">
             {localize(brand.cuisine, locale, brand.defaultLanguage)}
-          </motion.p>
-          <motion.div variants={rise} className="mt-6">
+          </p>
+          <div style={order(4)} className="rise-in mt-6">
             <OpenStatus />
-          </motion.div>
-          <motion.div variants={rise} className="mt-7 w-full max-w-xs">
+          </div>
+          <div style={order(5)} className="rise-in mt-7 w-full max-w-xs">
             <LinkButton href={`${base}/menu`} size="lg" className="w-full">
               {t("home.viewMenu")}
               <ArrowRight className="size-5" aria-hidden />
             </LinkButton>
-          </motion.div>
-          <motion.a
-            variants={rise}
+          </div>
+          <a
+            style={order(6)}
             href="#picks"
             aria-label={t("home.chefsPicks")}
-            className="mt-6 grid size-11 place-items-center rounded-full text-white/70 hover:text-white"
+            className="rise-in mt-6 grid size-11 place-items-center rounded-full text-white/70 hover:text-white"
           >
-            <motion.span animate={{ y: [0, 5, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}>
+            <span className="bob">
               <ChevronDown className="size-6" aria-hidden />
-            </motion.span>
-          </motion.a>
-        </motion.div>
+            </span>
+          </a>
+        </div>
       </section>
 
       {/* ── Below the fold ───────────────────────────────────────────────────── */}
@@ -155,7 +140,7 @@ export default function HomePage() {
                       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/30 to-black/5" />
                       <div className="mt-auto min-w-0">
                         <p className="font-display text-xl font-semibold leading-tight">{cat.name}</p>
-                        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/75">
+                        <p className="mt-1 text-xs font-label uppercase tracking-[0.08em] text-white/75">
                           {t("home.dishes", { count: items.length })}
                         </p>
                       </div>
@@ -195,7 +180,7 @@ function OpenStatus() {
     label = t("home.closedOpensOn", { day: weekdayName(state.nextDay), time: formatClock(state.until) });
   }
   return (
-    <span className="inline-flex min-h-8 items-center gap-2 rounded-full glass-dark px-3.5 py-1 text-[13px] font-semibold">
+    <span className="inline-flex min-h-8 items-center gap-2 rounded-card glass-dark px-3.5 py-1 text-[13px] font-semibold">
       <span className="relative flex size-2">
         {state.isOpen && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
         <span className={cn("relative inline-flex size-2 rounded-full", state.isOpen ? "bg-emerald-400" : "bg-rose-400")} />

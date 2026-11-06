@@ -44,3 +44,12 @@ see the photo page.
 | menu/cappuccino.jpg | [12703064](https://www.pexels.com/photo/12703064/) | Gia |
 | menu/pomegranate-lemonade.jpg | [8679162](https://www.pexels.com/photo/8679162/) | see photo page |
 | menu/lemon-mint-lemonade.jpg | [4021983](https://www.pexels.com/photo/4021983/) | see photo page |
+
+## Video
+
+From [Pexels](https://www.pexels.com) under the same licence. Converted from HDR, slowed to half speed,
+looped with a crossfade and cropped for each orientation, then saved in `public/videos`.
+
+| File | Pexels video | Photographer |
+| --- | --- | --- |
+| videos/hero-portrait.mp4, videos/hero-landscape.mp4 | [37118373](https://www.pexels.com/video/rustic-open-fire-cooking-with-boiling-pot-37118373/) | see video page |

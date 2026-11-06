@@ -1,7 +1,6 @@
 "use client";
 
 import { isAvailableAt, type Category, type MenuItem } from "@app/shared";
-import { AnimatePresence, motion } from "framer-motion";
 import { CloudOff, Search, SearchX, X } from "lucide-react";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { FoodCard, FoodCardSkeleton } from "@/components/guest/food-card";
@@ -110,26 +109,23 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
         onChange={(e) => onChange(e.target.value)}
         placeholder={t("menu.searchPlaceholder")}
         aria-label={t("menu.searchLabel")}
-        className="h-13 w-full rounded-full bg-surface pl-12 pr-12 shadow-soft ring-1 ring-line placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-primary [&::-webkit-search-cancel-button]:hidden"
+        className="h-13 w-full rounded-card bg-surface pl-12 pr-12 shadow-soft ring-1 ring-line placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-primary [&::-webkit-search-cancel-button]:hidden"
       />
-      <AnimatePresence>
+      <>
         {value && (
-          <motion.button
+          <button
             type="button"
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.6 }}
             onClick={() => {
               onChange("");
               inputRef.current?.focus();
             }}
             aria-label={t("menu.clearSearch")}
-            className="absolute right-1.5 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full text-fg-muted hover:bg-muted"
+            className="enter absolute right-1.5 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full text-fg-muted hover:bg-muted"
           >
             <X className="size-5" aria-hidden />
-          </motion.button>
+          </button>
         )}
-      </AnimatePresence>
+      </>
     </div>
   );
 }
@@ -204,17 +200,15 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
                 onClick={() => goTo(c.slug)}
                 aria-current={isActive ? "true" : undefined}
                 className={cn(
-                  "pressable relative min-h-12 shrink-0 whitespace-nowrap px-3.5 text-[13px] font-semibold uppercase tracking-[0.12em] transition-colors",
+                  "pressable relative min-h-12 shrink-0 whitespace-nowrap px-3.5 text-[13px] font-label uppercase tracking-[0.08em] transition-colors",
                   isActive ? "text-primary" : "text-fg-muted hover:text-fg",
                 )}
               >
                 <span className="relative">{c.name}</span>
                 {isActive && (
-                  <motion.span
-                    layoutId="tab-underline"
+                  <span
                     aria-hidden
                     className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-primary"
-                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
                   />
                 )}
               </button>
@@ -230,7 +224,7 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
             <section key={c.id} id={c.slug} aria-labelledby={`h-${c.slug}`} className="scroll-mt-[8.5rem]">
               <div className="flex items-center gap-3">
                 <span aria-hidden className="h-px w-8 bg-primary" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+                <span className="text-[11px] font-label uppercase tracking-[0.08em] text-primary">
                   {t("home.dishes", { count: catItems.length })}
                 </span>
               </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { CloudOff, Loader2, Plus, TicketPercent } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Field, MoneyField, Switch, apiMessage, fieldErrors, inputClass } from "@/components/admin/form";
@@ -83,14 +82,11 @@ export default function DiscountsPage() {
           <EmptyState icon={TicketPercent} title={t("admin.discounts.empty")} />
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2">
-            <AnimatePresence initial={false}>
+            <>
               {list.map((d) => (
-                <motion.li
+                <li
                   key={d.id}
-                  layout
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn("relative overflow-hidden card p-5", !d.active && "opacity-60")}
+                  className={`enter ${cn("relative overflow-hidden card p-5", !d.active && "opacity-60")}`}
                 >
                   {/* Ticket-style notches */}
                   <span aria-hidden className="absolute -left-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line" />
@@ -121,9 +117,9 @@ export default function DiscountsPage() {
                     {d.startsAt && <Badge>{t("admin.discounts.from", { date: fmtDate(d.startsAt) })}</Badge>}
                     {d.endsAt && <Badge>{t("admin.discounts.until", { date: fmtDate(d.endsAt) })}</Badge>}
                   </div>
-                </motion.li>
+                </li>
               ))}
-            </AnimatePresence>
+            </>
           </ul>
         )}
       </div>

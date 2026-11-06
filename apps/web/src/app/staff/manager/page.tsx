@@ -20,7 +20,7 @@ export default function ManagerLoginPage() {
 }
 
 const field =
-  "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
+  "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 ring-1 ring-inset ring-line text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
 function ManagerLogin() {
   const t = useT();

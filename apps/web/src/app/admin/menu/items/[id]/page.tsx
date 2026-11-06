@@ -1,7 +1,6 @@
 "use client";
 
 import { ALLERGENS, DIETARY_TAGS } from "@app/shared";
-import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ImagePlus, Loader2, Plus, SearchX, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
@@ -296,9 +295,9 @@ export default function ItemEditorPage() {
           <section className={card} aria-labelledby="sec-options">
             <h2 id="sec-options" className="font-display text-xl font-semibold">{t("admin.menu.item.options")}</h2>
             <p className="text-sm text-fg-muted">{t("admin.menu.item.optionsHint")}</p>
-            <AnimatePresence initial={false}>
+            <>
               {form.modifierGroups.map((g, gi) => (
-                <motion.div key={g.key} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }} className="mt-4 rounded-2xl ring-1 ring-line">
+                <div key={g.key} className="enter mt-4 rounded-2xl ring-1 ring-line">
                   <div className="flex flex-wrap items-end gap-3 border-b border-line p-4">
                     <Field label={t("admin.menu.item.groupName")} className="min-w-48 flex-1" error={errors[`modifierGroups.${gi}.name`]}>
                       <input
@@ -366,9 +365,9 @@ export default function ItemEditorPage() {
                       {t("admin.menu.item.addOption")}
                     </Button>
                   </div>
-                </motion.div>
+                </div>
               ))}
-            </AnimatePresence>
+            </>
             <Button
               variant="secondary"
               size="sm"

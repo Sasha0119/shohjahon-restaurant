@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { BellRing, ChevronRight, Droplets, HandHelping, Loader2, ReceiptText, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -44,24 +43,18 @@ export function CallServerSheet({ open, onClose }: { open: boolean; onClose: () 
       title={justSent ? t("call.onTheWay") : t("call.title")}
       description={justSent ? undefined : t("call.subtitle", { table: tableLabel })}
     >
-      <AnimatePresence mode="wait" initial={false}>
+      <>
         {justSent ? (
-          <motion.div
+          <div
             key="sent"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center pt-4 pb-2 text-center"
+            className="enter flex flex-col items-center pt-4 pb-2 text-center"
           >
             <div className="relative my-4 grid size-24 place-items-center">
               <span className="absolute inset-0 animate-ping rounded-full border border-primary/50" aria-hidden />
               <span className="relative grid size-20 place-items-center rounded-full bg-primary text-on-primary shadow-glow">
-                <motion.span
-                  animate={{ rotate: [0, -14, 12, -8, 6, 0] }}
-                  transition={{ duration: 0.9, repeat: Infinity, repeatDelay: 1.2 }}
-                >
+                <span className="wiggle">
                   <BellRing className="size-9" aria-hidden />
-                </motion.span>
+                </span>
               </span>
             </div>
             <p className="font-display text-2xl font-semibold">{t(`call.${justSent}`)}</p>
@@ -69,18 +62,17 @@ export function CallServerSheet({ open, onClose }: { open: boolean; onClose: () 
             <Button className="mt-7 w-full" size="lg" onClick={onClose}>
               {t("call.done")}
             </Button>
-          </motion.div>
+          </div>
         ) : (
-          <motion.ul key="options" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-5 space-y-3">
+          <ul key="options" className="enter mt-5 space-y-3">
             {options.map(({ type, icon: Icon }) => {
               const remaining = (cooldownUntil[type] ?? 0) - now;
               const cooling = remaining > 0;
               const pending = openCalls.some((c) => c.type === type && c.status === "open");
               return (
                 <li key={type}>
-                  <motion.button
+                  <button
                     type="button"
-                    whileTap={{ scale: 0.98 }}
                     disabled={cooling || busy !== null}
                     aria-busy={busy === type}
                     onClick={async () => {
@@ -90,10 +82,10 @@ export function CallServerSheet({ open, onClose }: { open: boolean; onClose: () 
                       setBusy(null);
                       if (call) setJustSent(type);
                     }}
-                    className={cn(
+                    className={`pressable ${cn(
                       "flex w-full items-center gap-4 rounded-2xl bg-muted/70 p-4 text-left ring-1 ring-line/60 transition-colors hover:bg-muted",
                       cooling && "opacity-60",
-                    )}
+                    )}`}
                   >
                     <span className="grid size-12 shrink-0 place-items-center rounded-full bg-surface text-primary ring-1 ring-gold-line">
                       <Icon className="size-6" strokeWidth={1.7} aria-hidden />
@@ -112,13 +104,13 @@ export function CallServerSheet({ open, onClose }: { open: boolean; onClose: () 
                     ) : (
                       !cooling && <ChevronRight className="size-5 text-fg-muted" aria-hidden />
                     )}
-                  </motion.button>
+                  </button>
                 </li>
               );
             })}
-          </motion.ul>
+          </ul>
         )}
-      </AnimatePresence>
+      </>
     </Sheet>
   );
 }

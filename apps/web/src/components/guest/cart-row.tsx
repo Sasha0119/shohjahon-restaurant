@@ -1,7 +1,6 @@
 "use client";
 
 import type { CartLineDTO } from "@app/shared/api";
-import { motion } from "framer-motion";
 import Image from "next/image";
 import { Badge } from "@/components/ui/misc";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
@@ -27,12 +26,8 @@ export function CartRow({ line, compact }: { line: CartLineDTO; compact?: boolea
   const name = item?.name ?? t("cart.unavailableItem");
 
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0, transition: { duration: 0.22 } }}
-      className="border-b border-line last:border-b-0"
+    <li
+      className="enter border-b border-line last:border-b-0"
     >
       <div className={cn("flex gap-3.5", compact ? "p-3" : "p-4")}>
         <button
@@ -72,6 +67,6 @@ export function CartRow({ line, compact }: { line: CartLineDTO; compact?: boolea
           </div>
         </div>
       </div>
-    </motion.li>
+    </li>
   );
 }

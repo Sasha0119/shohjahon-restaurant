@@ -8,7 +8,7 @@
 - **Idem.** = requires an `Idempotency-Key` header (16–128 chars). Retrying returns the first response.
 - Inputs are validated with the named Zod schema from `packages/shared/src/api/schemas.ts`.
 
-**66 routes.**
+**69 routes.**
 
 ## health
 
@@ -30,7 +30,7 @@
 
 | Method | Path | Access | Input | Idem. | Emits | Phase | Description |
 |---|---|---|---|---|---|---|---|
-| POST | `/api/tables/:qrToken/join` | public | `joinSessionBody` |  | `session:guests` `table:status` | 4 | Scan QR: verify signed token, join the open session or start one; sets guest cookie. 409 TABLE_OCCUPIED / OTHER_TABLE ask the guest to confirm _(rate limit: strict)_ |
+| POST | `/api/tables/:qrToken/join` | public | `joinSessionBody` |  | `session:guests` `table:status` | 4 | Scan QR: verify signed token, join the open session or start one; sets guest cookie. 409 TABLE_OCCUPIED / OTHER_TABLE / TABLE_RESERVED ask the guest to confirm _(rate limit: strict)_ |
 | GET | `/api/session` | guest |  |  |  | 4 | Full session snapshot (table, guests, cart, orders, bill, version) |
 | PATCH | `/api/session/me` | guest | `updateGuestBody` |  | `session:guests` | 4 | Set my nickname |
 | POST | `/api/session/cart` | guest | `addCartItemBody` |  | `cart:updated` | 6 | Add an item to the shared cart |
@@ -69,6 +69,8 @@
 | GET | `/api/waiter/tables` | waiter, manager |  |  |  | 6 | Live table status: free / occupied / ordering / waiting for bill |
 | POST | `/api/waiter/sessions/:sessionId/close` | waiter, manager |  |  | `session:closed` `table:status` | 4 | Close a session manually (audit logged) |
 | POST | `/api/waiter/sessions/:sessionId/cash` | waiter, manager | `confirmCashBody` |  | `payment:updated` `bill:updated` | 7 | Confirm a cash payment was received |
+| GET | `/api/waiter/reservations` | waiter, manager |  |  |  | 9 | Upcoming reservations with the guest's name and phone |
+| POST | `/api/waiter/reservations/:reservationId/cancel` | waiter, manager |  |  | `table:status` | 9 | Cancel a reservation and release its table |
 
 ## payments
 
@@ -133,6 +135,12 @@
 | POST | `/api/admin/combos` | manager | `comboDealInput` |  | `menu:updated` | 5 | Create combo deal |
 | PUT | `/api/admin/combos/:comboId` | manager | `comboDealInput` |  | `menu:updated` | 5 | Update combo deal |
 | DELETE | `/api/admin/combos/:comboId` | manager |  |  | `menu:updated` | 5 | Delete combo deal |
+
+## reservations
+
+| Method | Path | Access | Input | Idem. | Emits | Phase | Description |
+|---|---|---|---|---|---|---|---|
+| POST | `/api/reservations` | public | `createReservationBody` |  | `table:status` | 9 | Book a table online: assigns the smallest free table that fits. 409 NO_TABLE_AVAILABLE, 422 RESERVATION_TIME_INVALID, 429 TOO_MANY_RESERVATIONS _(rate limit: booking)_ |
 
 ## admin/tables
 

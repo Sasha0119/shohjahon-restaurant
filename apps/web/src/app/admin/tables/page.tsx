@@ -1,7 +1,6 @@
 "use client";
 
 import type { AdminTableDTO, TableStatusDTO } from "@app/shared/api";
-import { motion } from "framer-motion";
 import {
   CloudOff,
   Copy,
@@ -19,6 +18,7 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, LinkButton } from "@/components/ui/button";
+import { ReservationsPanel } from "@/components/staff/reservations-panel";
 import { Badge, EmptyState, Skeleton } from "@/components/ui/misc";
 import { Sheet } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/toast";
@@ -28,7 +28,7 @@ import { useT } from "@/i18n";
 import { translateError } from "@/i18n/errors";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { formatRelative } from "@/lib/format";
+import { formatRelative, reservationLabel } from "@/lib/format";
 
 const STATUS_STYLE: Record<TableStatusDTO, { dot: string; ring: string; tone: "muted" | "primary" | "warning" | "danger" }> = {
   free: { dot: "bg-fg/25", ring: "outline-transparent", tone: "muted" },
@@ -38,7 +38,7 @@ const STATUS_STYLE: Record<TableStatusDTO, { dot: string; ring: string; tone: "m
 };
 
 const field =
-  "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
+  "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 ring-1 ring-inset ring-line text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
 
 export default function TablesAdminPage() {
@@ -83,7 +83,7 @@ export default function TablesAdminPage() {
             {t("admin.tables.title")}
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-sans text-xs font-semibold",
+                "inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 font-sans text-xs font-semibold",
                 connected ? "bg-success/12 text-success" : "bg-muted text-fg-muted",
               )}
             >
@@ -104,6 +104,8 @@ export default function TablesAdminPage() {
           </Button>
         </div>
       </div>
+
+      <ReservationsPanel refreshOn={tables} className="mt-8 glass-card rounded-card p-4" />
 
       <div className="mt-8">
         {failed && !tables ? (
@@ -144,16 +146,15 @@ function TableCard({ table, onOpen }: { table: AdminTableDTO; onOpen: () => void
   const now = useNow(30_000) ?? Date.now();
   const style = STATUS_STYLE[table.status];
   return (
-    <motion.li layout>
-      <motion.button
+    <li>
+      <button
         type="button"
-        whileTap={{ scale: 0.97 }}
         onClick={onOpen}
-        className={cn(
+        className={`pressable ${cn(
           "glass-card lift flex h-full min-h-40 w-full flex-col rounded-card p-4 text-left outline-2 -outline-offset-2",
           style.ring,
           !table.active && "opacity-55",
-        )}
+        )}`}
       >
         <div className="flex items-start justify-between gap-2">
           <span className="font-display text-4xl font-semibold leading-none tabular">{table.number}</span>
@@ -170,6 +171,11 @@ function TableCard({ table, onOpen }: { table: AdminTableDTO; onOpen: () => void
           {table.label ? `${table.label} · ` : ""}
           {t("admin.tables.seatsCount", { count: table.seats })}
         </p>
+        {table.reservation && (
+          <p className="mt-1 text-sm font-semibold text-primary">
+            {t("reservations.reservedAt", { time: reservationLabel(table.reservation.startsAt) })}
+          </p>
+        )}
         <div className="mt-auto pt-4 text-sm">
           {table.session ? (
             <>
@@ -185,8 +191,8 @@ function TableCard({ table, onOpen }: { table: AdminTableDTO; onOpen: () => void
             <p className="text-fg-muted">—</p>
           )}
         </div>
-      </motion.button>
-    </motion.li>
+      </button>
+    </li>
   );
 }
 

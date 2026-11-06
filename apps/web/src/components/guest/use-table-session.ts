@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { ApiClientError, api } from "@/lib/api";
 import { createSocket, type AppSocket } from "@/lib/socket";
 import { useMenuStore } from "@/store/menu-store";
-import { useSessionStore, type JoinPhase } from "@/store/session-store";
+import { useSessionStore, type JoinAnswers, type JoinPhase } from "@/store/session-store";
 
 interface JoinResponse {
   rejoined: boolean;
@@ -15,8 +15,10 @@ interface JoinResponse {
 /** Map API errors from the join call to a screen. */
 export function phaseForJoinError(e: unknown): JoinPhase {
   if (!(e instanceof ApiClientError)) return { kind: "error" };
-  const d = (e.details ?? {}) as Record<string, number>;
+  const d = (e.details ?? {}) as Record<string, number> & { startsAt?: string };
   switch (e.code) {
+    case "TABLE_RESERVED":
+      return { kind: "reserved", table: d.table ?? 0, startsAt: d.startsAt ?? "", answers: {} };
     case "TABLE_OCCUPIED":
       return { kind: "occupied", table: d.table ?? 0, guestCount: d.guestCount ?? 1 };
     case "OTHER_TABLE":
@@ -45,13 +47,15 @@ export function useTableSession(token: string) {
   const socketRef = useRef<AppSocket | null>(null);
 
   const join = useCallback(
-    async (answers: { confirmJoin?: boolean; confirmSwitch?: boolean } = {}) => {
+    async (answers: JoinAnswers = {}) => {
       store.getState().setPhase({ kind: "joining" });
       try {
         const res = await api<JoinResponse>("POST", `/api/tables/${encodeURIComponent(token)}/join`, answers);
         store.getState().applySnapshot(res.snapshot);
       } catch (e) {
-        store.getState().setPhase(phaseForJoinError(e));
+        const phase = phaseForJoinError(e);
+        // Earlier answers still count: someone switching tables shouldn't be asked to switch again.
+        store.getState().setPhase(phase.kind === "reserved" ? { ...phase, answers } : phase);
       }
     },
     [store, token],

@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { IconButton } from "@/components/ui/button";
@@ -37,18 +36,14 @@ export function ThemeToggle({ onImage }: { onImage?: boolean }) {
       variant={onImage ? "glass" : "plain"}
       onClick={toggle}
     >
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
+      <>
+        <span
           key={mode ?? "unknown"}
-          initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
-          animate={{ rotate: 0, opacity: 1, scale: 1 }}
-          exit={{ rotate: 90, opacity: 0, scale: 0.6 }}
-          transition={{ duration: 0.2 }}
-          className="grid place-items-center"
+          className="enter grid place-items-center"
         >
           {mode === "dark" ? <Sun className="size-5" aria-hidden /> : <Moon className="size-5" aria-hidden />}
-        </motion.span>
-      </AnimatePresence>
+        </span>
+      </>
     </IconButton>
   );
 }

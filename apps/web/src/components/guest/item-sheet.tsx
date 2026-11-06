@@ -11,7 +11,6 @@ import {
   type ModifierGroup,
   type ModifierSelection,
 } from "@app/shared";
-import { motion, useAnimationControls } from "framer-motion";
 import { Check, Info, Loader2, Tag } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
@@ -22,6 +21,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/toast";
 import { useT } from "@/i18n";
 import { cn } from "@/lib/cn";
+import { shake } from "@/lib/shake";
 import { formatPrice } from "@/lib/format";
 import { useGuestActions } from "./use-guest-actions";
 import { DietaryTags } from "./dietary-tags";
@@ -55,7 +55,7 @@ export function ItemSheet({ itemId, onClose }: ItemSheetProps) {
   const { menuState } = useGuest();
   const { addToCart } = useGuestActions();
   const [adding, setAdding] = useState(false);
-  const controls = useAnimationControls();
+  const addButton = useRef<HTMLDivElement>(null);
 
   const item = itemId ? menuState.itemsById.get(itemId) : undefined;
   // Keep the last item so the closing animation still has content.
@@ -79,7 +79,7 @@ export function ItemSheet({ itemId, onClose }: ItemSheetProps) {
     if (errors.length > 0) {
       update({ attempted: true });
       haptic(30);
-      void controls.start({ x: [0, -8, 8, -5, 5, 0], transition: { duration: 0.4 } });
+      shake(addButton.current, 8);
       document.getElementById(`group-${errors[0]!.groupId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -97,7 +97,7 @@ export function ItemSheet({ itemId, onClose }: ItemSheetProps) {
       shown.inStock ? (
         <div className="flex items-center gap-3">
           <QuantityStepper value={form.quantity} onChange={(quantity) => update({ quantity })} />
-          <motion.div animate={controls} className="min-w-0 flex-1">
+          <div ref={addButton} className="min-w-0 flex-1">
             <Button
               size="lg"
               className="w-full min-w-0 justify-between gap-3 px-5"
@@ -113,17 +113,14 @@ export function ItemSheet({ itemId, onClose }: ItemSheetProps) {
                 {adding && <Loader2 className="size-5 animate-spin" aria-hidden />}
                 {t("item.addButton")}
               </span>
-              <motion.span
+              <span
                 key={unitPrice(shown, form.selection) * form.quantity}
-                initial={{ scale: 0.92, opacity: 0.5 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 520, damping: 26 }}
-                className="shrink-0 whitespace-nowrap tabular"
+                className="enter shrink-0 whitespace-nowrap tabular"
               >
                 {formatPrice(unitPrice(shown, form.selection) * form.quantity)}
-              </motion.span>
+              </span>
             </Button>
-          </motion.div>
+          </div>
         </div>
       ) : (
         <Button size="lg" className="w-full" disabled>
@@ -152,12 +149,9 @@ function ItemMedia({ item }: { item: MenuItem }) {
   return (
     // Phones/tablets: a 4:3 / 16:10 photo above the details. Desktop (split sheet): fills the left half.
     <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted sm:aspect-[16/10] lg:aspect-auto lg:h-full">
-      <motion.div
+      <div
         key={item.id}
-        initial={{ scale: 1.08, opacity: 0.6 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute inset-0"
+        className="enter absolute inset-0"
       >
         <Image
           src={item.image}
@@ -167,7 +161,7 @@ function ItemMedia({ item }: { item: MenuItem }) {
           className={cn("object-cover", !item.inStock && "grayscale")}
           priority
         />
-      </motion.div>
+      </div>
       <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-transparent" />
       <div aria-hidden className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface to-transparent lg:hidden" />
     </div>
@@ -265,9 +259,9 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
                 <span className="block text-sm text-fg-muted">{groupHint(group, t)}</span>
               </span>
               {invalid ? (
-                <motion.span key={String(form.attempted)} animate={{ x: [0, -6, 6, -4, 4, 0] }} transition={{ duration: 0.4 }}>
+                <span key={String(form.attempted)} className="shake">
                   <Badge tone="danger">{t("item.pleaseChoose")}</Badge>
-                </motion.span>
+                </span>
               ) : required ? (
                 <Badge tone={chosen.length >= group.minSelect ? "success" : "primary"}>
                   {chosen.length >= group.minSelect && <Check className="size-3.5" aria-hidden />}

@@ -1,5 +1,5 @@
 import { brand, localize, type LocaleCode } from "@app/config";
-import { currencyDigits, formatMoney, parseMoney, type Money } from "@app/shared";
+import { currencyDigits, formatMoney, parseMoney, zonedDate, type Money } from "@app/shared";
 
 /** UI language → the locale used for dates, times and numbers. */
 export const LOCALE_TAGS: Record<LocaleCode, string> = {
@@ -92,6 +92,22 @@ export function weekdayName(day: string, style: "long" | "short" = "long", local
   const index = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"].indexOf(day);
   // 2023-01-01 was a Sunday.
   return formatDate(new Date(2023, 0, 1 + index), { weekday: style }, locale);
+}
+
+/** A reservation's clock time in the restaurant's time zone, wherever the viewer is: "13:00". */
+export function reservationTimeOf(iso: string): string {
+  return new Intl.DateTimeFormat("en-GB", { timeZone: brand.timezone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(iso));
+}
+
+/** A reservation's date in the restaurant's time zone: "7 November". */
+export function reservationDay(iso: string): string {
+  return formatDate(new Date(iso), { timeZone: brand.timezone, day: "numeric", month: "long" });
+}
+
+/** "13:00" if it's today at the restaurant, otherwise "7 November, 13:00". */
+export function reservationLabel(iso: string): string {
+  const today = zonedDate(new Date(), brand.timezone) === zonedDate(new Date(iso), brand.timezone);
+  return today ? reservationTimeOf(iso) : `${reservationDay(iso)}, ${reservationTimeOf(iso)}`;
 }
 
 /*

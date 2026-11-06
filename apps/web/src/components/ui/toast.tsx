@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { CircleAlert, CircleCheck, Info } from "lucide-react";
 import { create } from "zustand";
 import { cn } from "@/lib/cn";
@@ -51,20 +50,15 @@ export function Toaster() {
       aria-live="polite"
       role="status"
     >
-      <AnimatePresence initial={false}>
+      <>
         {toasts.map((t) => {
           const Icon = icons[t.kind];
           return (
-            <motion.button
+            <button
               type="button"
               key={t.id}
-              layout
               onClick={() => dismiss(t.id)}
-              initial={{ opacity: 0, y: -24, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -16, scale: 0.96 }}
-              transition={{ type: "spring", stiffness: 420, damping: 32 }}
-              className="glass-panel pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl px-4 py-3 text-left"
+              className="enter glass-panel pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl px-4 py-3 text-left"
             >
               <Icon
                 aria-hidden
@@ -79,10 +73,10 @@ export function Toaster() {
                 <span className="block text-[15px] font-semibold">{t.title}</span>
                 {t.body && <span className="block text-sm text-fg-muted">{t.body}</span>}
               </span>
-            </motion.button>
+            </button>
           );
         })}
-      </AnimatePresence>
+      </>
     </div>
   );
 }

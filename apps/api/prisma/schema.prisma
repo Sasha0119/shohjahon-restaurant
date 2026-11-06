@@ -283,10 +283,35 @@ model DiningTable {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  sessions TableSession[]
-  calls    WaiterCall[]
+  sessions     TableSession[]
+  calls        WaiterCall[]
+  reservations Reservation[]
 
   @@map("dining_tables")
+}
+
+enum ReservationStatus {
+  ACTIVE
+  CANCELLED
+}
+
+/// A table booked online. It holds the table from startsAt for two hours (see packages/shared/src/reservations.ts).
+model Reservation {
+  id          String            @id @default(cuid())
+  tableId     String            @map("table_id")
+  table       DiningTable       @relation(fields: [tableId], references: [id])
+  startsAt    DateTime          @map("starts_at")
+  partySize   Int               @map("party_size")
+  guestName   String            @map("guest_name")
+  guestPhone  String            @map("guest_phone")
+  status      ReservationStatus @default(ACTIVE)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  cancelledAt DateTime?         @map("cancelled_at")
+
+  @@index([tableId, status, startsAt])
+  @@index([status, startsAt])
+  @@index([guestPhone, status])
+  @@map("reservations")
 }
 
 enum SessionStatus {

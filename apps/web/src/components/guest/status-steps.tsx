@@ -1,7 +1,6 @@
 "use client";
 
 import { ORDER_FLOW, statusIndex, type OrderStatus } from "@app/shared";
-import { motion } from "framer-motion";
 import { ChefHat, ClipboardCheck, ConciergeBell, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { useT } from "@/i18n";
 import { cn } from "@/lib/cn";
@@ -32,16 +31,14 @@ export function StatusSteps({ status }: { status: OrderStatus }) {
       <div className="relative">
         {/* Rail */}
         <div aria-hidden className="absolute left-[12.5%] right-[12.5%] top-[19px] h-[3px] overflow-hidden rounded-full bg-line">
-          <motion.div
-            className="relative h-full origin-left overflow-hidden rounded-full bg-primary"
-            initial={false}
-            animate={{ scaleX: progress }}
-            transition={{ type: "spring", stiffness: 90, damping: 20 }}
+          <div
+            className="relative h-full origin-left overflow-hidden rounded-full bg-primary transition-transform duration-700"
+            style={{ transform: `scaleX(${progress})` }}
           >
             {inProgress && (
               <span className="absolute inset-y-0 left-0 w-1/3 animate-sheen bg-gradient-to-r from-transparent via-white/70 to-transparent" />
             )}
-          </motion.div>
+          </div>
         </div>
         <ol className="relative grid grid-cols-4 gap-1">
           {ORDER_FLOW.map((step, i) => {
@@ -50,10 +47,7 @@ export function StatusSteps({ status }: { status: OrderStatus }) {
             const active = i === current;
             return (
               <li key={step} className="flex flex-col items-center text-center" aria-current={active ? "step" : undefined} title={t(`status.${step}`)}>
-                <motion.span
-                  initial={false}
-                  animate={{ scale: active ? 1.1 : 1 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                <span
                   className={cn(
                     "grid size-10 place-items-center rounded-full ring-4 ring-surface transition-colors duration-500",
                     done && "bg-primary/15 text-primary ring-1 ring-inset ring-gold-line",
@@ -62,7 +56,7 @@ export function StatusSteps({ status }: { status: OrderStatus }) {
                   )}
                 >
                   <Icon className="size-[18px]" strokeWidth={1.8} aria-hidden />
-                </motion.span>
+                </span>
                 <span className="sr-only">{t(`status.${step}`)}</span>
               </li>
             );
@@ -70,19 +64,16 @@ export function StatusSteps({ status }: { status: OrderStatus }) {
         </ol>
       </div>
       {/* Names don't fit side by side in every language: show the current one, and what's next. */}
-      <motion.p
+      <p
         key={status}
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         aria-hidden
-        className="mt-3 flex flex-wrap items-baseline justify-center gap-x-2 text-center"
+        className="enter mt-3 flex flex-wrap items-baseline justify-center gap-x-2 text-center"
       >
         <span className="font-display text-lg font-semibold text-primary">{t(`status.${status}`)}</span>
         {current >= 0 && current < ORDER_FLOW.length - 1 && (
           <span className="text-sm text-fg-muted">→ {t(`status.${ORDER_FLOW[current + 1]!}`)}</span>
         )}
-      </motion.p>
+      </p>
     </div>
   );
 }

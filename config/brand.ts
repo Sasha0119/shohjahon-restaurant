@@ -45,6 +45,7 @@ export const brand: BrandConfig = {
   theme: {
     preset: "signature",
     mode: "dark", // "dark" (signature) | "light" | "system" (follows the phone). Guests can switch.
+    fonts: { display: "piazzolla", body: "onest" },
   },
 
   // So'm are shown as whole numbers ("85 000 soʻm"); tiyin are not used.

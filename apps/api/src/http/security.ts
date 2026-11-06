@@ -92,5 +92,6 @@ export function createRateLimiters(opts: { disabled?: boolean } = {}): Record<Ra
     default: (_req, _res, next) => next(),
     strict: make(30, 60_000, "RATE_LIMITED"),
     auth: make(10, 60_000, "TOO_MANY_LOGIN_ATTEMPTS"),
+    booking: make(10, 3_600_000, "RATE_LIMITED"),
   };
 }

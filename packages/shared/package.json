@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./seed": "./src/seed/index.ts",
-    "./api": "./src/api/index.ts"
+    "./api": "./src/api/index.ts",
+    "./api/realtime": "./src/api/realtime.ts"
   },
   "dependencies": {
     "@app/config": "*",

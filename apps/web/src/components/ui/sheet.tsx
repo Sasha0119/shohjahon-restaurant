@@ -1,8 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion, useDragControls } from "framer-motion";
 import { X } from "lucide-react";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useMinWidth } from "@/hooks/use-media-query";
 import { useMounted } from "@/hooks/use-mounted";
@@ -28,6 +27,12 @@ interface SheetProps {
   /** "split": on desktop (lg+), `media` fills the left half and the content scrolls on the right. */
   layout?: "stack" | "split";
 }
+
+/** How long the closing animation runs before the sheet leaves the page. Matches .sheet-panel. */
+const CLOSE_MS = 340;
+/** Drag this far down, or flick this fast (px per ms), to dismiss. */
+const DISMISS_DISTANCE = 110;
+const DISMISS_SPEED = 0.6;
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -60,7 +65,43 @@ export function Sheet({
   const titleId = useId();
   const descId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  const dragControls = useDragControls();
+  // Stays on the page while closing, and starts closed so opening can animate.
+  const [rendered, setRendered] = useState(open);
+  const [state, setState] = useState<"open" | "closed">("closed");
+  useEffect(() => {
+    if (open) {
+      setRendered(true);
+      const frame = requestAnimationFrame(() => requestAnimationFrame(() => setState("open")));
+      return () => cancelAnimationFrame(frame);
+    }
+    setState("closed");
+    const timer = setTimeout(() => setRendered(false), CLOSE_MS);
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  // Drag down to dismiss, on phones.
+  const drag = useRef<{ startY: number; startTime: number; distance: number } | null>(null);
+  const startDrag = (e: ReactPointerEvent<HTMLElement>) => {
+    if (modal) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { startY: e.clientY, startTime: e.timeStamp, distance: 0 };
+    panelRef.current?.setAttribute("data-dragging", "");
+  };
+  const moveDrag = (e: ReactPointerEvent<HTMLElement>) => {
+    if (!drag.current || !panelRef.current) return;
+    drag.current.distance = Math.max(0, e.clientY - drag.current.startY);
+    panelRef.current.style.transform = `translateY(${drag.current.distance}px)`;
+  };
+  const endDrag = (e: ReactPointerEvent<HTMLElement>) => {
+    if (!drag.current || !panelRef.current) return;
+    const { distance, startTime } = drag.current;
+    drag.current = null;
+    panelRef.current.removeAttribute("data-dragging");
+    panelRef.current.style.transform = "";
+    const speed = distance / Math.max(1, e.timeStamp - startTime);
+    if (distance > DISMISS_DISTANCE || speed > DISMISS_SPEED) onClose();
+  };
+  const dragHandlers = { onPointerDown: startDrag, onPointerMove: moveDrag, onPointerUp: endDrag, onPointerCancel: endDrag };
   const onCloseRef = useRef(onClose);
   const mounted = useMounted();
   const modal = useMinWidth("md");
@@ -108,7 +149,7 @@ export function Sheet({
     };
   }, [open]);
 
-  if (!mounted) return null;
+  if (!mounted || !rendered) return null;
 
   const heading = (
     <>
@@ -129,49 +170,28 @@ export function Sheet({
   );
 
   return createPortal(
-    <AnimatePresence>
-      {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
-          <motion.div
-            aria-hidden
-            className="absolute inset-0 bg-black/60"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            onClick={onClose}
-          />
-          <motion.div
+          <div aria-hidden data-state={state} className="sheet-backdrop absolute inset-0 bg-black/70" onClick={onClose} />
+          <div
             ref={panelRef}
+            data-state={state}
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
             aria-describedby={description ? descId : undefined}
             tabIndex={-1}
             className={cn(
-              "glass-panel relative flex max-h-[min(92svh,900px)] w-full max-w-xl flex-col overflow-hidden rounded-t-sheet outline-none sm:mb-4 sm:rounded-sheet",
+              "sheet-panel glass-panel relative flex max-h-[min(92svh,900px)] w-full max-w-xl flex-col overflow-hidden rounded-t-sheet outline-none sm:mb-4 sm:rounded-sheet",
               "md:mb-0 md:max-h-[min(88svh,860px)] md:max-w-2xl",
               split && "lg:h-[min(86svh,760px)] lg:max-w-5xl lg:flex-row",
               className,
             )}
-            initial={modal ? { opacity: 0, scale: 0.96, y: 12 } : { y: "100%" }}
-            animate={modal ? { opacity: 1, scale: 1, y: 0 } : { y: 0 }}
-            exit={modal ? { opacity: 0, scale: 0.97, y: 8 } : { y: "100%" }}
-            transition={modal ? { type: "spring", damping: 32, stiffness: 420, mass: 0.8 } : { type: "spring", damping: 34, stiffness: 340, mass: 0.9 }}
-            drag={modal ? false : "y"}
-            dragControls={dragControls}
-            dragListener={false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0.05, bottom: 0.7 }}
-            onDragEnd={(_, info) => {
-              if (info.offset.y > 110 || info.velocity.y > 600) onClose();
-            }}
           >
             {/* Drag handle zone (phones only) */}
             {!modal && (
               <div
                 className="absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab touch-none items-start justify-center pt-2.5 active:cursor-grabbing"
-                onPointerDown={(e) => dragControls.start(e)}
+                {...dragHandlers}
               >
                 <span className={cn("h-1.5 w-11 rounded-full", media ? "bg-white/80 shadow" : "bg-primary/40")} />
               </div>
@@ -203,7 +223,7 @@ export function Sheet({
               <>
                 <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
                   {media && (
-                    <div className={cn(!modal && "touch-none")} onPointerDown={(e) => !modal && dragControls.start(e)}>
+                    <div className={cn(!modal && "touch-none")} {...dragHandlers}>
                       {media}
                     </div>
                   )}
@@ -215,10 +235,8 @@ export function Sheet({
                 {footerBar}
               </>
             )}
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>,
+          </div>
+        </div>,
     document.body,
   );
 }

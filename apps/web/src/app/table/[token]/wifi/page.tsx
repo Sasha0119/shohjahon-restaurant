@@ -2,7 +2,6 @@
 
 import { brand } from "@app/config";
 import { wifiQrPayload } from "@app/shared";
-import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, KeyRound, ScanLine, Wifi } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
@@ -29,14 +28,11 @@ export default function WifiPage() {
         <section className="card relative overflow-hidden p-6 ring-1 ring-gold-line">
           <div aria-hidden className="absolute -right-12 -top-14 size-52 rounded-full border border-gold-line" />
           <div aria-hidden className="absolute -right-4 -top-6 size-36 rounded-full border border-gold-line/60" />
-          <motion.div
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }}
-            className="relative grid size-14 place-items-center rounded-full text-primary ring-1 ring-gold-line"
+          <div
+            className="enter relative grid size-14 place-items-center rounded-full text-primary ring-1 ring-gold-line"
           >
             <Wifi className="size-7" strokeWidth={1.6} aria-hidden />
-          </motion.div>
+          </div>
           <p className="eyebrow relative mt-5">{t("wifi.network")}</p>
           <p className="relative mt-1.5 break-all font-display text-[2rem] font-semibold leading-tight">{wifi.ssid}</p>
           <span aria-hidden className="gold-rule relative mt-4 block w-24" />
@@ -64,11 +60,8 @@ export default function WifiPage() {
           </h2>
           <p className="mt-1 text-sm text-fg-muted">{t("wifi.scanHint")}</p>
           {/* QR codes need dark-on-light to scan reliably, so the tile is always white. */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.15, duration: 0.4 }}
-            className="mt-5 rounded-3xl bg-white p-5 shadow-soft ring-4 ring-gold-line"
+          <div
+            className="enter mt-5 rounded-3xl bg-white p-5 shadow-soft ring-4 ring-gold-line"
           >
             <QRCodeSVG
               value={wifiQrPayload(wifi)}
@@ -79,7 +72,7 @@ export default function WifiPage() {
               fgColor="#111111"
               title={`${t("wifi.network")}: ${wifi.ssid}`}
             />
-          </motion.div>
+          </div>
           <p className="mt-5 max-w-xs text-sm text-fg-muted">{t("wifi.manualHint")}</p>
         </section>
       </div>
@@ -117,30 +110,26 @@ function CopyRow({
     <div className="flex min-h-[4.5rem] items-center gap-3.5 px-5 py-3">
       <Icon className="size-5 shrink-0 text-primary" strokeWidth={1.8} aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fg-muted">{label}</p>
+        <p className="text-[11px] font-label uppercase tracking-[0.08em] text-fg-muted">{label}</p>
         <p className={mono ? "select-all break-all font-mono text-[17px] font-semibold" : "select-all break-all text-[17px] font-semibold"}>
           {value}
         </p>
       </div>
-      <motion.button
+      <button
         type="button"
-        whileTap={{ scale: 0.92 }}
         onClick={copy}
         aria-label={t("wifi.copy", { label })}
-        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary ring-1 ring-gold-line hover:bg-primary/10"
+        className="pressable inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary ring-1 ring-gold-line hover:bg-primary/10"
       >
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.span
+        <>
+          <span
             key={copied ? "y" : "n"}
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.5, opacity: 0 }}
-            className="grid place-items-center"
+            className="enter grid place-items-center"
           >
             {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
-          </motion.span>
-        </AnimatePresence>
-      </motion.button>
+          </span>
+        </>
+      </button>
     </div>
   );
 }

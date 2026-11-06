@@ -2,7 +2,6 @@
 
 import { roundStatus, statusIndex, suggestionsForCart, type OrderStatus } from "@app/shared";
 import type { OrderTicketDTO } from "@app/shared/api";
-import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, ShoppingBag } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CartRow } from "@/components/guest/cart-row";
@@ -96,11 +95,11 @@ export default function CartPage() {
               {t("cart.items", { count })}
             </h2>
             <ul className="card overflow-hidden">
-              <AnimatePresence initial={false}>
+              <>
                 {cart.map((line) => (
                   <CartRow key={line.id} line={line} />
                 ))}
-              </AnimatePresence>
+              </>
             </ul>
 
             {suggestions.length > 0 && (
@@ -150,7 +149,7 @@ function RoundCard({ round }: { round: Round }) {
   const cancelled = round.status === "cancelled";
 
   return (
-    <motion.article layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="card p-5">
+    <article className="enter card p-5">
       <header className="flex items-center justify-between gap-3">
         <div>
           <h3 className="font-display text-xl font-semibold">{t("orders.round", { number: round.round })}</h3>
@@ -206,6 +205,6 @@ function RoundCard({ round }: { round: Round }) {
           </Button>
         </div>
       )}
-    </motion.article>
+    </article>
   );
 }

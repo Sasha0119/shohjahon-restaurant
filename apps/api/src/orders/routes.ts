@@ -19,6 +19,7 @@ import { idempotent } from "../http/idempotency.ts";
 import type { createRegistrar } from "../http/registrar.ts";
 import { enums } from "../lib/enums.ts";
 import type { Realtime } from "../realtime/types.ts";
+import { reservationSummary, upcomingReservationInclude } from "../reservations/routes.ts";
 import { tableStatus } from "../sessions/rules.ts";
 import { addToCart, removeCartLine, updateCartLine } from "./cart.ts";
 import { cancelRound, publishSubmit, submitOrder, updateTicketStatus, type SubmitResult } from "./submit.ts";
@@ -142,6 +143,7 @@ export function registerOrderRoutes(on: On, db: Db, env: Env, realtime: Realtime
       where: { active: true },
       orderBy: { number: "asc" },
       include: {
+        reservations: upcomingReservationInclude(new Date()),
         sessions: {
           where: { status: "OPEN" },
           include: {
@@ -167,6 +169,7 @@ export function registerOrderRoutes(on: On, db: Db, env: Env, realtime: Realtime
           session: s
             ? { id: s.id, guestCount: s._count.guests, openedAt: s.openedAt.toISOString(), openCalls: s.calls.length }
             : null,
+          reservation: reservationSummary(t.reservations[0]),
         };
       }),
     });

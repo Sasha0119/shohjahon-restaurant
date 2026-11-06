@@ -62,7 +62,7 @@ export function StaffHeader({
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+            "inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 text-xs font-semibold",
             connected ? "bg-success/12 text-success" : "bg-warning/15 text-warning",
           )}
           role="status"
@@ -83,7 +83,7 @@ export function StaffHeader({
         </div>
       </div>
       {!sound.muted && !sound.unlocked && (
-        <p className="flex items-center justify-center gap-2 bg-primary px-4 py-1.5 text-sm font-semibold text-on-primary">
+        <p className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 bg-primary px-4 pt-1.5 pb-[max(env(safe-area-inset-bottom),0.375rem)] text-sm font-semibold text-on-primary">
           <Volume2 className="size-4" aria-hidden />
           {t("kitchen.enableSound")}
         </p>

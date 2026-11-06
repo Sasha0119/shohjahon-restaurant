@@ -3,7 +3,6 @@
 import { brand } from "@app/config";
 import { allowedAmounts, applyPercent, currencyDigits, suggestedAmount, type SplitModeKey } from "@app/shared";
 import type { BillDTO, OrderLineDTO, PaymentDTO } from "@app/shared/api";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   Banknote,
   Check,
@@ -208,11 +207,11 @@ function Row({ label, value, tone, strong }: { label: string; value: string; ton
 
 function Amount({ value }: { value: number }) {
   return (
-    <AnimatePresence mode="popLayout" initial={false}>
-      <motion.span key={value} className="inline-block" initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -12, opacity: 0 }} transition={{ duration: 0.22 }}>
+    <>
+      <span key={value} className="enter inline-block">
         {formatPrice(value)}
-      </motion.span>
-    </AnimatePresence>
+      </span>
+    </>
   );
 }
 
@@ -293,7 +292,7 @@ function DiscountCode({ bill }: { bill: BillDTO }) {
           autoComplete="off"
           aria-invalid={!!error}
           aria-describedby="discount-error"
-          className="h-12 min-w-0 flex-1 rounded-full bg-muted px-4 font-mono tracking-wider placeholder:font-sans placeholder:tracking-normal placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-danger"
+          className="h-12 min-w-0 flex-1 rounded-card bg-muted px-4 ring-1 ring-inset ring-line font-mono tracking-wider placeholder:font-sans placeholder:tracking-normal placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-danger"
         />
         <Button type="submit" variant="secondary" disabled={busy || code.length < 2}>
           {busy && <Loader2 className="size-4 animate-spin" aria-hidden />}
@@ -439,8 +438,8 @@ function PayPanel({ bill }: { bill: BillDTO }) {
             { value: "custom", label: t("bill.splitCustom") },
           ]}
         />
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={mode} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
+        <>
+          <div className="enter" key={mode}>
             {mode === "even" && (
               <div className="mt-5">
                 <div className="flex items-center justify-between gap-4">
@@ -512,8 +511,8 @@ function PayPanel({ bill }: { bill: BillDTO }) {
                 <p className="mt-2 text-xs text-fg-muted">{t("bill.customMax", { amount: formatPrice(bill.outstandingCents) })}</p>
               </div>
             )}
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        </>
       </section>
 
       <section aria-labelledby="tip" className="card p-5">
@@ -557,23 +556,22 @@ function PayPanel({ bill }: { bill: BillDTO }) {
           {METHODS.map(({ id, icon: Icon }) => {
             const active = method === id;
             return (
-              <motion.button
+              <button
                 key={id}
                 type="button"
                 role="radio"
                 aria-checked={active}
-                whileTap={{ scale: 0.97 }}
                 onClick={() => setMethod(id)}
-                className={cn("relative flex min-h-16 items-center gap-3 rounded-2xl px-4 pr-10 text-left transition-colors", active ? "bg-primary/10 ring-2 ring-primary" : "glass-chip hover:text-primary")}
+                className={`pressable ${cn("relative flex min-h-16 items-center gap-3 rounded-2xl px-4 pr-10 text-left transition-colors", active ? "bg-primary/10 ring-2 ring-primary" : "glass-chip hover:text-primary")}`}
               >
                 <Icon className={cn("size-5", active ? "text-primary" : "text-fg-muted")} aria-hidden />
                 <span className="text-[15px] font-semibold">{t(`bill.${id}`)}</span>
                 {active && (
-                  <motion.span layoutId="method-check" className="absolute right-3 grid size-5 place-items-center rounded-full bg-primary text-on-primary">
+                  <span className="absolute right-3 grid size-5 place-items-center rounded-full bg-primary text-on-primary">
                     <Check className="size-3" strokeWidth={3.5} aria-hidden />
-                  </motion.span>
+                  </span>
                 )}
-              </motion.button>
+              </button>
             );
           })}
         </div>
@@ -583,7 +581,7 @@ function PayPanel({ bill }: { bill: BillDTO }) {
       <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] z-20 -mx-4 px-4 pt-2 pb-3 md:bottom-[calc(env(safe-area-inset-bottom)+1rem)] lg:mx-0 lg:px-0">
         <div className="glass-panel rounded-card p-3">
           <div className="flex items-center justify-between gap-4 px-2 pb-2.5">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">{t("bill.youPay")}</span>
+            <span className="text-xs font-label uppercase tracking-[0.08em] text-fg-muted">{t("bill.youPay")}</span>
             <span className="font-display text-2xl font-semibold tabular text-primary">
               <Amount value={amount + tipCents} />
             </span>
@@ -613,17 +611,14 @@ function OutcomeSheet({ outcome, onClose }: { outcome: Outcome | null; onClose: 
   return (
     <Sheet open={!!outcome} onClose={onClose} title={title}>
       <div className="flex flex-col items-center pt-2 text-center">
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 260, damping: 16 }}
-          className={cn(
+        <div
+          className={`enter ${cn(
             "my-4 grid size-20 place-items-center rounded-full",
             o.kind === "success" ? "bg-primary text-on-primary shadow-glow" : o.kind === "declined" ? "bg-danger/12 text-danger ring-1 ring-danger/30" : "bg-primary/12 text-primary ring-1 ring-gold-line",
-          )}
+          )}`}
         >
           {o.kind === "success" ? <CircleCheckBig className="size-10" aria-hidden /> : o.kind === "declined" ? <X className="size-10" aria-hidden /> : <Banknote className="size-10" aria-hidden />}
-        </motion.div>
+        </div>
         <p className="max-w-xs text-[15px] text-fg-muted">
           {o.kind === "success"
             ? `${t("pay.successBody", { amount: formatPrice(o.payment.amountCents + o.payment.tipCents) })}${o.settled ? ` ${t("pay.successSettled")}` : ""}`
@@ -636,7 +631,7 @@ function OutcomeSheet({ outcome, onClose }: { outcome: Outcome | null; onClose: 
           {o.kind === "success" && o.payment.receiptToken && (
             <Link
               href={`/receipt/${o.payment.receiptToken}`}
-              className="pressable inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-primary px-6 font-semibold text-on-primary shadow-glow"
+              className="pressable inline-flex min-h-14 items-center justify-center gap-2 rounded-card bg-primary px-6 font-semibold text-on-primary shadow-glow"
             >
               <ReceiptText className="size-5" aria-hidden />
               {t("pay.viewReceipt")}
@@ -653,17 +648,16 @@ function OutcomeSheet({ outcome, onClose }: { outcome: Outcome | null; onClose: 
 
 function TipChip({ active, onClick, title, sub }: { active: boolean; onClick: () => void; title: string; sub?: string }) {
   return (
-    <motion.button
+    <button
       type="button"
       role="radio"
       aria-checked={active}
-      whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={cn("flex min-h-16 flex-col items-center justify-center rounded-2xl px-2 py-2 text-center leading-tight transition-colors", active ? "bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.35),var(--shadow-glow)]" : "glass-chip hover:text-primary")}
+      className={`pressable ${cn("flex min-h-16 flex-col items-center justify-center rounded-2xl px-2 py-2 text-center leading-tight transition-colors", active ? "bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.35),var(--shadow-glow)]" : "glass-chip hover:text-primary")}`}
     >
       <span className="max-w-full text-[14px] font-semibold [overflow-wrap:anywhere]">{title}</span>
       {sub && <span className={cn("max-w-full truncate text-xs tabular", active ? "opacity-85" : "text-fg-muted")}>{sub}</span>}
-    </motion.button>
+    </button>
   );
 }
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { BellRing, ReceiptText, ShoppingBag, UtensilsCrossed, Wifi, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -49,29 +48,23 @@ export function BottomNav() {
             <>
               <span className="relative grid h-8 w-14 place-items-center">
                 {active && (
-                  <motion.span
-                    layoutId="nav-pill"
-                    className="absolute inset-0 rounded-full bg-primary/12 ring-1 ring-inset ring-gold-line"
-                    transition={{ type: "spring", stiffness: 500, damping: 36 }}
+                  <span
+                    className="absolute inset-0 rounded-card bg-primary/12 ring-1 ring-inset ring-gold-line"
                   />
                 )}
                 <Icon className="relative size-[22px]" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
                 {key === "cart" && (
-                  <AnimatePresence>
+                  <>
                     {count > 0 && (
-                      <motion.span
+                      <span
                         key={count}
-                        initial={{ scale: 0.4, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.4, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 600, damping: 20 }}
-                        className="absolute -top-1 right-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-on-primary ring-2 ring-surface tabular"
+                        className="enter absolute -top-1 right-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-on-primary ring-2 ring-surface tabular"
                         aria-hidden
                       >
                         {count > 99 ? "99+" : count}
-                      </motion.span>
+                      </span>
                     )}
-                  </AnimatePresence>
+                  </>
                 )}
               </span>
               <span className="max-w-full truncate px-0.5 text-[11px] font-semibold tracking-wide md:line-clamp-2 md:whitespace-normal md:text-center md:leading-tight">{label}</span>

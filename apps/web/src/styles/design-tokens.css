@@ -1,0 +1,88 @@
+/*
+ * Shohjahon design tokens. See docs/art-direction.md.
+ *
+ * Scoped to the landing page's .sj wrapper, which also carries the font
+ * variables (they must be on the same element for var() to resolve). Colours
+ * repeat the "signature" dark palette in config/themes.ts, so
+ * the landing page matches the app. If that palette changes, change these too.
+ */
+.sj {
+  /* Colour: near-black, warm ivory, one gold accent */
+  --sj-ink: #0d0c0a;
+  --sj-ink-raised: #16140f;
+  --sj-line: #2e2a22;
+  --sj-line-gold: rgb(201 164 92 / 0.38);
+  --sj-ivory: #f4eee2;
+  --sj-smoke: #ada393;
+  --sj-gold: #c9a45c;
+  --sj-gold-on-ivory: #8a6424; /* plain gold on ivory is only 2.0:1 */
+  --sj-scrim: rgb(8 7 5 / 0.62);
+
+  /* Type families: the --ff-* variables come from components/landing/fonts.ts */
+  --sj-font-display: var(--ff-piazzolla), Georgia, "Times New Roman", serif;
+  --sj-font-label: var(--ff-ibm-plex-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* Type scale: fluid from 360px to ultrawide. Hero also respects short laptop screens. */
+  --sj-type-hero: clamp(3.25rem, min(17vw, 23svh), 18rem);
+  --sj-type-wordmark: clamp(3.25rem, 21.5vw, 60rem);
+  --sj-type-number: clamp(3.5rem, 11vw, 12rem);
+  --sj-type-section: clamp(2.5rem, 7.5vw, 8rem);
+  --sj-type-statement: clamp(1.875rem, 4.6vw, 5.5rem);
+  --sj-type-lead: clamp(1.125rem, 1.5vw, 1.625rem);
+  --sj-type-body: 1rem;
+  --sj-type-label: clamp(0.75rem, 0.7vw, 1.125rem);
+  --sj-type-counter: clamp(1.75rem, 3.4vw, 4.5rem);
+
+  --sj-leading-display: 0.92;
+  --sj-leading-statement: 1.08;
+  --sj-leading-body: 1.55;
+  --sj-tracking-display: -0.02em;
+  --sj-tracking-label: 0.08em;
+
+  /* Grid */
+  --sj-columns: 12;
+  --sj-margin: clamp(1rem, 3.2vw, 3rem);
+  --sj-gutter: clamp(0.75rem, 1.6vw, 1.5rem);
+  --sj-max-content: 160rem; /* 2560px: content stops growing, full-bleed media does not */
+  --sj-rule: 1px;
+
+  /* Spacing: 8px base, plus fluid section gaps */
+  --sj-space-1: 0.25rem;
+  --sj-space-2: 0.5rem;
+  --sj-space-3: 1rem;
+  --sj-space-4: 1.5rem;
+  --sj-space-5: 2.5rem;
+  --sj-space-6: 4rem;
+  --sj-section-gap: clamp(6rem, 16vw, 16rem);
+
+  /* Motion: two curves only */
+  --sj-ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --sj-ease-curtain: cubic-bezier(0.76, 0, 0.24, 1);
+  --sj-duration-hover: 200ms;
+  --sj-duration-label: 600ms;
+  --sj-duration-headline: 900ms;
+  --sj-duration-curtain: 1100ms;
+  --sj-stagger-letter: 45ms;
+  --sj-stagger-line: 90ms;
+  --sj-loader-max: 2200ms;
+
+  /* Layers, lowest to highest */
+  --sj-z-content: 1;
+  --sj-z-header: 40;
+  --sj-z-menu: 50;
+  --sj-z-curtain: 60;
+  --sj-z-loader: 70;
+  --sj-z-cursor: 80;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sj {
+    --sj-duration-hover: 0ms;
+    --sj-duration-label: 0ms;
+    --sj-duration-headline: 0ms;
+    --sj-duration-curtain: 0ms;
+    --sj-stagger-letter: 0ms;
+    --sj-stagger-line: 0ms;
+    --sj-loader-max: 0ms;
+  }
+}

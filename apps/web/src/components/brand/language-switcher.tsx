@@ -1,7 +1,6 @@
 "use client";
 
 import { brand, type LocaleCode } from "@app/config";
-import { AnimatePresence, motion } from "framer-motion";
 import { Check, Globe } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { localeNames, localeShort, useI18n } from "@/i18n";
@@ -63,27 +62,23 @@ export function LanguageSwitcher({
         aria-label={`${t("language.label")}: ${localeNames[locale]}`}
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "pressable inline-flex h-11 items-center gap-1.5 rounded-full px-3 text-xs font-semibold tracking-[0.12em]",
+          "pressable inline-flex h-11 items-center gap-1.5 rounded-card px-3 text-xs font-semibold tracking-[0.12em]",
           onImage ? "glass-dark" : "glass-chip text-fg hover:text-primary",
         )}
       >
         <Globe className="size-4" aria-hidden />
         {localeShort[locale]}
       </button>
-      <AnimatePresence>
+      <>
         {open && (
-          <motion.ul
+          <ul
             id={listId}
             role="list"
             aria-label={t("language.label")}
-            initial={{ opacity: 0, y: placement === "below" ? -6 : 6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: placement === "below" ? -6 : 6, scale: 0.97 }}
-            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className={cn(
+            className={`enter ${cn(
               "glass-panel absolute z-50 w-48 overflow-hidden rounded-2xl p-1.5 text-fg",
               placement === "below" ? "right-0 top-[calc(100%+0.5rem)] origin-top-right" : "bottom-[calc(100%+0.5rem)] left-0 origin-bottom-left",
-            )}
+            )}`}
           >
             {brand.languages.map((code) => {
               const active = code === locale;
@@ -106,9 +101,9 @@ export function LanguageSwitcher({
                 </li>
               );
             })}
-          </motion.ul>
+          </ul>
         )}
-      </AnimatePresence>
+      </>
     </div>
   );
 }

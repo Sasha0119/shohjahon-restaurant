@@ -1,7 +1,6 @@
 "use client";
 
 import type { MenuItem } from "@app/shared";
-import { motion } from "framer-motion";
 import { Plus, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/misc";
@@ -16,7 +15,7 @@ import { needsChoices, useQuickAdd } from "./use-quick-add";
 function SoldOutSeal({ label }: { label: string }) {
   return (
     <div className="absolute inset-0 grid place-items-center bg-black/45">
-      <span className="glass-photo rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em]">
+      <span className="glass-photo rounded-card px-4 py-1.5 text-[11px] font-label uppercase tracking-[0.08em]">
         {label}
       </span>
     </div>
@@ -31,15 +30,11 @@ export function FoodCard({ item, priority }: { item: MenuItem; priority?: boolea
   const soldOut = !item.inStock;
 
   return (
-    <motion.article
-      layout="position"
-      className="glass-card lift group relative overflow-hidden rounded-card"
-    >
-      <motion.button
+    <article className="glass-card lift group relative overflow-hidden rounded-card">
+      <button
         type="button"
-        whileTap={{ scale: 0.985 }}
         onClick={() => openItem(item.id)}
-        className="block w-full text-left"
+        className="pressable-soft block w-full text-left"
         aria-label={`${item.name}, ${formatPrice(item.price)}${soldOut ? `, ${t("menu.soldOut")}` : ""}`}
       >
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
@@ -57,7 +52,7 @@ export function FoodCard({ item, priority }: { item: MenuItem; priority?: boolea
           <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/15" />
           <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
             {item.featured && !soldOut ? (
-              <span className="glass-photo inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] !text-[#E7D6AE]">
+              <span className="glass-photo inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 text-[11px] font-label uppercase tracking-[0.08em] !text-[#E7D6AE]">
                 <Sparkles className="size-3.5" aria-hidden />
                 {t("menu.chefsPick")}
               </span>
@@ -75,21 +70,19 @@ export function FoodCard({ item, priority }: { item: MenuItem; priority?: boolea
             {formatPrice(item.price)}
           </p>
         </div>
-      </motion.button>
+      </button>
 
       {!soldOut && (
-        <motion.button
+        <button
           type="button"
-          whileTap={{ scale: 0.86 }}
-          whileHover={{ scale: 1.06 }}
           onClick={() => quickAdd(item)}
           aria-label={needsChoices(item) ? t("menu.customize", { name: item.name }) : t("menu.quickAdd", { name: item.name })}
-          className="absolute bottom-4 right-4 grid size-12 place-items-center rounded-full bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.3),var(--shadow-glow)]"
+          className="pressable absolute bottom-4 right-4 grid size-12 place-items-center rounded-full bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.3),var(--shadow-glow)]"
         >
           <Plus className="size-6" strokeWidth={2.2} aria-hidden />
-        </motion.button>
+        </button>
       )}
-    </motion.article>
+    </article>
   );
 }
 
@@ -112,11 +105,10 @@ export function FeatureCard({ item, priority }: { item: MenuItem; priority?: boo
   const t = useT();
   const { openItem } = useGuest();
   return (
-    <motion.button
+    <button
       type="button"
-      whileTap={{ scale: 0.97 }}
       onClick={() => openItem(item.id)}
-      className="group relative block aspect-[4/5] w-[70vw] max-w-[280px] shrink-0 snap-start overflow-hidden rounded-card bg-muted text-left shadow-soft ring-1 ring-gold-line/70"
+      className="pressable group relative block aspect-[4/5] w-[70vw] max-w-[280px] shrink-0 snap-start overflow-hidden rounded-card bg-muted text-left shadow-soft ring-1 ring-gold-line/70"
       aria-label={`${item.name}, ${formatPrice(item.price)}`}
     >
       <Image
@@ -130,12 +122,12 @@ export function FeatureCard({ item, priority }: { item: MenuItem; priority?: boo
       <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
       <DietaryTags tags={item.tags} variant="glass" className="absolute right-3 top-3" />
       <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#E7D6AE]">{t("menu.chefsPick")}</p>
+        <p className="text-[10px] font-label uppercase tracking-[0.08em] text-[#E7D6AE]">{t("menu.chefsPick")}</p>
         <h3 className="mt-1.5 font-display text-[1.45rem] font-semibold leading-tight">{item.name}</h3>
         <span aria-hidden className="mt-3 block h-px w-10 bg-[#C9A45C]" />
         <p className="mt-3 text-[15px] font-semibold text-white/95 tabular">{formatPrice(item.price)}</p>
       </div>
-    </motion.button>
+    </button>
   );
 }
 
@@ -155,15 +147,14 @@ export function MiniItemCard({ item }: { item: MenuItem }) {
           <span className="mt-1 block text-sm text-primary tabular">{formatPrice(item.price)}</span>
         </span>
       </button>
-      <motion.button
+      <button
         type="button"
-        whileTap={{ scale: 0.85 }}
         onClick={() => quickAdd(item)}
         aria-label={t("menu.quickAdd", { name: item.name })}
-        className="absolute right-2.5 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full text-primary ring-1 ring-gold-line hover:bg-primary/10"
+        className="absolute right-2.5 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full text-primary ring-1 ring-gold-line hover:bg-primary/10 active:brightness-90"
       >
         <Plus className="size-5" strokeWidth={2.2} aria-hidden />
-      </motion.button>
+      </button>
     </div>
   );
 }

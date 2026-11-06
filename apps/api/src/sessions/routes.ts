@@ -29,6 +29,7 @@ export function registerSessionRoutes(on: On, db: Db, env: Env, realtime: Realti
       guestToken: req.cookies?.[GUEST_COOKIE],
       confirmJoin: body.confirmJoin,
       confirmSwitch: body.confirmSwitch,
+      confirmReserved: body.confirmReserved,
     });
     if (result.newGuestToken) {
       res.cookie(GUEST_COOKIE, result.newGuestToken, guestCookieOptions(env.COOKIE_SECURE));

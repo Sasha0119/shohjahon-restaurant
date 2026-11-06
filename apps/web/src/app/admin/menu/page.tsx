@@ -1,7 +1,6 @@
 "use client";
 
 import { brand, type LocaleCode } from "@app/config";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDown,
   ArrowUp,
@@ -197,7 +196,7 @@ function ItemRow({
   const inStock = useInStock(item.id, item.inStock);
 
   return (
-    <motion.li layout className={cn("flex items-center gap-3 border-b border-line px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/30", item.archived && "opacity-55")}>
+    <li className={cn("flex items-center gap-3 border-b border-line px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/30", item.archived && "opacity-55")}>
       <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
         <Image src={item.imageUrl} alt="" fill sizes="64px" className={cn("object-cover", !inStock && "grayscale")} />
       </span>
@@ -245,7 +244,7 @@ function ItemRow({
       >
         <Pencil className="size-5" aria-hidden />
       </Link>
-    </motion.li>
+    </li>
   );
 }
 
@@ -277,7 +276,7 @@ function CategoriesTab({ categories, reload }: { categories: AdminCategory[]; re
       </div>
       <ul className="mt-4 overflow-hidden card">
         {categories.map((c, i) => (
-          <motion.li layout key={c.id} className={cn("flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0", !c.active && "opacity-55")}>
+          <li key={c.id} className={cn("flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0", !c.active && "opacity-55")}>
             <div className="flex flex-col">
               <button type="button" disabled={i === 0} onClick={() => void move(i, -1)} aria-label={t("admin.menu.moveUp", { name: c.name })} className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30">
                 <ArrowUp className="size-4" aria-hidden />
@@ -301,7 +300,7 @@ function CategoriesTab({ categories, reload }: { categories: AdminCategory[]; re
             <button type="button" onClick={() => setEditing(c)} aria-label={t("admin.menu.edit", { name: c.name })} className="grid size-11 place-items-center rounded-full text-fg-muted hover:bg-muted hover:text-fg">
               <Pencil className="size-5" aria-hidden />
             </button>
-          </motion.li>
+          </li>
         ))}
       </ul>
       <CategorySheet target={editing} onClose={() => setEditing(null)} onSaved={reload} nextSort={categories.length} />
@@ -424,9 +423,9 @@ function CategorySheet({
         <div>
           <p className="text-sm font-semibold">{t("admin.menu.category.availability")}</p>
           <p className="mt-1 text-sm text-fg-muted">{t("admin.menu.category.availabilityHint")}</p>
-          <AnimatePresence initial={false}>
+          <>
             {form.availability.map((w, i) => (
-              <motion.div key={i} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden rounded-2xl bg-muted/50 p-3">
+              <div key={i} className="enter mt-3 overflow-hidden rounded-2xl bg-muted/50 p-3">
                 <div className="flex flex-wrap gap-1.5">
                   {DAYS.map((d) => (
                     <ToggleChip key={d} on={w.days.includes(d)} onClick={() => setWindow(i, { days: w.days.includes(d) ? w.days.filter((x) => x !== d) : [...w.days, d] })}>
@@ -446,9 +445,9 @@ function CategorySheet({
                     <Trash2 className="size-5" aria-hidden />
                   </button>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
+          </>
           <Button variant="ghost" size="sm" className="mt-2" onClick={() => set("availability", [...form.availability, { days: [], from: "08:00", to: "11:30" }])}>
             <Plus className="size-4" aria-hidden />
             {t("admin.menu.category.addWindow")}

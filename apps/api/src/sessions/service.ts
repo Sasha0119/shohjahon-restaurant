@@ -1,4 +1,5 @@
 import { rooms } from "@app/shared/api";
+import { RESERVATION_GRACE_MINUTES, RESERVATION_MINUTES } from "@app/shared";
 import { audit } from "../audit.ts";
 import { hashToken, newToken } from "../auth/tokens.ts";
 import type { Db } from "../db.ts";
@@ -191,6 +192,7 @@ export interface JoinInput {
   guestToken?: string;
   confirmJoin: boolean;
   confirmSwitch: boolean;
+  confirmReserved?: boolean;
   now?: Date;
 }
 
@@ -265,6 +267,28 @@ export async function joinTable(db: Db, realtime: Realtime, cfg: SessionConfig, 
         table: table.number,
         guestCount,
         openedAt: open.openedAt.toISOString(),
+      });
+    }
+  }
+
+  // 4. A reservation is due: warn before a new visit opens. The guest may well be the one who booked.
+  if (!open && !input.confirmReserved) {
+    const reservation = await db.reservation.findFirst({
+      where: {
+        tableId: table.id,
+        status: "ACTIVE",
+        startsAt: {
+          gte: new Date(now.getTime() - RESERVATION_GRACE_MINUTES * 60_000),
+          lt: new Date(now.getTime() + RESERVATION_MINUTES * 60_000),
+        },
+      },
+      orderBy: { startsAt: "asc" },
+      select: { startsAt: true },
+    });
+    if (reservation) {
+      throw new ApiError(409, "TABLE_RESERVED", "This table is reserved.", {
+        table: table.number,
+        startsAt: reservation.startsAt.toISOString(),
       });
     }
   }

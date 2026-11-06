@@ -11,6 +11,7 @@ import { errorHandler, notFoundHandler } from "./http/errors.ts";
 import { createRegistrar } from "./http/registrar.ts";
 import { corsMiddleware, createRateLimiters, originGuard, securityHeaders } from "./http/security.ts";
 import type { Realtime } from "./realtime/types.ts";
+import { registerReservationRoutes } from "./reservations/routes.ts";
 import { registerSessionRoutes } from "./sessions/routes.ts";
 import { GUEST_COOKIE, resolveGuest, resolveGuestIncludingClosed } from "./sessions/service.ts";
 import { registerTableAdminRoutes } from "./tables/admin-routes.ts";
@@ -95,6 +96,7 @@ export function createApp({ db, env, logger, realtime, imageStore, paymentProvid
   registerStaffAdminRoutes(on, db);
   registerSessionRoutes(on, db, env, realtime);
   registerTableAdminRoutes(on, db, env, realtime);
+  registerReservationRoutes(on, db, realtime);
   registerMenuRoutes(on, db, realtime);
   registerOrderRoutes(on, db, env, realtime);
   registerReviewRoutes(on, db, realtime);

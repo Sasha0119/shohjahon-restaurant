@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { useId, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
@@ -20,14 +19,10 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon: Icon, title, body, action, className }: EmptyStateProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className={cn("flex flex-col items-center px-8 py-14 text-center", className)}
+    <div
+      className={`enter ${cn("flex flex-col items-center px-8 py-14 text-center", className)}`}
     >
       <div className="relative mb-6">
-        <div className="absolute inset-0 scale-150 rounded-full bg-primary/12 blur-2xl" aria-hidden />
         <div className="relative grid size-20 place-items-center rounded-full bg-surface shadow-soft ring-1 ring-gold-line">
           <Icon className="size-8 text-primary" strokeWidth={1.4} aria-hidden />
         </div>
@@ -36,7 +31,7 @@ export function EmptyState({ icon: Icon, title, body, action, className }: Empty
       <span aria-hidden className="gold-rule mt-4 w-16" />
       {body && <p className="mt-4 max-w-xs text-[15px] leading-relaxed text-fg-muted">{body}</p>}
       {action && <div className="mt-7">{action}</div>}
-    </motion.div>
+    </div>
   );
 }
 
@@ -55,7 +50,7 @@ export function Segmented<T extends string>({ value, onChange, options, label, c
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn("glass-chip flex rounded-full p-1", className)}
+      className={cn("glass-chip flex rounded-card p-1", className)}
       onKeyDown={(e) => {
         if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
         e.preventDefault();
@@ -77,15 +72,13 @@ export function Segmented<T extends string>({ value, onChange, options, label, c
             data-value={o.value}
             onClick={() => onChange(o.value)}
             className={cn(
-              "pressable relative min-h-10 flex-1 rounded-full px-2 py-1.5 text-[13px] font-semibold leading-tight transition-colors sm:text-sm",
+              "pressable relative min-h-10 flex-1 rounded-card px-2 py-1.5 text-[13px] font-semibold leading-tight transition-colors sm:text-sm",
               active ? "text-fg" : "text-fg-muted hover:text-fg",
             )}
           >
             {active && (
-              <motion.span
-                layoutId={`seg-${id}`}
-                className="absolute inset-0 rounded-full bg-surface shadow-soft ring-1 ring-gold-line"
-                transition={{ type: "spring", stiffness: 500, damping: 38 }}
+              <span
+                className="absolute inset-0 rounded-card bg-surface shadow-soft ring-1 ring-gold-line"
               />
             )}
             <span className="relative">{o.label}</span>
@@ -109,7 +102,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold leading-none",
+        "inline-flex items-center gap-1 rounded-card px-2.5 py-1 text-xs font-semibold leading-none",
         tone === "muted" && "bg-muted text-fg-muted ring-1 ring-inset ring-line",
         tone === "primary" && "bg-primary/12 text-primary ring-1 ring-inset ring-gold-line",
         tone === "secondary" && "bg-secondary text-on-secondary",

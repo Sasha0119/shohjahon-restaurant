@@ -1,7 +1,6 @@
 "use client";
 
 import { brand } from "@app/config";
-import { motion } from "framer-motion";
 import {
   BookOpen,
   ChartColumn,
@@ -80,11 +79,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
               )}
             >
               {active && (
-                <motion.span
-                  layoutId="admin-nav"
+                <span
                   className="absolute inset-0 rounded-xl bg-primary/10 ring-1 ring-inset ring-gold-line"
                   aria-hidden
-                  transition={{ type: "spring", stiffness: 500, damping: 40 }}
                 />
               )}
               <Icon className="relative size-5" aria-hidden />
@@ -157,7 +154,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <div className="flex h-16 items-center gap-2 px-4">
           <Logo size={34} />
           {/* Tighter than the sidebar wordmark so the full name fits beside the buttons on a phone. */}
-          <p className="min-w-0 flex-1 truncate font-display text-base font-semibold uppercase tracking-[0.1em]">{brand.name}</p>
+          <p className="min-w-0 flex-1 truncate font-display text-base font-label uppercase tracking-[0.08em]">{brand.name}</p>
           <LanguageSwitcher />
           <ThemeToggle />
           <IconButton label={t("staff.signOut")} onClick={signOut}>

@@ -1,9 +1,9 @@
 "use client";
 
-import type { CallDTO, TableStatusDTO } from "@app/shared/api";
-import { AnimatePresence, motion } from "framer-motion";
+import type { CallDTO, ReservationSummaryDTO, TableStatusDTO } from "@app/shared/api";
 import { Banknote, BellRing, Check, Droplets, HandHelping, Loader2, ReceiptText, Users, XCircle, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ReservationsPanel } from "@/components/staff/reservations-panel";
 import { StaffGate } from "@/components/staff/staff-session";
 import { StaffHeader, useSoundAlerts } from "@/components/staff/staff-header";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { useT } from "@/i18n";
 import { translateError } from "@/i18n/errors";
 import { ApiClientError, api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatRelative } from "@/lib/format";
+import { formatPrice, formatRelative, reservationLabel } from "@/lib/format";
 
 const ROLES = ["waiter", "manager"] as const;
 
@@ -27,6 +27,7 @@ interface FloorTable {
   seats: number;
   status: TableStatusDTO;
   session: { id: string; guestCount: number; openedAt: string; openCalls: number } | null;
+  reservation: ReservationSummaryDTO | null;
 }
 
 const CALL_ICON: Record<CallDTO["type"], LucideIcon> = {
@@ -166,11 +167,11 @@ function Floor() {
             <EmptyState icon={BellRing} title={t("waiter.noCalls")} body={t("waiter.noCallsBody")} />
           ) : (
             <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:mt-0 lg:grid-cols-1">
-              <AnimatePresence initial={false}>
+              <>
                 {calls.map((c) => (
                   <CallCard key={c.id} call={c} fresh={fresh.has(c.id)} onHandle={() => void handle(c)} />
                 ))}
-              </AnimatePresence>
+              </>
             </ul>
           )}
         </section>
@@ -179,6 +180,7 @@ function Floor() {
           <h2 id="tables-title" className="sr-only lg:not-sr-only lg:mb-3 lg:flex lg:items-center lg:gap-3 lg:px-1 lg:font-sans lg:text-[13px] lg:font-semibold lg:uppercase lg:tracking-[0.2em] lg:text-primary">
             {t("waiter.tabs.tables")}
           </h2>
+          <ReservationsPanel refreshOn={tables} className="mb-5 mt-5 glass-card rounded-card p-4 lg:mt-0" />
           {!tables ? (
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:mt-0">
               {Array.from({ length: 8 }, (_, i) => (
@@ -189,23 +191,26 @@ function Floor() {
             <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:mt-0 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
               {tables.map((tb) => (
                 <li key={tb.id}>
-                  <motion.button
+                  <button
                     type="button"
-                    layout
-                    whileTap={{ scale: 0.97 }}
                     onClick={() => tb.session && setOpenTable(tb)}
-                    className={cn(
+                    className={`pressable ${cn(
                       "glass-card pressable flex h-full min-h-36 w-full flex-col rounded-card p-4 text-left -outline-offset-2",
                       tb.session && "lift",
                       tb.status === "billRequested" ? "outline-2 outline-danger/60" : tb.status === "ordered" ? "outline-2 outline-warning/50" : tb.status === "seated" ? "outline-1 outline-gold-line" : "outline-0",
                       !tb.session && "cursor-default opacity-75",
-                    )}
+                    )}`}
                   >
                     <span className="flex flex-wrap items-start justify-between gap-2">
                       <span className="font-display text-[2.6rem] font-semibold leading-none tabular">{tb.number}</span>
                       <Badge tone={STATUS_TONE[tb.status]}>{t(`admin.tables.status.${tb.status}`)}</Badge>
                     </span>
                     {tb.label && <span className="mt-1 truncate text-xs text-fg-muted">{tb.label}</span>}
+                    {tb.reservation && (
+                      <span className="mt-2 text-sm font-semibold text-primary">
+                        {t("reservations.reservedAt", { time: reservationLabel(tb.reservation.startsAt) })}
+                      </span>
+                    )}
                     {tb.session && (
                       <span className="mt-auto pt-3 text-sm">
                         <span className="flex items-center gap-1.5 font-semibold">
@@ -217,7 +222,7 @@ function Floor() {
                         )}
                       </span>
                     )}
-                  </motion.button>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -235,16 +240,12 @@ function CallCard({ call, fresh, onHandle }: { call: CallDTO; fresh: boolean; on
   const Icon = CALL_ICON[call.type];
   const urgent = call.type === "bill" || call.type === "cashPayment";
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 40 }}
-      className={cn(
+    <li
+      className={`enter ${cn(
         "glass-card flex flex-wrap items-center gap-4 rounded-card p-4 outline-1 -outline-offset-1",
         urgent ? "outline-danger/50" : "outline-gold-line",
         fresh && "animate-pulse-ring",
-      )}
+      )}`}
     >
       {/* The call type in a thin ring, echoing the logo mark. */}
       <span
@@ -272,7 +273,7 @@ function CallCard({ call, fresh, onHandle }: { call: CallDTO; fresh: boolean; on
         <Check className="size-5" aria-hidden />
         {call.type === "cashPayment" ? t("waiter.cashReceived") : t("waiter.handle")}
       </Button>
-    </motion.li>
+    </li>
   );
 }
 

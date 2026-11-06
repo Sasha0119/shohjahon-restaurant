@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import {
   CloudOff,
   KeyRound,
@@ -38,7 +37,7 @@ interface StaffRow {
 }
 
 const input =
-  "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
+  "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 ring-1 ring-inset ring-line text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
 
 export default function StaffAdminPage() {
@@ -109,17 +108,14 @@ function StaffList({ rows, onEdit }: { rows: StaffRow[]; onEdit: (r: StaffRow) =
         <span className="sr-only">{t("admin.staff.actions", { name: "" })}</span>
       </div>
       <ul>
-        <AnimatePresence initial={false}>
+        <>
           {rows.map((r) => (
-            <motion.li
+            <li
               key={r.id}
-              layout
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cn(
+              className={`enter ${cn(
                 "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b border-line px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,2fr)_8rem_8rem_10rem_3rem]",
                 !r.active && "opacity-60",
-              )}
+              )}`}
             >
               <div className="flex min-w-0 items-center gap-3">
                 <span
@@ -168,9 +164,9 @@ function StaffList({ rows, onEdit }: { rows: StaffRow[]; onEdit: (r: StaffRow) =
                   {r.lastLoginAt ? formatRelative(Date.parse(r.lastLoginAt), now) : t("admin.staff.never")}
                 </span>
               </div>
-            </motion.li>
+            </li>
           ))}
-        </AnimatePresence>
+        </>
       </ul>
     </div>
   );

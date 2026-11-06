@@ -1,6 +1,6 @@
 "use client";
 
-import { SOCKET_CLIENT_OPTIONS, type ClientToServerEvents, type ServerToClientEvents } from "@app/shared/api";
+import { SOCKET_CLIENT_OPTIONS, type ClientToServerEvents, type ServerToClientEvents } from "@app/shared/api/realtime";
 import { io, type Socket } from "socket.io-client";
 
 export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;

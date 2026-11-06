@@ -56,7 +56,7 @@ function PrintQr() {
                 <div aria-hidden className="pointer-events-none absolute inset-3 rounded-[calc(var(--radius-card)-8px)] ring-1 ring-[#C9A45C]/45 print:rounded-none" />
                 <Logo size={52} />
                 <p className="mt-2 font-display text-2xl font-semibold tracking-wide">{brand.name}</p>
-                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#8A6424]">{localize(brand.tagline, locale)}</p>
+                <p className="mt-1 text-[10px] font-label uppercase tracking-[0.08em] text-[#8A6424]">{localize(brand.tagline, locale)}</p>
                 <div aria-hidden className="mt-4 flex items-center gap-2 text-[#C9A45C]">
                   <span className="h-px w-12 bg-current" />
                   <span className="size-1.5 rotate-45 bg-current" />

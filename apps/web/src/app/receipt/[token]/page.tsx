@@ -2,7 +2,6 @@
 
 import { brand, localize } from "@app/config";
 import type { ReceiptDTO } from "@app/shared/api";
-import { motion } from "framer-motion";
 import { CircleCheckBig, Loader2, Mail, Printer, ReceiptText } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -42,13 +41,10 @@ export default function ReceiptPage() {
       {!receipt ? (
         <Skeleton className="mx-auto mt-6 h-[32rem] max-w-md rounded-card" />
       ) : (
-        <motion.article
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        <article
           // Paper is always ivory, so the logo uses the deep (light-mode) gold here.
           style={{ "--primary-color": "#8A6424" } as React.CSSProperties}
-          className="relative mx-auto mt-6 max-w-md overflow-hidden rounded-card bg-[#FBF8F2] px-6 pb-7 pt-8 text-[#1d1a15] shadow-lift ring-1 ring-[#C9A45C]/40 print:mt-0 print:shadow-none print:ring-0"
+          className="enter relative mx-auto mt-6 max-w-md overflow-hidden rounded-card bg-[#FBF8F2] px-6 pb-7 pt-8 text-[#1d1a15] shadow-lift ring-1 ring-[#C9A45C]/40 print:mt-0 print:shadow-none print:ring-0"
         >
           {/* A gold hairline frame inside the paper edge. */}
           <div aria-hidden className="pointer-events-none absolute inset-2.5 rounded-[calc(var(--radius-card)-6px)] ring-1 ring-[#C9A45C]/35" />
@@ -56,7 +52,7 @@ export default function ReceiptPage() {
           <header className="relative text-center">
             <Logo size={58} className="mx-auto" />
             <h1 className="mt-3 font-display text-[1.75rem] font-semibold leading-none tracking-wide">{brand.name}</h1>
-            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8A6424]">{tagline}</p>
+            <p className="mt-2 text-[11px] font-label uppercase tracking-[0.08em] text-[#8A6424]">{tagline}</p>
             <GoldRule />
             <p className="text-sm text-[#5a5348]">
               {t("receipt.number", { number: receipt.number })} · {t("receipt.table", { number: receipt.tableNumber })}
@@ -116,7 +112,7 @@ export default function ReceiptPage() {
           </section>
 
           <p className="relative mt-6 text-center font-display text-lg italic text-[#8A6424]">{t("receipt.thanks")}</p>
-        </motion.article>
+        </article>
       )}
 
       {receipt && (
@@ -188,7 +184,7 @@ function EmailForm({ token, emailedTo }: { token: string; emailedTo: string | nu
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder={t("receipt.emailPlaceholder")}
-          className="h-12 min-w-0 flex-1 rounded-full bg-muted px-4 placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+          className="h-12 min-w-0 flex-1 rounded-card bg-muted px-4 ring-1 ring-inset ring-line placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <Button type="submit" disabled={busy || !email}>
           {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Mail className="size-4" aria-hidden />}

@@ -3,7 +3,6 @@
 import { brand } from "@app/config";
 import { isTicketUpdateNewer, ticketUrgency, type OrderStatus, type Station } from "@app/shared";
 import type { MenuDTO, OrderTicketDTO } from "@app/shared/api";
-import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Boxes, CheckCheck, ChefHat, Clock, Loader2, MessageSquareText } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Switch } from "@/components/admin/form";
@@ -184,7 +183,7 @@ function KitchenDisplay() {
       <main className="grid gap-4 p-4 md:grid-cols-3 md:gap-3 md:p-3 lg:min-h-0 lg:flex-1 lg:gap-4 lg:p-4">
         {columns.map((col) => (
           <section key={col.status} aria-labelledby={`col-${col.status}`} className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
-            <h2 id={`col-${col.status}`} className="mb-3 flex shrink-0 items-center gap-3 px-1 font-sans text-[13px] font-semibold uppercase tracking-[0.2em] text-primary">
+            <h2 id={`col-${col.status}`} className="mb-3 flex shrink-0 items-center gap-3 px-1 text-[13px] font-label uppercase tracking-[0.08em] text-primary">
               <span aria-hidden className="h-px w-6 bg-primary" />
               {t(`kitchen.columns.${col.status}`)}
               <span className="grid h-6 min-w-6 place-items-center rounded-full px-2 text-xs tabular text-fg ring-1 ring-gold-line">{col.items.length}</span>
@@ -197,11 +196,11 @@ function KitchenDisplay() {
                   {col.status === "received" ? t("kitchen.allClear") : t("kitchen.empty")}
                 </p>
               ) : (
-                <AnimatePresence initial={false}>
+                <>
                   {col.items.map((ticket) => (
                     <TicketCard key={ticket.id} ticket={ticket} fresh={fresh.has(ticket.id)} busy={busy.has(ticket.id)} onAdvance={() => void advance(ticket)} />
                   ))}
-                </AnimatePresence>
+                </>
               )}
             </div>
           </section>
@@ -224,16 +223,12 @@ function TicketCard({ ticket, fresh, busy, onAdvance }: { ticket: OrderTicketDTO
   const Icon = status === "received" ? ChefHat : status === "preparing" ? CheckCheck : ArrowRight;
 
   return (
-    <motion.article
-      layout
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      className={cn(
+    <article
+      className={`enter ${cn(
         "glass-card overflow-hidden rounded-card outline-2 -outline-offset-2",
         urgency === "late" ? "outline-danger" : urgency === "warn" ? "outline-warning" : fresh ? "outline-primary" : "outline-transparent",
         fresh && "animate-pulse-ring",
-      )}
+      )}`}
     >
       <header
         className={cn(
@@ -245,7 +240,7 @@ function TicketCard({ ticket, fresh, busy, onAdvance }: { ticket: OrderTicketDTO
           <p className="font-display text-[1.75rem] font-semibold leading-none">{t("kitchen.table", { number: ticket.tableNumber })}</p>
           <p className={cn("mt-1 text-xs font-semibold uppercase tracking-wider", urgency === "late" ? "text-white/85" : "text-fg-muted")}>
             {t("kitchen.round", { number: ticket.round })} · {t(`kitchen.stations.${ticket.station}`)}
-            {fresh && <span className="ml-2 rounded-full bg-primary px-1.5 py-0.5 text-on-primary">{t("kitchen.newBadge")}</span>}
+            {fresh && <span className="ml-2 rounded-card bg-primary px-1.5 py-0.5 text-on-primary">{t("kitchen.newBadge")}</span>}
           </p>
         </div>
         <p className="flex shrink-0 items-center gap-1.5 text-xl font-bold tabular" aria-label={formatCountdown(now - created)}>
@@ -281,7 +276,7 @@ function TicketCard({ ticket, fresh, busy, onAdvance }: { ticket: OrderTicketDTO
           {label}
         </Button>
       </div>
-    </motion.article>
+    </article>
   );
 }
 

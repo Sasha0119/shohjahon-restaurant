@@ -1,7 +1,6 @@
 "use client";
 
 import type { FeedbackDTO } from "@app/shared/api";
-import { AnimatePresence, motion } from "framer-motion";
 import { Check, CloudOff, Loader2, MessageSquareHeart, RotateCcw, Star } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -125,11 +124,11 @@ export default function FeedbackPage() {
         ) : (
           <>
             <ul className="space-y-3">
-              <AnimatePresence initial={false}>
+              <>
                 {data.feedback.map((f) => (
                   <FeedbackCard key={f.id} f={f} fresh={fresh.has(f.id)} busy={busy === f.id} onSet={(s) => void setStatus(f, s)} />
                 ))}
-              </AnimatePresence>
+              </>
             </ul>
             {data.feedback.length < data.total && (
               <Button variant="secondary" className="mt-4 w-full" onClick={() => void load(data.page + 1)}>
@@ -148,16 +147,12 @@ function FeedbackCard({ f, fresh, busy, onSet }: { f: FeedbackDTO; fresh: boolea
   const now = useNow(60_000) ?? Date.now();
   const handled = f.status === "handled";
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 30 }}
-      className={cn(
+    <li
+      className={`enter ${cn(
         "glass-card rounded-card p-5 outline-1 -outline-offset-1",
         handled ? "outline-transparent" : "outline-danger/30",
         fresh && "animate-pulse-ring",
-      )}
+      )}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -184,6 +179,6 @@ function FeedbackCard({ f, fresh, busy, onSet }: { f: FeedbackDTO; fresh: boolea
           {handled ? t("admin.feedback.reopen") : t("admin.feedback.markHandled")}
         </Button>
       </div>
-    </motion.li>
+    </li>
   );
 }

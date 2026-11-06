@@ -1,10 +1,9 @@
 "use client";
 
-import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { ArrowLeft, Check, CloudOff, Delete, Loader2, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState, useRef } from "react";
 import { StaffAuthLayout } from "@/components/staff/auth-layout";
 import { safeNext } from "@/components/staff/staff-session";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { EmptyState, Skeleton } from "@/components/ui/misc";
 import { useT } from "@/i18n";
 import { ApiClientError, api, homeForRole, type StaffMe } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { shake } from "@/lib/shake";
 import { formatTime } from "@/lib/format";
 
 export default function PinLoginPage() {
@@ -45,13 +45,13 @@ function PinLogin() {
         </Link>
       }
     >
-      <AnimatePresence mode="wait" initial={false}>
+      <>
         {selected ? (
-          <motion.div key="pin" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }}>
+          <div className="enter" key="pin">
             <PinPad person={selected} onBack={() => setSelected(null)} />
-          </motion.div>
+          </div>
         ) : (
-          <motion.div key="who" initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}>
+          <div className="enter" key="who">
             {failed ? (
               <EmptyState
                 icon={CloudOff}
@@ -71,11 +71,10 @@ function PinLogin() {
               <ul className="grid grid-cols-2 gap-3">
                 {staff.map((s) => (
                   <li key={s.id}>
-                    <motion.button
+                    <button
                       type="button"
-                      whileTap={{ scale: 0.96 }}
                       onClick={() => setSelected(s)}
-                      className="flex h-full min-h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl bg-muted/60 p-3 text-center ring-1 ring-line transition-colors hover:bg-muted"
+                      className="pressable flex h-full min-h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl bg-muted/60 p-3 text-center ring-1 ring-line transition-colors hover:bg-muted"
                     >
                       <span className="grid size-12 place-items-center rounded-full bg-primary text-lg font-semibold text-on-primary shadow-glow">
                         {s.name.charAt(0).toUpperCase()}
@@ -84,14 +83,14 @@ function PinLogin() {
                       <span className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
                         {t(`staff.roles.${s.role}`)}
                       </span>
-                    </motion.button>
+                    </button>
                   </li>
                 ))}
               </ul>
             )}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </>
     </StaffAuthLayout>
   );
 }
@@ -105,7 +104,7 @@ function PinPad({ person, onBack }: { person: StaffMe; onBack: () => void }) {
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const controls = useAnimationControls();
+  const dots = useRef<HTMLDivElement>(null);
 
   const submit = useCallback(
     async (value: string) => {
@@ -127,13 +126,13 @@ function PinPad({ person, onBack }: { person: StaffMe; onBack: () => void }) {
         } else {
           setError(t("errors.generic"));
         }
-        void controls.start({ x: [0, -12, 12, -8, 8, 0], transition: { duration: 0.4 } });
+        shake(dots.current, 12);
         navigator.vibrate?.(60);
       } finally {
         setBusy(false);
       }
     },
-    [busy, controls, params, person.id, router, t],
+    [busy, params, person.id, router, t],
   );
 
   const press = useCallback(
@@ -168,7 +167,7 @@ function PinPad({ person, onBack }: { person: StaffMe; onBack: () => void }) {
       <button
         type="button"
         onClick={onBack}
-        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-full px-2 text-sm font-semibold text-fg-muted hover:text-fg"
+        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-card px-2 text-sm font-semibold text-fg-muted hover:text-fg"
       >
         <ArrowLeft className="size-4" aria-hidden />
         {t("staff.notYou")}
@@ -178,24 +177,23 @@ function PinPad({ person, onBack }: { person: StaffMe; onBack: () => void }) {
         <span className="grid size-14 place-items-center rounded-full bg-primary/12 text-primary">
           <UserRound className="size-7" aria-hidden />
         </span>
-        <motion.div
-          animate={controls}
+        <div
+          ref={dots}
           className="mt-5 flex h-6 items-center gap-3.5"
           role="status"
           aria-label={t("staff.pinDigits", { count: pin.length })}
         >
           {Array.from({ length: slots }, (_, i) => (
-            <motion.span
+            <span
               key={i}
-              initial={false}
-              animate={{ scale: i < pin.length ? 1 : 0.7 }}
               className={cn(
-                "size-3.5 rounded-full transition-colors",
+                "size-3.5 rounded-full transition-[background-color,transform]",
+                i < pin.length ? "scale-100" : "scale-75",
                 i < pin.length ? (error ? "bg-danger" : "bg-primary") : "bg-fg/15",
               )}
             />
           ))}
-        </motion.div>
+        </div>
         <p className="mt-3 h-5 text-center text-sm font-medium text-danger" role="alert">
           {error}
         </p>
@@ -206,17 +204,16 @@ function PinPad({ person, onBack }: { person: StaffMe; onBack: () => void }) {
           const label =
             key === "del" ? t("staff.deleteDigit") : key === "ok" ? t("staff.signIn") : undefined;
           return (
-            <motion.button
+            <button
               key={key}
               type="button"
-              whileTap={{ scale: 0.9 }}
               onClick={() => press(key)}
               disabled={busy || (key === "ok" && pin.length < 4) || (key === "del" && pin.length === 0)}
               aria-label={label}
-              className={cn(
+              className={`pressable ${cn(
                 "grid h-16 place-items-center rounded-2xl text-2xl font-semibold tabular transition-colors disabled:opacity-35",
                 key === "ok" ? "bg-primary text-on-primary shadow-glow" : "bg-muted/70 hover:bg-muted",
-              )}
+              )}`}
             >
               {key === "del" ? (
                 <Delete className="size-6" aria-hidden />
@@ -225,7 +222,7 @@ function PinPad({ person, onBack }: { person: StaffMe; onBack: () => void }) {
               ) : (
                 key
               )}
-            </motion.button>
+            </button>
           );
         })}
       </div>

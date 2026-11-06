@@ -4,6 +4,7 @@ export * from "./cart";
 export * from "./bill";
 export * from "./split";
 export * from "./hours";
+export * from "./reservations";
 export * from "./upsell";
 export * from "./status";
 export * from "./wifi";

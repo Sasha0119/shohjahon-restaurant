@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence } from "framer-motion";
 import { ChefHat, Loader2, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
@@ -85,11 +84,11 @@ export function CartPanel() {
       ) : (
         <>
           <ul className="card no-scrollbar mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-label={t("cart.items", { count })}>
-            <AnimatePresence initial={false}>
+            <>
               {cart.map((line) => (
                 <CartRow key={line.id} line={line} compact />
               ))}
-            </AnimatePresence>
+            </>
           </ul>
           <CartSummaryCard className="mt-3 shrink-0" />
         </>

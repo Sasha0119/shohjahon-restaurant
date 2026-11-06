@@ -10,6 +10,7 @@ import type { createRegistrar } from "../http/registrar.ts";
 import type { Realtime } from "../realtime/types.ts";
 import { tableStatus } from "../sessions/rules.ts";
 import { closeSession, emitTableStatus } from "../sessions/service.ts";
+import { reservationSummary, upcomingReservationInclude } from "../reservations/routes.ts";
 import { createQrToken, guestTableUrl } from "./qr-token.ts";
 
 type On = ReturnType<typeof createRegistrar>["on"];
@@ -28,6 +29,7 @@ export function registerTableAdminRoutes(on: On, db: Db, env: Env, realtime: Rea
       where,
       orderBy: { number: "asc" },
       include: {
+        reservations: upcomingReservationInclude(new Date()),
         sessions: {
           where: { status: "OPEN" },
           include: {
@@ -59,6 +61,7 @@ export function registerTableAdminRoutes(on: On, db: Db, env: Env, realtime: Rea
               lastActivityAt: s.lastActivityAt.toISOString(),
             }
           : null,
+        reservation: reservationSummary(t.reservations[0]),
       };
     });
   };
