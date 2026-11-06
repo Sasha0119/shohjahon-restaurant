@@ -239,7 +239,8 @@ export const uz: Messages = {
   },
   join: {
     reservedTitle: "{table}-stol band qilingan",
-    reservedBody: "Bu stol soat {time} ga band qilingan. Agar bu sizning bandlovingiz boʻlsa yoki sizni xodim shu yerga oʻtqazgan boʻlsa, davom eting. Aks holda, xodimga murojaat qiling.",
+    reservedBody:
+      "Bu stol soat {time} ga band qilingan. Agar bu sizning bandlovingiz boʻlsa yoki sizni xodim shu yerga oʻtqazgan boʻlsa, davom eting. Aks holda, xodimga murojaat qiling.",
     reservedContinue: "Davom etish",
     connecting: "Stolingiz qidirilmoqda…",
     occupiedTitle: "{table}-stolda buyurtma allaqachon boshlangan",
@@ -346,7 +347,8 @@ export const uz: Messages = {
   reserve: {
     nameError: "Ismingizni kiriting, kamida 2 ta harf.",
     phoneError: "Telefon raqamini toʻliq kiriting, masalan +998 90 123 45 67.",
-    unavailable: "Hozir onlayn band qilib boʻlmayapti. Birozdan soʻng urinib koʻring yoki bizga qoʻngʻiroq qiling: {phone}",
+    unavailable:
+      "Hozir onlayn band qilib boʻlmayapti. Birozdan soʻng urinib koʻring yoki bizga qoʻngʻiroq qiling: {phone}",
     cta: "Stol band qilish",
     title: "Stol band qilish",
     subtitle: "Kun va vaqtni tanlang, stolni siz uchun saqlab qoʻyamiz.",
@@ -379,7 +381,8 @@ export const uz: Messages = {
     view: "Koʻrish",
     storyLabel: "Hikoya",
     storyTitle: "Avval dasturxon.",
-    storyBody: "Shohjahon dasturxon atrofida qurilgan: taom baham koʻriladigan, hech kim ketishga shoshilmaydigan joy. Bu yerda hamma narsa shundan boshlanadi.",
+    storyBody:
+      "Shohjahon dasturxon atrofida qurilgan: taom baham koʻriladigan, hech kim ketishga shoshilmaydigan joy. Bu yerda hamma narsa shundan boshlanadi.",
     menuTitle: "Tandirdan soʻnggi piyola choygacha.",
     menuBody: "Gazaklar, osh va lagʻmon, kabob, shirinliklar va ichimliklar. Bugun nimalar borligini koʻring.",
     reserveTitle: "Oldindan band qiling yoki shunchaki oʻtiring.",
@@ -454,7 +457,12 @@ export const uz: Messages = {
     handled: "Bajarildi deb belgilandi",
     cashReceived: "Naqd olindi",
     cashConfirmed: "{number}-stol uchun naqd toʻlov tasdiqlandi",
-    callTypes: { water: "Suv keltirish", assistance: "Yordam kerak", bill: "Hisobni soʻrayapti", cashPayment: "Naqd toʻlaydi" },
+    callTypes: {
+      water: "Suv keltirish",
+      assistance: "Yordam kerak",
+      bill: "Hisobni soʻrayapti",
+      cashPayment: "Naqd toʻlaydi",
+    },
     ago: "{time}",
     openCalls: { one: "{count} ta ochiq chaqiruv", other: "{count} ta ochiq chaqiruv" },
     closeSession: "Bu stol sessiyasini yopish",
@@ -464,10 +472,20 @@ export const uz: Messages = {
   admin: {
     title: "Boshqaruv",
     fieldInvalid: "Bu qiymatni tekshiring.",
-    nav: { overview: "Umumiy koʻrinish", tables: "Stollar", orders: "Buyurtmalar", menu: "Menyu", discounts: "Chegirmalar", feedback: "Fikrlar", audit: "Audit jurnali", staff: "Xodimlar" },
+    nav: {
+      overview: "Umumiy koʻrinish",
+      tables: "Stollar",
+      orders: "Buyurtmalar",
+      menu: "Menyu",
+      discounts: "Chegirmalar",
+      feedback: "Fikrlar",
+      audit: "Audit jurnali",
+      staff: "Xodimlar",
+    },
     feedback: {
       title: "Fikrlar",
-      subtitle: "1–3 yulduz qoʻygan mehmonlarning shaxsiy izohlari. 4–5 yulduz qoʻyganlar ommaviy sharh sahifalaringizga yoʻnaltiriladi.",
+      subtitle:
+        "1–3 yulduz qoʻygan mehmonlarning shaxsiy izohlari. 4–5 yulduz qoʻyganlar ommaviy sharh sahifalaringizga yoʻnaltiriladi.",
       tabs: { new: "Yangi", handled: "Koʻrib chiqilgan", all: "Hammasi" },
       empty: "Hech narsa yoʻq — mehmonlar mamnun.",
       markHandled: "Koʻrib chiqildi",
@@ -631,7 +649,12 @@ export const uz: Messages = {
       seatsCount: { one: "{count} oʻrin", other: "{count} oʻrin" },
       takingOrders: "Buyurtma qabul qiladi",
       off: "Oʻchiq",
-      status: { free: "Boʻsh", seated: "Mehmonlar oʻtirgan", ordered: "Buyurtma berilgan", billRequested: "Hisob soʻralgan" },
+      status: {
+        free: "Boʻsh",
+        seated: "Mehmonlar oʻtirgan",
+        ordered: "Buyurtma berilgan",
+        billRequested: "Hisob soʻralgan",
+      },
       guests: { one: "{count} mehmon", other: "{count} mehmon" },
       since: "{time} dan beri",
       qr: "{number}-stol uchun QR kod",
@@ -713,7 +736,8 @@ export const uz: Messages = {
     },
     overview: {
       title: "Umumiy koʻrinish",
-      subtitle: "Restoran ishlari qanday. Raqamlar toʻlangan hisoblar va oshxonaga yuborilgan buyurtmalarni hisoblaydi.",
+      subtitle:
+        "Restoran ishlari qanday. Raqamlar toʻlangan hisoblar va oshxonaga yuborilgan buyurtmalarni hisoblaydi.",
       loadError: "Raqamlarni yuklab boʻlmadi.",
       retry: "Qayta urinish",
       vsPrevious: "oldingi {days} kunga nisbatan",
@@ -878,7 +902,8 @@ export const uz: Messages = {
       STALE_STATUS: "Kimdir bu buyurtmani hozirgina yangiladi. Yangilanmoqda.",
       TABLE_OCCUPIED: "Bu stolda kimdir allaqachon buyurtma boshlagan.",
       TABLE_UNAVAILABLE: "Bu stol hozir buyurtma qabul qilmayapti.",
-      TOO_LATE_TO_CANCEL: "Oshxona bu buyurtmani tayyorlashni boshlagan, uni bekor qilib boʻlmaydi. Xodimlarimizdan soʻrang.",
+      TOO_LATE_TO_CANCEL:
+        "Oshxona bu buyurtmani tayyorlashni boshlagan, uni bekor qilib boʻlmaydi. Xodimlarimizdan soʻrang.",
       TOO_MANY_LOGIN_ATTEMPTS: "Urinishlar juda koʻp. Bir daqiqa kuting.",
       UNAUTHORIZED: "Iltimos, qaytadan kiring.",
       UNSUPPORTED_IMAGE: "Bu fayl qoʻllab-quvvatlanadigan rasm emas (JPEG, PNG, WebP yoki AVIF).",

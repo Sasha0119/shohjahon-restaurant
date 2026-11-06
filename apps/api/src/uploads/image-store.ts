@@ -17,9 +17,9 @@ export interface ImageStore {
 }
 
 /** Names we hand out: 32 hex chars + ".webp". Anything else is never looked up. */
-export const IMAGE_NAME = /^[0-9a-f]{32}\.webp$/;
+const IMAGE_NAME = /^[0-9a-f]{32}\.webp$/;
 
-export const IMAGE_LIMITS = {
+const IMAGE_LIMITS = {
   maxEdge: 1600,
   minEdge: 200,
   /** Refuse decompression bombs. */
@@ -32,14 +32,18 @@ export const IMAGE_LIMITS = {
  * stored file is always a clean image: EXIF (incl. GPS) and anything hidden
  * in the original are dropped, and non-images fail to decode.
  */
-export async function processImage(input: Buffer): Promise<{ data: Buffer; width: number; height: number }> {
+async function processImage(input: Buffer): Promise<{ data: Buffer; width: number; height: number }> {
   let pipeline;
   try {
     pipeline = sharp(input, { limitInputPixels: IMAGE_LIMITS.maxInputPixels, failOn: "error" });
     const meta = await pipeline.metadata();
     if (!meta.width || !meta.height) throw new Error("no dimensions");
     if (Math.min(meta.width, meta.height) < IMAGE_LIMITS.minEdge) {
-      throw new ApiError(422, "IMAGE_TOO_SMALL", `Please use a photo at least ${IMAGE_LIMITS.minEdge} px on each side.`);
+      throw new ApiError(
+        422,
+        "IMAGE_TOO_SMALL",
+        `Please use a photo at least ${IMAGE_LIMITS.minEdge} px on each side.`,
+      );
     }
   } catch (e) {
     if (e instanceof ApiError) throw e;

@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  CloudOff,
-  KeyRound,
-  Loader2,
-  Lock,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Power,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { CloudOff, KeyRound, Loader2, Lock, MoreHorizontal, Pencil, Plus, Power, UserPlus, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useStaffSession } from "@/components/staff/staff-session";
 import { Button } from "@/components/ui/button";
@@ -39,7 +28,6 @@ interface StaffRow {
 const input =
   "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 ring-1 ring-inset ring-line text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
-
 export default function StaffAdminPage() {
   const t = useT();
   const [rows, setRows] = useState<StaffRow[] | null>(null);
@@ -56,7 +44,9 @@ export default function StaffAdminPage() {
   useEffect(load, [load]);
 
   const upsert = (row: StaffRow) =>
-    setRows((rs) => (rs ? (rs.some((r) => r.id === row.id) ? rs.map((r) => (r.id === row.id ? row : r)) : [...rs, row]) : [row]));
+    setRows((rs) =>
+      rs ? (rs.some((r) => r.id === row.id) ? rs.map((r) => (r.id === row.id ? row : r)) : [...rs, row]) : [row],
+    );
 
   return (
     <div>
@@ -73,7 +63,11 @@ export default function StaffAdminPage() {
 
       <div className="mt-8">
         {failed ? (
-          <EmptyState icon={CloudOff} title={t("admin.staff.loadError")} action={<Button onClick={load}>{t("common.retry")}</Button>} />
+          <EmptyState
+            icon={CloudOff}
+            title={t("admin.staff.loadError")}
+            action={<Button onClick={load}>{t("common.retry")}</Button>}
+          />
         ) : !rows ? (
           <div className="space-y-3" aria-busy="true">
             {Array.from({ length: 4 }, (_, i) => (
@@ -231,18 +225,42 @@ function CreateStaffSheet({
         <label className="mt-5 block text-sm font-semibold" htmlFor="new-name">
           {t("admin.staff.name")}
         </label>
-        <input id="new-name" className={input} value={name} onChange={(e) => setName(e.target.value)} maxLength={60} required />
+        <input
+          id="new-name"
+          className={input}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={60}
+          required
+        />
 
         {role === "manager" ? (
           <>
             <label className="mt-4 block text-sm font-semibold" htmlFor="new-email">
               {t("staff.email")}
             </label>
-            <input id="new-email" type="email" autoComplete="off" className={input} value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input
+              id="new-email"
+              type="email"
+              autoComplete="off"
+              className={input}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
             <label className="mt-4 block text-sm font-semibold" htmlFor="new-password">
               {t("admin.staff.newPassword")}
             </label>
-            <input id="new-password" type="password" autoComplete="new-password" className={input} value={password} onChange={(e) => setPassword(e.target.value)} minLength={10} required />
+            <input
+              id="new-password"
+              type="password"
+              autoComplete="new-password"
+              className={input}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={10}
+              required
+            />
           </>
         ) : (
           <>
@@ -269,7 +287,11 @@ function CreateStaffSheet({
             {t("admin.staff.cancel")}
           </Button>
           <Button type="submit" className="flex-1" disabled={busy || !name.trim()}>
-            {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <UserPlus className="size-5" aria-hidden />}
+            {busy ? (
+              <Loader2 className="size-5 animate-spin" aria-hidden />
+            ) : (
+              <UserPlus className="size-5" aria-hidden />
+            )}
             {t("admin.staff.create")}
           </Button>
         </div>
@@ -345,16 +367,26 @@ function EditStaffSheet({
   const toggleActive = () =>
     run(
       () => api("PATCH", `/api/admin/staff/${shown.id}`, { active: !shown.active }),
-      shown.active ? t("admin.staff.deactivated", { name: shown.name }) : t("admin.staff.activated", { name: shown.name }),
+      shown.active
+        ? t("admin.staff.deactivated", { name: shown.name })
+        : t("admin.staff.activated", { name: shown.name }),
     );
 
-  const menuButton = "flex min-h-14 w-full items-center gap-3 rounded-2xl px-4 text-left text-[15px] font-semibold transition-colors hover:bg-muted";
+  const menuButton =
+    "flex min-h-14 w-full items-center gap-3 rounded-2xl px-4 text-left text-[15px] font-semibold transition-colors hover:bg-muted";
 
   return (
     <Sheet open={!!row} onClose={onClose} title={shown.name} description={t(`staff.roles.${shown.role}`)}>
       {mode === "menu" ? (
         <div className="mt-4 space-y-1">
-          <button type="button" className={menuButton} onClick={() => { setValue(shown.name); setMode("rename"); }}>
+          <button
+            type="button"
+            className={menuButton}
+            onClick={() => {
+              setValue(shown.name);
+              setMode("rename");
+            }}
+          >
             <Pencil className="size-5 text-fg-muted" aria-hidden />
             {t("admin.staff.rename")}
           </button>
@@ -382,7 +414,11 @@ function EditStaffSheet({
       ) : (
         <form onSubmit={submit} className="mt-5">
           <label className="block text-sm font-semibold" htmlFor="edit-value">
-            {mode === "rename" ? t("admin.staff.name") : isManager ? t("admin.staff.newPassword") : t("admin.staff.newPin")}
+            {mode === "rename"
+              ? t("admin.staff.name")
+              : isManager
+                ? t("admin.staff.newPassword")
+                : t("admin.staff.newPin")}
           </label>
           <input
             id="edit-value"
@@ -397,7 +433,9 @@ function EditStaffSheet({
             }
           />
           {mode === "secret" && (
-            <p className="mt-2 text-sm text-fg-muted">{isManager ? t("admin.staff.passwordHint") : t("admin.staff.pinHint")}</p>
+            <p className="mt-2 text-sm text-fg-muted">
+              {isManager ? t("admin.staff.passwordHint") : t("admin.staff.pinHint")}
+            </p>
           )}
           <p className="mt-3 min-h-5 text-sm font-medium text-danger" role="alert">
             {error}

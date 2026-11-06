@@ -25,7 +25,13 @@ describe.skipIf(!TEST_DATABASE_URL)("staff auth & roles (integration)", () => {
       COOKIE_SECRET: "c".repeat(40),
       STAFF_SESSION_HOURS: "12",
     });
-    app = createApp({ db, env, logger: pino({ level: "silent" }), realtime: createRecordingRealtime(), disableRateLimits: true }).app;
+    app = createApp({
+      db,
+      env,
+      logger: pino({ level: "silent" }),
+      realtime: createRecordingRealtime(),
+      disableRateLimits: true,
+    }).app;
   }, 180_000);
 
   afterAll(async () => {
@@ -34,7 +40,8 @@ describe.skipIf(!TEST_DATABASE_URL)("staff auth & roles (integration)", () => {
 
   /** A cookie-keeping client, like a browser tab. */
   const agent = () => request.agent(app);
-  const post = (a: ReturnType<typeof agent>, path: string, body: object = {}) => a.post(path).set("Origin", ORIGIN).send(body);
+  const post = (a: ReturnType<typeof agent>, path: string, body: object = {}) =>
+    a.post(path).set("Origin", ORIGIN).send(body);
   const managerAgent = async () => {
     const a = agent();
     const res = await post(a, "/api/auth/login", TEST_MANAGER);
@@ -128,8 +135,13 @@ describe.skipIf(!TEST_DATABASE_URL)("staff auth & roles (integration)", () => {
       const res = await post(m, `/api/admin/staff/${TEST_PIN_STAFF.kitchen.id}/reset-pin`, { pin: "8642" });
       expect(res.status).toBe(200);
       expect(res.body.staff.locked).toBe(false);
-      expect((await post(agent(), "/api/auth/pin", { staffId: TEST_PIN_STAFF.kitchen.id, pin: "8642" })).status).toBe(200);
-      expect((await post(agent(), "/api/auth/pin", { staffId: TEST_PIN_STAFF.kitchen.id, pin: TEST_PIN_STAFF.kitchen.pin })).status).toBe(401);
+      expect((await post(agent(), "/api/auth/pin", { staffId: TEST_PIN_STAFF.kitchen.id, pin: "8642" })).status).toBe(
+        200,
+      );
+      expect(
+        (await post(agent(), "/api/auth/pin", { staffId: TEST_PIN_STAFF.kitchen.id, pin: TEST_PIN_STAFF.kitchen.pin }))
+          .status,
+      ).toBe(401);
       TEST_PIN_STAFF.kitchen.pin = "8642";
     });
   });
@@ -147,7 +159,10 @@ describe.skipIf(!TEST_DATABASE_URL)("staff auth & roles (integration)", () => {
       expect(forged.status).toBe(401);
 
       const a = await pinAgent("waiter");
-      await db.staffSession.updateMany({ where: { staffId: TEST_PIN_STAFF.waiter.id }, data: { expiresAt: new Date(0) } });
+      await db.staffSession.updateMany({
+        where: { staffId: TEST_PIN_STAFF.waiter.id },
+        data: { expiresAt: new Date(0) },
+      });
       expect((await a.get("/api/auth/me")).status).toBe(401);
     });
 
@@ -162,10 +177,16 @@ describe.skipIf(!TEST_DATABASE_URL)("staff auth & roles (integration)", () => {
     it("deactivating someone signs them out and blocks login", async () => {
       const waiter = await pinAgent("waiter");
       const m = await managerAgent();
-      const res = await m.patch(`/api/admin/staff/${TEST_PIN_STAFF.waiter.id}`).set("Origin", ORIGIN).send({ active: false });
+      const res = await m
+        .patch(`/api/admin/staff/${TEST_PIN_STAFF.waiter.id}`)
+        .set("Origin", ORIGIN)
+        .send({ active: false });
       expect(res.body.staff.active).toBe(false);
       expect((await waiter.get("/api/auth/me")).status).toBe(401);
-      expect((await post(agent(), "/api/auth/pin", { staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin })).status).toBe(401);
+      expect(
+        (await post(agent(), "/api/auth/pin", { staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin }))
+          .status,
+      ).toBe(401);
       await m.patch(`/api/admin/staff/${TEST_PIN_STAFF.waiter.id}`).set("Origin", ORIGIN).send({ active: true });
     });
   });
@@ -196,7 +217,10 @@ describe.skipIf(!TEST_DATABASE_URL)("staff auth & roles (integration)", () => {
         password: "another-test-password",
       });
       expect(mgr.status).toBe(201);
-      expect((await post(agent(), "/api/auth/login", { email: "jordan@example.com", password: "another-test-password" })).status).toBe(200);
+      expect(
+        (await post(agent(), "/api/auth/login", { email: "jordan@example.com", password: "another-test-password" }))
+          .status,
+      ).toBe(200);
     });
 
     it("rejects a duplicate email with 409", async () => {
@@ -240,7 +264,9 @@ describe.skipIf(!TEST_DATABASE_URL)("staff auth & roles (integration)", () => {
       const here = await managerAgent();
       const elsewhere = await managerAgent();
       const manager = await db.staff.findFirstOrThrow({ where: { email: TEST_MANAGER.email } });
-      const res = await post(here, `/api/admin/staff/${manager.id}/reset-password`, { password: "brand-new-password-1" });
+      const res = await post(here, `/api/admin/staff/${manager.id}/reset-password`, {
+        password: "brand-new-password-1",
+      });
       expect(res.status).toBe(200);
       expect((await here.get("/api/auth/me")).status).toBe(200);
       expect((await elsewhere.get("/api/auth/me")).status).toBe(401);

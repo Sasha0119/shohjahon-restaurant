@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { useId, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 /** Shimmering placeholder block. */
@@ -19,9 +19,7 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon: Icon, title, body, action, className }: EmptyStateProps) {
   return (
-    <div
-      className={`enter ${cn("flex flex-col items-center px-8 py-14 text-center", className)}`}
-    >
+    <div className={`enter ${cn("flex flex-col items-center px-8 py-14 text-center", className)}`}>
       <div className="relative mb-6">
         <div className="relative grid size-20 place-items-center rounded-full bg-surface shadow-soft ring-1 ring-gold-line">
           <Icon className="size-8 text-primary" strokeWidth={1.4} aria-hidden />
@@ -45,7 +43,6 @@ interface SegmentedProps<T extends string> {
 
 /** Pill-style segmented control with an animated thumb. Arrow keys move between options. */
 export function Segmented<T extends string>({ value, onChange, options, label, className }: SegmentedProps<T>) {
-  const id = useId();
   return (
     <div
       role="radiogroup"
@@ -76,11 +73,7 @@ export function Segmented<T extends string>({ value, onChange, options, label, c
               active ? "text-fg" : "text-fg-muted hover:text-fg",
             )}
           >
-            {active && (
-              <span
-                className="absolute inset-0 rounded-card bg-surface shadow-soft ring-1 ring-gold-line"
-              />
-            )}
+            {active && <span className="absolute inset-0 rounded-card bg-surface shadow-soft ring-1 ring-gold-line" />}
             <span className="relative">{o.label}</span>
           </button>
         );

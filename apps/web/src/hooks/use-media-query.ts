@@ -6,7 +6,7 @@ import { useCallback, useSyncExternalStore } from "react";
 export const BREAKPOINTS = { sm: 640, md: 768, lg: 1024, xl: 1280, "2xl": 1536 } as const;
 
 /** True while the media query matches. Always false on the server and during hydration. */
-export function useMediaQuery(query: string): boolean {
+function useMediaQuery(query: string): boolean {
   const subscribe = useCallback(
     (onChange: () => void) => {
       const mql = window.matchMedia(query);

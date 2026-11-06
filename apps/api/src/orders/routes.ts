@@ -104,7 +104,11 @@ export function registerOrderRoutes(on: On, db: Db, env: Env, realtime: Realtime
     // One atomic UPDATE … RETURNING: the row lock orders concurrent toggles, and the
     // version it returns tells every client which change is the newest.
     const item = await db.menuItem
-      .update({ where: { id }, data: { inStock, stockVersion: { increment: 1 } }, select: { name: true, stockVersion: true } })
+      .update({
+        where: { id },
+        data: { inStock, stockVersion: { increment: 1 } },
+        select: { name: true, stockVersion: true },
+      })
       .catch((e: unknown) => {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") throw errors.notFound("Item");
         throw e;
@@ -175,4 +179,3 @@ export function registerOrderRoutes(on: On, db: Db, env: Env, realtime: Realtime
     });
   });
 }
-

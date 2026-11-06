@@ -27,7 +27,11 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 
 /** Admin sections. */
-const NAV: { href: string; key: "overview" | "tables" | "orders" | "menu" | "discounts" | "feedback" | "audit" | "staff"; icon: LucideIcon }[] = [
+const NAV: {
+  href: string;
+  key: "overview" | "tables" | "orders" | "menu" | "discounts" | "feedback" | "audit" | "staff";
+  icon: LucideIcon;
+}[] = [
   { href: "/admin/overview", key: "overview", icon: ChartColumn },
   { href: "/admin/tables", key: "tables", icon: LayoutGrid },
   { href: "/admin/orders", key: "orders", icon: ReceiptText },
@@ -136,7 +140,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <ThemeToggle />
         </div>
         <div className="glass-chip flex items-center gap-2 rounded-2xl p-2">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary font-display text-sm font-semibold text-on-primary" aria-hidden>
+          <span
+            className="grid size-9 shrink-0 place-items-center rounded-full bg-primary font-display text-sm font-semibold text-on-primary"
+            aria-hidden
+          >
             {me.name.charAt(0).toUpperCase()}
           </span>
           <div className="min-w-0 flex-1">
@@ -154,7 +161,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <div className="flex h-16 items-center gap-2 px-4">
           <Logo size={34} />
           {/* Tighter than the sidebar wordmark so the full name fits beside the buttons on a phone. */}
-          <p className="min-w-0 flex-1 truncate font-display text-base font-label uppercase tracking-[0.08em]">{brand.name}</p>
+          <p className="min-w-0 flex-1 truncate font-display text-base font-label uppercase tracking-[0.08em]">
+            {brand.name}
+          </p>
           <LanguageSwitcher />
           <ThemeToggle />
           <IconButton label={t("staff.signOut")} onClick={signOut}>

@@ -28,17 +28,39 @@ describe("isTicketUpdateNewer", () => {
   const at = (m: number) => new Date(Date.UTC(2026, 10, 3, 19, m)).toISOString();
   it("accepts forward moves and brand-new tickets", () => {
     expect(isTicketUpdateNewer(undefined, { status: "received", statusChangedAt: at(0) })).toBe(true);
-    expect(isTicketUpdateNewer({ status: "received", statusChangedAt: at(0) }, { status: "preparing", statusChangedAt: at(1) })).toBe(true);
+    expect(
+      isTicketUpdateNewer(
+        { status: "received", statusChangedAt: at(0) },
+        { status: "preparing", statusChangedAt: at(1) },
+      ),
+    ).toBe(true);
   });
 
   it("ignores a late, older broadcast after the cook already moved the ticket", () => {
     // Optimistic local move keeps the old timestamp; the delayed "received" event must not undo it.
-    expect(isTicketUpdateNewer({ status: "preparing", statusChangedAt: at(0) }, { status: "received", statusChangedAt: at(0) })).toBe(false);
-    expect(isTicketUpdateNewer({ status: "ready", statusChangedAt: at(5) }, { status: "ready", statusChangedAt: at(3) })).toBe(false);
+    expect(
+      isTicketUpdateNewer(
+        { status: "preparing", statusChangedAt: at(0) },
+        { status: "received", statusChangedAt: at(0) },
+      ),
+    ).toBe(false);
+    expect(
+      isTicketUpdateNewer({ status: "ready", statusChangedAt: at(5) }, { status: "ready", statusChangedAt: at(3) }),
+    ).toBe(false);
   });
 
   it("always applies a cancellation, and nothing after it", () => {
-    expect(isTicketUpdateNewer({ status: "received", statusChangedAt: at(2) }, { status: "cancelled", statusChangedAt: at(1) })).toBe(true);
-    expect(isTicketUpdateNewer({ status: "cancelled", statusChangedAt: at(1) }, { status: "received", statusChangedAt: at(2) })).toBe(false);
+    expect(
+      isTicketUpdateNewer(
+        { status: "received", statusChangedAt: at(2) },
+        { status: "cancelled", statusChangedAt: at(1) },
+      ),
+    ).toBe(true);
+    expect(
+      isTicketUpdateNewer(
+        { status: "cancelled", statusChangedAt: at(1) },
+        { status: "received", statusChangedAt: at(2) },
+      ),
+    ).toBe(false);
   });
 });

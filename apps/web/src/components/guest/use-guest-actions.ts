@@ -60,7 +60,7 @@ export function useGuestActions() {
           void resync();
           return void toast.error(t("errors.tooLate"));
         case "SESSION_CLOSED":
-          return s().closed(((e.details as { reason?: "paid" | "staff" | "expired" })?.reason) ?? "expired");
+          return s().closed((e.details as { reason?: "paid" | "staff" | "expired" })?.reason ?? "expired");
         case "NETWORK":
           return void toast.error(t("errors.offline"));
         default:
@@ -111,10 +111,15 @@ export function useGuestActions() {
     try {
       const res = await fetchWithKey(sendKey.current, snap.version);
       sendKey.current = null;
-      if (s().applyCart(res.cartVersion, []) === "resync" || s().applyOrdersCreated(res.version, res.tickets) === "resync") {
+      if (
+        s().applyCart(res.cartVersion, []) === "resync" ||
+        s().applyOrdersCreated(res.version, res.tickets) === "resync"
+      ) {
         void resync();
       }
-      void api<{ bill: BillDTO }>("GET", "/api/session/bill").then(({ bill }) => s().setBill(bill)).catch(() => {});
+      void api<{ bill: BillDTO }>("GET", "/api/session/bill")
+        .then(({ bill }) => s().setBill(bill))
+        .catch(() => {});
       return true;
     } catch (e) {
       // Keep the key only for network failures (a retry must be recognised as the same order).
@@ -174,6 +179,12 @@ async function fetchWithKey(key: string, cartVersion: number) {
     throw new ApiClientError(0, "NETWORK", "offline");
   }
   const data = await res.json().catch(() => null);
-  if (!res.ok) throw new ApiClientError(res.status, data?.error?.code ?? "HTTP_ERROR", data?.error?.message ?? "", data?.error?.details);
+  if (!res.ok)
+    throw new ApiClientError(
+      res.status,
+      data?.error?.code ?? "HTTP_ERROR",
+      data?.error?.message ?? "",
+      data?.error?.details,
+    );
   return data as { cartVersion: number; version: number; tickets: OrderTicketDTO[] };
 }

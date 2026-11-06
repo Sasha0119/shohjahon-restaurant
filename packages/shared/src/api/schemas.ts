@@ -9,7 +9,11 @@ import { ALLERGENS, DIETARY_TAGS } from "../types";
  */
 
 // ── primitives ───────────────────────────────────────────────────────────────
-export const zId = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/, "Invalid id");
+export const zId = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[A-Za-z0-9_-]+$/, "Invalid id");
 /** Minor units of the brand currency (whole so'm for UZS). Fits the database's 32-bit columns. */
 export const zCents = z.int().min(0).max(1_000_000_000);
 export const zPositiveCents = z.int().min(1).max(1_000_000_000);
@@ -23,7 +27,11 @@ export const zHhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM");
 export const zNote = z.string().trim().max(140);
 export const zNickname = z.string().trim().max(24);
 /** Client-generated idempotency key (sent as the `Idempotency-Key` header). */
-export const zIdempotencyKey = z.string().min(16).max(128).regex(/^[A-Za-z0-9_-]+$/);
+export const zIdempotencyKey = z
+  .string()
+  .min(16)
+  .max(128)
+  .regex(/^[A-Za-z0-9_-]+$/);
 export const zDietaryTag = z.enum(DIETARY_TAGS);
 export const zAllergen = z.enum(ALLERGENS);
 export const zStation = z.enum(["kitchen", "bar"]);
@@ -34,7 +42,10 @@ export const zSplitMode = z.enum(["full", "even", "items", "custom"]);
 export const zStaffRole = z.enum(["manager", "waiter", "kitchen"]);
 export const zPin = z.string().regex(/^\d{4,6}$/, "PIN must be 4–6 digits");
 export const zPassword = z.string().min(10, "At least 10 characters").max(200);
-export const zEmail = z.email().max(200).transform((e) => e.toLowerCase());
+export const zEmail = z
+  .email()
+  .max(200)
+  .transform((e) => e.toLowerCase());
 /** Menu photos: only bundled (/images/…) or uploaded (/uploads/…) files — never arbitrary URLs. */
 export const zImagePath = z
   .string()
@@ -106,7 +117,12 @@ export const billQuery = z.object({
 });
 
 export const applyDiscountBody = z.object({
-  code: z.string().trim().min(2).max(32).transform((c) => c.toUpperCase()),
+  code: z
+    .string()
+    .trim()
+    .min(2)
+    .max(32)
+    .transform((c) => c.toUpperCase()),
 });
 
 export const createPaymentBody = z
@@ -158,7 +174,10 @@ export const confirmCashBody = z.object({ paymentId: zId });
 // ── manager: menu ────────────────────────────────────────────────────────────
 export const availabilityWindowInput = z
   .object({
-    days: z.array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"])).max(7).default([]),
+    days: z
+      .array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]))
+      .max(7)
+      .default([]),
     from: zHhmm,
     to: zHhmm,
   })
@@ -170,17 +189,25 @@ export const availabilityWindowInput = z
  */
 function zTranslations<const F extends string>(fields: Record<F, number>) {
   const shape = Object.fromEntries(
-    Object.entries(fields).map(([f, max]) => [f, z.string().trim().max(max as number).optional()]),
+    Object.entries(fields).map(([f, max]) => [
+      f,
+      z
+        .string()
+        .trim()
+        .max(max as number)
+        .optional(),
+    ]),
   ) as Record<F, z.ZodOptional<z.ZodString>>;
   return z
     .record(z.string().regex(/^[a-z]{2}$/, "Use a 2-letter language code"), z.object(shape).strict())
     .refine((r) => Object.keys(r).length <= 10, "Too many languages")
-    .transform((r) =>
-      Object.fromEntries(
-        Object.entries(r)
-          .map(([lang, t]) => [lang, Object.fromEntries(Object.entries(t as object).filter(([, v]) => v))])
-          .filter(([, t]) => Object.keys(t as object).length > 0),
-      ) as Record<string, Partial<Record<F, string>>>,
+    .transform(
+      (r) =>
+        Object.fromEntries(
+          Object.entries(r)
+            .map(([lang, t]) => [lang, Object.fromEntries(Object.entries(t as object).filter(([, v]) => v))])
+            .filter(([, t]) => Object.keys(t as object).length > 0),
+        ) as Record<string, Partial<Record<F, string>>>,
     )
     .default({});
 }
@@ -307,7 +334,10 @@ export const discountCodeInput = z
   })
   .refine((d) => d.kind !== "percent" || d.value <= 100, { message: "Max 100 %", path: ["value"] })
   .refine((d) => d.kind !== "fixed" || Number.isInteger(d.value), { message: "Cents must be whole", path: ["value"] })
-  .refine((d) => !d.startsAt || !d.endsAt || d.startsAt < d.endsAt, { message: "End must be after start", path: ["endsAt"] });
+  .refine((d) => !d.startsAt || !d.endsAt || d.startsAt < d.endsAt, {
+    message: "End must be after start",
+    path: ["endsAt"],
+  });
 
 // ── manager: reports ─────────────────────────────────────────────────────────
 /** A calendar date in the restaurant's time zone. */
@@ -338,8 +368,18 @@ export const auditQuery = z
     from: zLocalDate.optional(),
     to: zLocalDate.optional(),
     /** Prefix, e.g. "payment." or "staff.login". */
-    action: z.string().trim().max(60).regex(/^[a-z_.]*$/).optional(),
-    entityType: z.string().trim().max(40).regex(/^[a-z_]*$/).optional(),
+    action: z
+      .string()
+      .trim()
+      .max(60)
+      .regex(/^[a-z_.]*$/)
+      .optional(),
+    entityType: z
+      .string()
+      .trim()
+      .max(40)
+      .regex(/^[a-z_]*$/)
+      .optional(),
     page: z.coerce.number().int().min(1).default(1),
   })
   .refine((q) => !q.from || !q.to || q.from <= q.to, { message: "'from' must be on or before 'to'", path: ["from"] });

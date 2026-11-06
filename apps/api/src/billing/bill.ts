@@ -43,14 +43,23 @@ export async function computeSessionBill(db: Db | Tx, sessionId: string): Promis
   for (const l of items) quantities.set(l.itemId, (quantities.get(l.itemId) ?? 0) + l.quantity);
   const combo = applyCombos(
     quantities,
-    combos.map((c) => ({ id: c.id, kind: "combo" as const, name: c.name, itemIds: c.items.map((i) => i.itemId), discount: c.discountCents })),
+    combos.map((c) => ({
+      id: c.id,
+      kind: "combo" as const,
+      name: c.name,
+      itemIds: c.items.map((i) => i.itemId),
+      discount: c.discountCents,
+    })),
   );
 
   const subtotal = items.reduce((n, l) => n + l.unitPriceCents * l.quantity, 0);
   const comboDiscount = Math.min(combo.discount, subtotal);
   const code = session.discountCode;
   const codeQualifies = !!code && (code.minSubtotalCents == null || subtotal >= code.minSubtotalCents);
-  const codeOff = code && codeQualifies ? codeDiscount(code.kind === "PERCENT" ? "percent" : "fixed", code.value, subtotal - comboDiscount) : 0;
+  const codeOff =
+    code && codeQualifies
+      ? codeDiscount(code.kind === "PERCENT" ? "percent" : "fixed", code.value, subtotal - comboDiscount)
+      : 0;
 
   const bill = computeBill({
     lineTotals: items.map((l) => l.unitPriceCents * l.quantity),

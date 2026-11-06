@@ -3,7 +3,7 @@
 import { ChevronRight, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useT } from "@/i18n";
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/format";
@@ -48,12 +48,12 @@ export function FloatingCartBar() {
             >
               <span className="relative grid size-11 place-items-center rounded-full bg-on-primary/12 ring-1 ring-on-primary/20">
                 <ShoppingBag className="size-5" aria-hidden />
-                  <span
-                    key={count}
-                    className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-on-primary px-1 text-[11px] font-bold text-primary tabular"
-                  >
-                    {count}
-                  </span>
+                <span
+                  key={count}
+                  className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-on-primary px-1 text-[11px] font-bold text-primary tabular"
+                >
+                  {count}
+                </span>
               </span>
               <span className="flex-1 truncate text-[15px] font-semibold tracking-[0.01em]">{t("cart.viewCart")}</span>
               <span className="text-[15px] font-bold tabular">{total}</span>

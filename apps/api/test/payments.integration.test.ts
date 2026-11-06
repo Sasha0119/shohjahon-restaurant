@@ -28,7 +28,13 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
   beforeAll(async () => {
     t = await createTestDb();
     db = t.db;
-    env = parseEnv({ DATABASE_URL: t.url, CORS_ORIGINS: ORIGIN, PUBLIC_WEB_URL: ORIGIN, QR_TOKEN_SECRET: QR, COOKIE_SECRET });
+    env = parseEnv({
+      DATABASE_URL: t.url,
+      CORS_ORIGINS: ORIGIN,
+      PUBLIC_WEB_URL: ORIGIN,
+      QR_TOKEN_SECRET: QR,
+      COOKIE_SECRET,
+    });
     app = createApp({ db, env, logger: pino({ level: "silent" }), realtime: rt, mailer, disableRateLimits: true }).app;
   }, 180_000);
   afterAll(async () => {
@@ -40,7 +46,12 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
   const cookie = (res: request.Response) => (res.headers["set-cookie"] as unknown as string[])[0]!.split(";")[0]!;
   const seat = async (n: number, confirmJoin = false) => {
     const tb = await db.diningTable.findUniqueOrThrow({ where: { number: n } });
-    return cookie(await request(app).post(`/api/tables/${createQrToken(QR, tb.id, tb.qrVersion)}/join`).set("Origin", ORIGIN).send({ confirmJoin }));
+    return cookie(
+      await request(app)
+        .post(`/api/tables/${createQrToken(QR, tb.id, tb.qrVersion)}/join`)
+        .set("Origin", ORIGIN)
+        .send({ confirmJoin }),
+    );
   };
   const as = (c: string) => ({
     get: (p: string) => request(app).get(p).set("Cookie", c),
@@ -53,7 +64,12 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
   });
   const login = async () => cookie(await request(app).post("/api/auth/login").set("Origin", ORIGIN).send(TEST_MANAGER));
   const waiterLogin = async () =>
-    cookie(await request(app).post("/api/auth/pin").set("Origin", ORIGIN).send({ staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin }));
+    cookie(
+      await request(app)
+        .post("/api/auth/pin")
+        .set("Origin", ORIGIN)
+        .send({ staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin }),
+    );
   /** Seat a guest and send burger + flat white (subtotal 23.00). */
   const tableWithOrder = async (n: number) => {
     const g = await seat(n);
@@ -95,19 +111,40 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
     });
 
     it("managers create codes; guests apply them; limits are enforced", async () => {
-      const created = await as(manager).post("/api/admin/discounts", { code: "welcome10", kind: "percent", value: 10, maxRedemptions: 1 });
+      const created = await as(manager).post("/api/admin/discounts", {
+        code: "welcome10",
+        kind: "percent",
+        value: 10,
+        maxRedemptions: 1,
+      });
       expect(created.status).toBe(201);
-      expect(created.body.discount).toMatchObject({ code: "WELCOME10", kind: "percent", value: 10, redemptionCount: 0 });
-      expect((await as(manager).post("/api/admin/discounts", { code: "WELCOME10", kind: "fixed", value: 100 })).body.error.code).toBe("CODE_TAKEN");
+      expect(created.body.discount).toMatchObject({
+        code: "WELCOME10",
+        kind: "percent",
+        value: 10,
+        redemptionCount: 0,
+      });
+      expect(
+        (await as(manager).post("/api/admin/discounts", { code: "WELCOME10", kind: "fixed", value: 100 })).body.error
+          .code,
+      ).toBe("CODE_TAKEN");
 
       expect((await as(g).post("/api/session/discount", { code: "nope" })).body.error.code).toBe("INVALID_CODE");
       const applied = await as(g).post("/api/session/discount", { code: "welcome10" });
-      expect(applied.body.bill).toMatchObject({ discountCode: "WELCOME10", codeDiscountCents: 230, serviceChargeCents: 207, taxCents: 0, totalCents: 2277 });
+      expect(applied.body.bill).toMatchObject({
+        discountCode: "WELCOME10",
+        codeDiscountCents: 230,
+        serviceChargeCents: 207,
+        taxCents: 0,
+        totalCents: 2277,
+      });
       expect(rt.events.find((e) => e.event === "bill:updated")).toBeTruthy();
 
       // Only one use: another table can't have it…
       const other = await tableWithOrder(2);
-      expect((await as(other).post("/api/session/discount", { code: "WELCOME10" })).body.error.code).toBe("CODE_USED_UP");
+      expect((await as(other).post("/api/session/discount", { code: "WELCOME10" })).body.error.code).toBe(
+        "CODE_USED_UP",
+      );
       // …until the first table removes it.
       await as(g).del("/api/session/discount");
       expect((await as(other).post("/api/session/discount", { code: "WELCOME10" })).status).toBe(200);
@@ -116,13 +153,23 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
     });
 
     it("respects minimum order size, dates and the on/off switch", async () => {
-      await as(manager).post("/api/admin/discounts", { code: "BIGSPEND", kind: "fixed", value: 500, minSubtotalCents: 10_000 });
+      await as(manager).post("/api/admin/discounts", {
+        code: "BIGSPEND",
+        kind: "fixed",
+        value: 500,
+        minSubtotalCents: 10_000,
+      });
       const other = await tableWithOrder(3);
       const res = await as(other).post("/api/session/discount", { code: "BIGSPEND" });
       expect(res.status).toBe(422);
       expect(res.body.error).toMatchObject({ code: "CODE_MIN_SUBTOTAL", details: { minSubtotalCents: 10_000 } });
 
-      const future = await as(manager).post("/api/admin/discounts", { code: "LATER", kind: "fixed", value: 100, startsAt: new Date(Date.now() + 86_400_000).toISOString() });
+      const future = await as(manager).post("/api/admin/discounts", {
+        code: "LATER",
+        kind: "fixed",
+        value: 100,
+        startsAt: new Date(Date.now() + 86_400_000).toISOString(),
+      });
       expect(future.status).toBe(201);
       expect((await as(other).post("/api/session/discount", { code: "LATER" })).body.error.code).toBe("INVALID_CODE");
 
@@ -139,31 +186,57 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
     let receiptToken = "";
     it("pays for chosen items with a fair share of service, tax and discount", async () => {
       const snap = (await as(g).get("/api/session")).body.snapshot;
-      const burgerLine = snap.orders.flatMap((o: { lines: { id: string; name: string }[] }) => o.lines).find((l: { name: string }) => l.name === "Double Smash Burger");
+      const burgerLine = snap.orders
+        .flatMap((o: { lines: { id: string; name: string }[] }) => o.lines)
+        .find((l: { name: string }) => l.name === "Double Smash Burger");
       const share = shareForItems(2277, 2300, 1850);
       expect(share).toBe(1832);
 
-      expect((await pay(g, { splitMode: "items", method: "card", amountCents: share + 1, orderItemIds: [burgerLine.id] })).body.error.code).toBe("AMOUNT_CHANGED");
-      expect((await as(g).post("/api/session/payments", { splitMode: "full", method: "card", amountCents: 2277 })).body.error.code).toBe("IDEMPOTENCY_KEY_REQUIRED");
+      expect(
+        (await pay(g, { splitMode: "items", method: "card", amountCents: share + 1, orderItemIds: [burgerLine.id] }))
+          .body.error.code,
+      ).toBe("AMOUNT_CHANGED");
+      expect(
+        (await as(g).post("/api/session/payments", { splitMode: "full", method: "card", amountCents: 2277 })).body.error
+          .code,
+      ).toBe("IDEMPOTENCY_KEY_REQUIRED");
 
       const key = randomUUID();
-      const res = await pay(g, { splitMode: "items", method: "card", amountCents: share, tipCents: 300, orderItemIds: [burgerLine.id] }, key);
+      const res = await pay(
+        g,
+        { splitMode: "items", method: "card", amountCents: share, tipCents: 300, orderItemIds: [burgerLine.id] },
+        key,
+      );
       expect(res.status).toBe(201);
       expect(res.body.payment).toMatchObject({ status: "succeeded", method: "card", amountCents: 1832, tipCents: 300 });
       expect(res.body.payment.receiptToken).toMatch(/^[A-Za-z0-9_-]{32}$/);
-      expect(res.body.bill).toMatchObject({ paidCents: 1832, balanceCents: 445, outstandingCents: 445, tipsPaidCents: 300 });
+      expect(res.body.bill).toMatchObject({
+        paidCents: 1832,
+        balanceCents: 445,
+        outstandingCents: 445,
+        tipsPaidCents: 300,
+      });
       expect(res.body.bill.claimedOrderItemIds).toEqual([burgerLine.id]);
       receiptToken = res.body.payment.receiptToken;
       expect(rt.events.map((e) => e.event)).toEqual(expect.arrayContaining(["payment:updated", "bill:updated"]));
 
       // Retrying the same request never charges again.
-      const again = await pay(g, { splitMode: "items", method: "card", amountCents: share, tipCents: 300, orderItemIds: [burgerLine.id] }, key);
+      const again = await pay(
+        g,
+        { splitMode: "items", method: "card", amountCents: share, tipCents: 300, orderItemIds: [burgerLine.id] },
+        key,
+      );
       expect(again.body.payment.id).toBe(res.body.payment.id);
       expect(await db.payment.count({ where: { session: { table: { number: 1 } } } })).toBe(1);
 
       // Nobody can pay the same item twice.
       const friend = await seat(1, true);
-      const dup = await pay(friend, { splitMode: "items", method: "card", amountCents: 1832, orderItemIds: [burgerLine.id] });
+      const dup = await pay(friend, {
+        splitMode: "items",
+        method: "card",
+        amountCents: 1832,
+        orderItemIds: [burgerLine.id],
+      });
       expect(dup.body.error.code).toBe("ITEMS_ALREADY_PAID");
     });
 
@@ -181,7 +254,9 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
       const res = await pay(g, { splitMode: "full", method: "cash", amountCents: 445, tipCents: 22 });
       expect(res.body.payment.status).toBe("pending");
       expect(res.body.bill).toMatchObject({ pendingCents: 445, outstandingCents: 0, balanceCents: 445 });
-      expect((await pay(g, { splitMode: "custom", method: "card", amountCents: 100 })).body.error.code).toBe("NOTHING_TO_PAY");
+      expect((await pay(g, { splitMode: "custom", method: "card", amountCents: 100 })).body.error.code).toBe(
+        "NOTHING_TO_PAY",
+      );
 
       const waiter = await waiterLogin();
       const calls = (await as(waiter).get("/api/waiter/calls")).body.calls;
@@ -189,15 +264,22 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
       expect(cashCall).toMatchObject({ amountCents: 467, tableNumber: 1, paymentId: res.body.payment.id });
 
       rt.clear();
-      const sessionId = (await db.tableSession.findFirstOrThrow({ where: { table: { number: 1 }, status: "OPEN" } })).id;
+      const sessionId = (await db.tableSession.findFirstOrThrow({ where: { table: { number: 1 }, status: "OPEN" } }))
+        .id;
       const ok = await as(waiter).post(`/api/waiter/sessions/${sessionId}/cash`, { paymentId: res.body.payment.id });
       expect(ok.body.payment.status).toBe("succeeded");
       expect(rt.events.find((e) => e.event === "session:closed")?.payload).toMatchObject({ reason: "paid" });
       expect(rt.events.find((e) => e.event === "call:updated")?.payload).toMatchObject({ call: { status: "handled" } });
-      expect((await as(g).get("/api/session")).body.error).toMatchObject({ code: "SESSION_CLOSED", details: { reason: "paid" } });
+      expect((await as(g).get("/api/session")).body.error).toMatchObject({
+        code: "SESSION_CLOSED",
+        details: { reason: "paid" },
+      });
       const audits = await db.auditLog.findMany({ where: { action: "payment.succeeded" } });
       expect(audits.length).toBeGreaterThanOrEqual(2);
-      expect((await as(waiter).post(`/api/waiter/sessions/${sessionId}/cash`, { paymentId: res.body.payment.id })).body.error.code).toBe("ALREADY_SETTLED");
+      expect(
+        (await as(waiter).post(`/api/waiter/sessions/${sessionId}/cash`, { paymentId: res.body.payment.id })).body.error
+          .code,
+      ).toBe("ALREADY_SETTLED");
     });
 
     it("serves the receipt and emails it", async () => {
@@ -214,15 +296,35 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
       expect(r.body.receipt.lines.map((l: { name: string }) => l.name)).toEqual(["Double Smash Burger", "Flat White"]);
       expect((await request(app).get("/api/receipts/not-a-real-receipt-token-x")).status).toBe(404);
 
-      const mail = await request(app).post(`/api/receipts/${receiptToken}/email`).set("Origin", ORIGIN).send({ email: "Guest@Example.com" });
+      const mail = await request(app)
+        .post(`/api/receipts/${receiptToken}/email`)
+        .set("Origin", ORIGIN)
+        .send({ email: "Guest@Example.com" });
       expect(mail.body).toEqual({ sent: true });
       expect(mailer.sent.at(-1)).toMatchObject({ to: "guest@example.com" });
       expect(mailer.sent.at(-1)!.text).toContain("Double Smash Burger");
       expect((await request(app).get(`/api/receipts/${receiptToken}`)).body.receipt.emailedTo).toBe("g•••@example.com");
-      expect((await request(app).post(`/api/receipts/${receiptToken}/email`).set("Origin", ORIGIN).send({ email: "x@example.com" })).status).toBe(429);
+      expect(
+        (
+          await request(app)
+            .post(`/api/receipts/${receiptToken}/email`)
+            .set("Origin", ORIGIN)
+            .send({ email: "x@example.com" })
+        ).status,
+      ).toBe(429);
 
-      const noMail = createApp({ db, env, logger: pino({ level: "silent" }), realtime: rt, mailer: null, disableRateLimits: true }).app;
-      const off = await request(noMail).post(`/api/receipts/${receiptToken}/email`).set("Origin", ORIGIN).send({ email: "x@example.com" });
+      const noMail = createApp({
+        db,
+        env,
+        logger: pino({ level: "silent" }),
+        realtime: rt,
+        mailer: null,
+        disableRateLimits: true,
+      }).app;
+      const off = await request(noMail)
+        .post(`/api/receipts/${receiptToken}/email`)
+        .set("Origin", ORIGIN)
+        .send({ email: "x@example.com" });
       expect(off.body.error.code).toBe("EMAIL_NOT_CONFIGURED");
     });
   });
@@ -266,13 +368,23 @@ describe.skipIf(!TEST_DATABASE_URL)("bill, discounts, payments & receipts (integ
       const body = JSON.stringify({ paymentId: res.body.payment.id, status: "succeeded" });
       const secret = mockWebhookSecret(COOKIE_SECRET);
 
-      const bad = await request(app).post("/api/payments/webhook/mock").set("Content-Type", "application/json").set("x-mock-signature", "0".repeat(64)).send(body);
+      const bad = await request(app)
+        .post("/api/payments/webhook/mock")
+        .set("Content-Type", "application/json")
+        .set("x-mock-signature", "0".repeat(64))
+        .send(body);
       expect(bad.status).toBe(400);
       const good = () =>
-        request(app).post("/api/payments/webhook/mock").set("Content-Type", "application/json").set("x-mock-signature", signMockWebhook(secret, body)).send(body);
+        request(app)
+          .post("/api/payments/webhook/mock")
+          .set("Content-Type", "application/json")
+          .set("x-mock-signature", signMockWebhook(secret, body))
+          .send(body);
       expect((await good()).body).toEqual({ received: true });
       expect((await good()).body).toEqual({ received: true });
-      expect(await db.auditLog.count({ where: { action: "payment.succeeded", entityId: res.body.payment.id } })).toBe(1);
+      expect(await db.auditLog.count({ where: { action: "payment.succeeded", entityId: res.body.payment.id } })).toBe(
+        1,
+      );
       expect((await request(app).post("/api/payments/webhook/stripe").send("{}")).status).toBe(404);
     });
   });

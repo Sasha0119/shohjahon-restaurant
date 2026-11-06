@@ -59,10 +59,7 @@ export function CartPanel() {
   const { count } = useCartSummary();
 
   return (
-    <aside
-      aria-labelledby="cart-panel-title"
-      className="sticky top-20 flex max-h-[calc(100svh-6rem)] flex-col"
-    >
+    <aside aria-labelledby="cart-panel-title" className="sticky top-20 flex max-h-[calc(100svh-6rem)] flex-col">
       <div className="flex items-baseline justify-between gap-3 px-1">
         <h2 id="cart-panel-title" className="font-display text-xl font-semibold">
           {t("cart.title")}
@@ -83,7 +80,10 @@ export function CartPanel() {
         </div>
       ) : (
         <>
-          <ul className="card no-scrollbar mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-label={t("cart.items", { count })}>
+          <ul
+            className="card no-scrollbar mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain"
+            aria-label={t("cart.items", { count })}
+          >
             <>
               {cart.map((line) => (
                 <CartRow key={line.id} line={line} compact />

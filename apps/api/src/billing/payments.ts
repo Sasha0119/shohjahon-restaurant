@@ -50,7 +50,13 @@ export async function startPayment(
 
   const bill = await computeSessionBill(tx, guest.sessionId);
   if (bill.outstanding <= 0) {
-    throw new ApiError(409, "NOTHING_TO_PAY", bill.dto.pendingCents > 0 ? "A payment is already in progress for the rest of the bill." : "There is nothing left to pay.");
+    throw new ApiError(
+      409,
+      "NOTHING_TO_PAY",
+      bill.dto.pendingCents > 0
+        ? "A payment is already in progress for the rest of the bill."
+        : "There is nothing left to pay.",
+    );
   }
 
   let selectedSubtotal = 0;
@@ -61,7 +67,9 @@ export async function startPayment(
       const line = byId.get(id);
       if (!line) throw errors.badRequest("UNKNOWN_ITEM", "One of those items isn't on this table's bill.");
       if (bill.claimed.has(id)) {
-        throw new ApiError(409, "ITEMS_ALREADY_PAID", `${line.name} has already been paid by someone else.`, { orderItemId: id });
+        throw new ApiError(409, "ITEMS_ALREADY_PAID", `${line.name} has already been paid by someone else.`, {
+          orderItemId: id,
+        });
       }
       selectedSubtotal += line.unitPriceCents * line.quantity;
     }
@@ -110,7 +118,12 @@ export async function startPayment(
     action: "payment.started",
     entityType: "payment",
     entityId: payment.id,
-    data: { amountCents: input.amountCents, tipCents: input.tipCents, method: input.method, splitMode: input.splitMode },
+    data: {
+      amountCents: input.amountCents,
+      tipCents: input.tipCents,
+      method: input.method,
+      splitMode: input.splitMode,
+    },
   });
   const version = await bumpVersion(tx, guest.sessionId);
   return { paymentId: payment.id, version, callId };
@@ -128,10 +141,18 @@ async function publishMoney(db: Db, realtime: Realtime, sessionId: string, payme
 }
 
 /** After step 1 commits: tell the table, and alert the waiter for cash. */
-export async function publishStarted(db: Db, realtime: Realtime, sessionId: string, started: { paymentId: string; version: number; callId: string | null }) {
+export async function publishStarted(
+  db: Db,
+  realtime: Realtime,
+  sessionId: string,
+  started: { paymentId: string; version: number; callId: string | null },
+) {
   await publishMoney(db, realtime, sessionId, started.paymentId, started.version);
   if (started.callId) {
-    const call = await db.waiterCall.findUniqueOrThrow({ where: { id: started.callId }, include: { table: { select: { number: true } } } });
+    const call = await db.waiterCall.findUniqueOrThrow({
+      where: { id: started.callId },
+      include: { table: { select: { number: true } } },
+    });
     realtime.emit([rooms.session(sessionId), rooms.waiters], "call:created", { call: toCallDTO(call) });
   }
 }
@@ -177,17 +198,35 @@ export async function settlePayment(
       where: { id: paymentId, status: "PENDING" },
       data:
         outcome.status === "succeeded"
-          ? { status: "SUCCEEDED", providerRef: outcome.providerRef, completedAt: new Date(), cashConfirmedById: opts.cashStaffId ?? null }
-          : { status: "FAILED", providerRef: outcome.providerRef, failureReason: outcome.reason, completedAt: new Date() },
+          ? {
+              status: "SUCCEEDED",
+              providerRef: outcome.providerRef,
+              completedAt: new Date(),
+              cashConfirmedById: opts.cashStaffId ?? null,
+            }
+          : {
+              status: "FAILED",
+              providerRef: outcome.providerRef,
+              failureReason: outcome.reason,
+              completedAt: new Date(),
+            },
     });
     if (res.count === 0) return null; // already settled — nothing to do
 
     if (outcome.status === "succeeded") {
       const bill = await computeSessionBill(tx, payment.sessionId);
-      const session = await tx.tableSession.findUniqueOrThrow({ where: { id: payment.sessionId }, include: { table: { select: { number: true } } } });
+      const session = await tx.tableSession.findUniqueOrThrow({
+        where: { id: payment.sessionId },
+        include: { table: { select: { number: true } } },
+      });
       const snapshot: Omit<ReceiptDTO, "number" | "issuedAt" | "emailedTo"> = {
         tableNumber: session.table.number,
-        lines: bill.lines.map((l) => ({ name: l.name, quantity: l.quantity, unitPriceCents: l.unitPriceCents, options: l.options })),
+        lines: bill.lines.map((l) => ({
+          name: l.name,
+          quantity: l.quantity,
+          unitPriceCents: l.unitPriceCents,
+          options: l.options,
+        })),
         bill: {
           subtotalCents: bill.dto.subtotalCents,
           comboDiscountCents: bill.dto.comboDiscountCents,
@@ -216,7 +255,10 @@ export async function settlePayment(
       action: outcome.status === "succeeded" ? "payment.succeeded" : "payment.failed",
       entityType: "payment",
       entityId: paymentId,
-      data: outcome.status === "succeeded" ? { amountCents: payment.amountCents, tipCents: payment.tipCents } : { reason: outcome.reason },
+      data:
+        outcome.status === "succeeded"
+          ? { amountCents: payment.amountCents, tipCents: payment.tipCents }
+          : { reason: outcome.reason },
       ip: opts.ip,
     });
     const version = await bumpVersion(tx, payment.sessionId);
@@ -234,7 +276,14 @@ export async function settlePayment(
 }
 
 /** Waiter confirms they received cash for a pending payment. Also closes its call. */
-export async function confirmCash(db: Db, realtime: Realtime, sessionId: string, paymentId: string, staffId: string, ip?: string) {
+export async function confirmCash(
+  db: Db,
+  realtime: Realtime,
+  sessionId: string,
+  paymentId: string,
+  staffId: string,
+  ip?: string,
+) {
   const payment = await db.payment.findFirst({ where: { id: paymentId, sessionId }, include: { cashCall: true } });
   if (!payment) throw errors.notFound("Payment");
   if (payment.method !== "CASH") throw errors.badRequest("NOT_CASH", "Only cash payments are confirmed by staff.");
@@ -246,9 +295,18 @@ export async function confirmCash(db: Db, realtime: Realtime, sessionId: string,
       data: { status: "HANDLED", handledAt: new Date(), handledById: staffId },
     });
     if (res.count) {
-      const call = await db.waiterCall.findUniqueOrThrow({ where: { id: payment.cashCall.id }, include: { table: { select: { number: true } } } });
+      const call = await db.waiterCall.findUniqueOrThrow({
+        where: { id: payment.cashCall.id },
+        include: { table: { select: { number: true } } },
+      });
       realtime.emit([rooms.session(sessionId), rooms.waiters], "call:updated", { call: toCallDTO(call) });
     }
   }
-  await settlePayment(db, realtime, paymentId, { status: "succeeded", providerRef: null }, { cashStaffId: staffId, ip });
+  await settlePayment(
+    db,
+    realtime,
+    paymentId,
+    { status: "succeeded", providerRef: null },
+    { cashStaffId: staffId, ip },
+  );
 }

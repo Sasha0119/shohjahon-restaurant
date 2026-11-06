@@ -8,7 +8,10 @@ import type { LocaleCode } from "@app/config";
 export const SIGNATURE_DISHES: { slug: string; name: Record<LocaleCode, string> }[] = [
   { slug: "tashkent-plov", name: { uz: "Toshkent oshi", en: "Tashkent plov", ru: "Ташкентский плов" } },
   { slug: "lamb-shashlik", name: { uz: "Qoʻy goʻshtidan shashlik", en: "Lamb shashlik", ru: "Шашлык из баранины" } },
-  { slug: "hand-pulled-lagman", name: { uz: "Qoʻlda choʻzilgan lagʻmon", en: "Hand-pulled lagman", ru: "Лагман ручной тяжки" } },
+  {
+    slug: "hand-pulled-lagman",
+    name: { uz: "Qoʻlda choʻzilgan lagʻmon", en: "Hand-pulled lagman", ru: "Лагман ручной тяжки" },
+  },
   { slug: "tandir-samsa", name: { uz: "Tandir somsa", en: "Tandoor samsa", ru: "Тандырная самса" } },
   { slug: "napoleon", name: { uz: "Napoleon", en: "Napoleon cake", ru: "Торт «Наполеон»" } },
 ];

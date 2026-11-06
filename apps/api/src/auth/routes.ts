@@ -11,7 +11,7 @@ import { STAFF_COOKIE, createStaffSession, revokeSession, staffCookieOptions } f
 
 type On = ReturnType<typeof createRegistrar>["on"];
 
-export const publicStaff = (s: Pick<Staff, "id" | "name" | "role">) => ({
+const publicStaff = (s: Pick<Staff, "id" | "name" | "role">) => ({
   id: s.id,
   name: s.name,
   role: enums.role.fromDb(s.role),

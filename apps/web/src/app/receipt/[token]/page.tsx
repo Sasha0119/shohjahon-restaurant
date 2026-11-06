@@ -29,7 +29,12 @@ export default function ReceiptPage() {
       .catch(() => setMissing(true));
   }, [token]);
 
-  if (missing) return <main className="grid min-h-svh place-items-center"><EmptyState icon={ReceiptText} title={t("receipt.notFound")} /></main>;
+  if (missing)
+    return (
+      <main className="grid min-h-svh place-items-center">
+        <EmptyState icon={ReceiptText} title={t("receipt.notFound")} />
+      </main>
+    );
 
   return (
     <main className="min-h-svh px-4 py-8 print:p-0">
@@ -47,7 +52,10 @@ export default function ReceiptPage() {
           className="enter relative mx-auto mt-6 max-w-md overflow-hidden rounded-card bg-[#FBF8F2] px-6 pb-7 pt-8 text-[#1d1a15] shadow-lift ring-1 ring-[#C9A45C]/40 print:mt-0 print:shadow-none print:ring-0"
         >
           {/* A gold hairline frame inside the paper edge. */}
-          <div aria-hidden className="pointer-events-none absolute inset-2.5 rounded-[calc(var(--radius-card)-6px)] ring-1 ring-[#C9A45C]/35" />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-2.5 rounded-[calc(var(--radius-card)-6px)] ring-1 ring-[#C9A45C]/35"
+          />
 
           <header className="relative text-center">
             <Logo size={58} className="mx-auto" />
@@ -58,7 +66,11 @@ export default function ReceiptPage() {
               {t("receipt.number", { number: receipt.number })} · {t("receipt.table", { number: receipt.tableNumber })}
             </p>
             <p className="text-sm text-[#5a5348]">
-              {formatDate(new Date(receipt.issuedAt), { dateStyle: "medium", timeStyle: "short", timeZone: brand.timezone })}
+              {formatDate(new Date(receipt.issuedAt), {
+                dateStyle: "medium",
+                timeStyle: "short",
+                timeZone: brand.timezone,
+              })}
             </p>
             {brand.contact.address && <p className="mt-1 text-xs text-[#7a7264]">{brand.contact.address}</p>}
           </header>
@@ -68,7 +80,9 @@ export default function ReceiptPage() {
               <li key={i} className="flex justify-between gap-4">
                 <span className="min-w-0">
                   <span className="font-semibold tabular text-[#8A6424]">{l.quantity}×</span> {l.name}
-                  {l.options.length > 0 && <span className="block text-sm text-[#6b6355]">{l.options.join(" · ")}</span>}
+                  {l.options.length > 0 && (
+                    <span className="block text-sm text-[#6b6355]">{l.options.join(" · ")}</span>
+                  )}
                 </span>
                 <span className="shrink-0 tabular">{formatPrice(l.unitPriceCents * l.quantity)}</span>
               </li>
@@ -77,12 +91,25 @@ export default function ReceiptPage() {
 
           <dl className="relative mt-5 space-y-1.5 border-t border-dashed border-[#d8cdb8] pt-4 text-[15px] text-[#4a443a]">
             <Line label={t("bill.subtotal")} value={formatPrice(receipt.bill.subtotalCents)} />
-            {receipt.bill.comboDiscountCents > 0 && <Line label={t("bill.comboSavings")} value={`−${formatPrice(receipt.bill.comboDiscountCents)}`} />}
-            {receipt.bill.codeDiscountCents > 0 && (
-              <Line label={t("pay.codeDiscount", { code: receipt.bill.discountCode ?? "" })} value={`−${formatPrice(receipt.bill.codeDiscountCents)}`} />
+            {receipt.bill.comboDiscountCents > 0 && (
+              <Line label={t("bill.comboSavings")} value={`−${formatPrice(receipt.bill.comboDiscountCents)}`} />
             )}
-            <Line label={t("bill.serviceCharge", { percent: formatPercent(brand.serviceChargePercent) })} value={formatPrice(receipt.bill.serviceChargeCents)} />
-            {brand.taxPercent > 0 && <Line label={t("bill.tax", { percent: formatPercent(brand.taxPercent) })} value={formatPrice(receipt.bill.taxCents)} />}
+            {receipt.bill.codeDiscountCents > 0 && (
+              <Line
+                label={t("pay.codeDiscount", { code: receipt.bill.discountCode ?? "" })}
+                value={`−${formatPrice(receipt.bill.codeDiscountCents)}`}
+              />
+            )}
+            <Line
+              label={t("bill.serviceCharge", { percent: formatPercent(brand.serviceChargePercent) })}
+              value={formatPrice(receipt.bill.serviceChargeCents)}
+            />
+            {brand.taxPercent > 0 && (
+              <Line
+                label={t("bill.tax", { percent: formatPercent(brand.taxPercent) })}
+                value={formatPrice(receipt.bill.taxCents)}
+              />
+            )}
             <div className="flex items-baseline justify-between gap-4 border-t border-[#C9A45C]/50 pt-3 text-[#1d1a15]">
               <dt className="font-display text-xl font-semibold">{t("bill.total")}</dt>
               <dd className="font-display text-2xl font-semibold tabular">{formatPrice(receipt.bill.totalCents)}</dd>
@@ -90,13 +117,19 @@ export default function ReceiptPage() {
             {brand.taxPercent === 0 && <p className="text-xs text-[#7a7264]">{t("bill.vatIncluded")}</p>}
           </dl>
 
-          <section className="relative mt-6 rounded-2xl bg-[#F3ECDF] p-4 text-[15px] ring-1 ring-inset ring-[#C9A45C]/30" aria-labelledby="your-payment">
+          <section
+            className="relative mt-6 rounded-2xl bg-[#F3ECDF] p-4 text-[15px] ring-1 ring-inset ring-[#C9A45C]/30"
+            aria-labelledby="your-payment"
+          >
             <h2 id="your-payment" className="flex items-center gap-2 font-semibold">
               <CircleCheckBig className="size-5 text-[#1f7a4d]" aria-hidden />
               {t("receipt.yourPayment")}
             </h2>
             <dl className="mt-2 space-y-1 text-[#4a443a]">
-              <Line label={t("receipt.method")} value={`${t(`bill.${receipt.payment.method}`)} · ${t(`receipt.splitModes.${receipt.payment.splitMode}`)}`} />
+              <Line
+                label={t("receipt.method")}
+                value={`${t(`bill.${receipt.payment.method}`)} · ${t(`receipt.splitModes.${receipt.payment.splitMode}`)}`}
+              />
               <Line label={t("receipt.amount")} value={formatPrice(receipt.payment.amountCents)} />
               <Line label={t("receipt.tip")} value={formatPrice(receipt.payment.tipCents)} />
               <div className="flex justify-between gap-4 font-semibold text-[#1d1a15]">
@@ -163,7 +196,11 @@ function EmailForm({ token, emailedTo }: { token: string; emailedTo: string | nu
       setEmail("");
       toast.success(t("receipt.sent"));
     } catch (err) {
-      toast.error(err instanceof ApiClientError && err.code === "EMAIL_NOT_CONFIGURED" ? t("receipt.emailUnavailable") : translateError(err, t));
+      toast.error(
+        err instanceof ApiClientError && err.code === "EMAIL_NOT_CONFIGURED"
+          ? t("receipt.emailUnavailable")
+          : translateError(err, t),
+      );
     } finally {
       setBusy(false);
     }

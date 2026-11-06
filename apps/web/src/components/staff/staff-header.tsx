@@ -72,7 +72,12 @@ export function StaffHeader({
         </span>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {children}
-          <IconButton label={sound.muted ? t("kitchen.soundOff") : t("kitchen.soundOn")} variant="muted" onClick={sound.toggle} aria-pressed={!sound.muted}>
+          <IconButton
+            label={sound.muted ? t("kitchen.soundOff") : t("kitchen.soundOn")}
+            variant="muted"
+            onClick={sound.toggle}
+            aria-pressed={!sound.muted}
+          >
             {sound.muted ? <BellOff className="size-5" aria-hidden /> : <Bell className="size-5" aria-hidden />}
           </IconButton>
           <LanguageSwitcher />

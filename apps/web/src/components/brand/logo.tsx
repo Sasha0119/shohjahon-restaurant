@@ -84,10 +84,7 @@ export function Wordmark({ size = 40, onImage, layout = "row", tagline, classNam
       <Logo size={size} onImage={onImage} />
       <span className={cn("flex flex-col", stack && "items-center")}>
         <span
-          className={cn(
-            "font-display italic leading-none tracking-[-0.01em]",
-            onImage ? "text-white" : "text-fg",
-          )}
+          className={cn("font-display italic leading-none tracking-[-0.01em]", onImage ? "text-white" : "text-fg")}
           style={{ fontSize: Math.max(16, size * (stack ? 0.68 : 0.56)) }}
         >
           {brand.name}

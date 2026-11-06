@@ -42,7 +42,8 @@ export function createRegistrar(deps: RegistrarDeps) {
     const chain: RequestHandler[] = [];
     if (def.rateLimit) chain.push(deps.limiters[def.rateLimit]);
     if (def.access.kind === "staff") chain.push(deps.loadStaff, requireRoles(def.access.roles));
-    if (def.access.kind === "guest") chain.push(def.allowClosedSession ? deps.requireGuestIncludingClosed : deps.requireGuest);
+    if (def.access.kind === "guest")
+      chain.push(def.allowClosedSession ? deps.requireGuestIncludingClosed : deps.requireGuest);
 
     const expressPath = path.replace(/^\/api/, "");
     router[method.toLowerCase() as "get" | "post" | "patch" | "put" | "delete"](expressPath, ...chain, ...handlers);
@@ -52,11 +53,10 @@ export function createRegistrar(deps: RegistrarDeps) {
   return { router, on, mounted };
 }
 
-export function requireRoles(roles: AuthedStaff["role"][]): RequestHandler {
+function requireRoles(roles: AuthedStaff["role"][]): RequestHandler {
   return (req, _res, next) => {
     if (!req.staff) return next(errors.unauthorized());
     if (!roles.includes(req.staff.role)) return next(errors.forbidden());
     next();
   };
 }
-

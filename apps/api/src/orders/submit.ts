@@ -37,7 +37,11 @@ export async function submitOrder(tx: Tx, guest: AuthedGuest, cartVersion: numbe
     data: { version: { increment: 1 }, lastActivityAt: new Date() },
   });
   if (claimed.count === 0) {
-    throw new ApiError(409, "CART_CHANGED", "The order changed while you were looking at it. Please check it and send again.");
+    throw new ApiError(
+      409,
+      "CART_CHANGED",
+      "The order changed while you were looking at it. Please check it and send again.",
+    );
   }
   const cart = await tx.cartItem.findMany({
     where: { sessionId: guest.sessionId },
@@ -46,7 +50,10 @@ export async function submitOrder(tx: Tx, guest: AuthedGuest, cartVersion: numbe
   });
   if (cart.length === 0) throw errors.badRequest("CART_EMPTY", "Add something to the order first.");
 
-  const orderable = await loadOrderable(tx, cart.map((c) => c.itemId));
+  const orderable = await loadOrderable(
+    tx,
+    cart.map((c) => c.itemId),
+  );
   const lines = cart.map((c) => {
     const o = orderable.get(c.itemId)!;
     const { selection, unitPriceCents } = checkSelection(o, readSelection(c.selection));
@@ -99,7 +106,11 @@ export async function submitOrder(tx: Tx, guest: AuthedGuest, cartVersion: numbe
     data: { round, orderIds, lines: lines.length },
   });
 
-  const orders = await tx.order.findMany({ where: { id: { in: orderIds } }, include: ticketInclude, orderBy: { station: "asc" } });
+  const orders = await tx.order.findMany({
+    where: { id: { in: orderIds } },
+    include: ticketInclude,
+    orderBy: { station: "asc" },
+  });
   return { cartVersion: cartVersion + 1, version, tickets: orders.map(toTicketDTO) };
 }
 
@@ -126,7 +137,11 @@ export async function cancelRound(db: Db, realtime: Realtime, guest: AuthedGuest
       data: { status: "CANCELLED", cancelledAt: new Date(), statusChangedAt: new Date() },
     });
     if (res.count !== tickets.length) {
-      throw new ApiError(409, "TOO_LATE_TO_CANCEL", "The kitchen has already started this order, so it can't be cancelled. Please ask a member of staff.");
+      throw new ApiError(
+        409,
+        "TOO_LATE_TO_CANCEL",
+        "The kitchen has already started this order, so it can't be cancelled. Please ask a member of staff.",
+      );
     }
     const out: { id: string; version: number }[] = [];
     for (const t of tickets) out.push({ id: t.id, version: await bumpVersion(tx, guest.sessionId) });
@@ -168,8 +183,18 @@ const STAMP: Partial<Record<DbOrderStatus, "preparingAt" | "readyAt" | "servedAt
  * Kitchen moves a ticket one step forward (or cancels it while received).
  * Compare-and-set on the current status, so two screens can't skip a step.
  */
-export async function updateTicketStatus(db: Db, realtime: Realtime, orderId: string, to: OrderStatus, staffId: string, ip?: string) {
-  const order = await db.order.findUnique({ where: { id: orderId }, include: { session: { select: { tableId: true } } } });
+export async function updateTicketStatus(
+  db: Db,
+  realtime: Realtime,
+  orderId: string,
+  to: OrderStatus,
+  staffId: string,
+  ip?: string,
+) {
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: { session: { select: { tableId: true } } },
+  });
   if (!order) throw errors.notFound("Order");
   const from = enums.orderStatus.fromDb(order.status);
   if (!canTransition(from, to)) {

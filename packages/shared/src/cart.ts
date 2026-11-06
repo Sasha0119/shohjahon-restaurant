@@ -79,9 +79,7 @@ export function selectionSummary(item: MenuItem, selection: ModifierSelection): 
 }
 
 /** Two lines are "the same" when item, options, note and guest all match. */
-export function lineSignature(
-  line: Pick<CartLine, "itemId" | "selection" | "note" | "addedByGuestId">,
-): string {
+export function lineSignature(line: Pick<CartLine, "itemId" | "selection" | "note" | "addedByGuestId">): string {
   const sel = Object.keys(line.selection)
     .sort()
     .map((g) => `${g}:${[...(line.selection[g] ?? [])].sort().join(",")}`)

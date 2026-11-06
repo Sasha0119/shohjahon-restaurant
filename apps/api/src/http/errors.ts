@@ -55,7 +55,8 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof ApiError) apiError = err;
   else if (err instanceof ZodError) apiError = validationError(err);
   else if (err?.type === "entity.parse.failed") apiError = errors.badRequest("INVALID_JSON", "Body is not valid JSON.");
-  else if (err?.type === "entity.too.large") apiError = new ApiError(413, "PAYLOAD_TOO_LARGE", "Request body is too large.");
+  else if (err?.type === "entity.too.large")
+    apiError = new ApiError(413, "PAYLOAD_TOO_LARGE", "Request body is too large.");
   else {
     req.log?.error({ err }, "Unhandled error");
     apiError = new ApiError(500, "INTERNAL", "Something went wrong. Please try again.");

@@ -18,14 +18,19 @@ export async function useEnglish(ctx: BrowserContext) {
 }
 
 /** Fail the test on any uncaught page error or CSP violation. */
-export function watchForErrors(page: Page, errors: string[]) {
+function watchForErrors(page: Page, errors: string[]) {
   page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
   page.on("console", (m) => {
     if (m.type() === "error" && /Content Security Policy|Refused to/.test(m.text())) errors.push(`csp: ${m.text()}`);
   });
 }
 
-export async function staffPage(browser: Browser, role: keyof typeof AUTH, errors: string[], opts = {}): Promise<{ ctx: BrowserContext; page: Page }> {
+export async function staffPage(
+  browser: Browser,
+  role: keyof typeof AUTH,
+  errors: string[],
+  opts = {},
+): Promise<{ ctx: BrowserContext; page: Page }> {
   const ctx = await browser.newContext({ storageState: AUTH[role], ...opts });
   await useEnglish(ctx);
   const page = await ctx.newPage();

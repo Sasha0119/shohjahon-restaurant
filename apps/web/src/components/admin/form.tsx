@@ -83,7 +83,12 @@ export function Switch({
   compact?: boolean;
 }) {
   return (
-    <label className={cn("flex cursor-pointer items-center justify-between gap-4", !compact && "min-h-14 rounded-2xl bg-muted/50 px-4 py-2")}>
+    <label
+      className={cn(
+        "flex cursor-pointer items-center justify-between gap-4",
+        !compact && "min-h-14 rounded-2xl bg-muted/50 px-4 py-2",
+      )}
+    >
       <span className={cn(compact && "sr-only")}>
         <span className="block font-semibold">{label}</span>
         {hint && <span className="block text-sm text-fg-muted">{hint}</span>}
@@ -105,7 +110,9 @@ export function ToggleChip({ on, onClick, children }: { on: boolean; onClick: ()
       onClick={onClick}
       className={cn(
         "inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-card px-3.5 text-sm font-semibold transition-colors",
-        on ? "bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]" : "glass-chip text-fg-muted hover:text-fg",
+        on
+          ? "bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]"
+          : "glass-chip text-fg-muted hover:text-fg",
       )}
     >
       {children}
@@ -143,7 +150,9 @@ export function MoneyField({
   return (
     <div className={cn("relative", className)}>
       {/* The currency as a suffix, so a word like "soʻm" never covers the digits. */}
-      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-fg-muted">{symbol}</span>
+      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-fg-muted">
+        {symbol}
+      </span>
       <input
         id={id ?? auto}
         inputMode="decimal"
@@ -212,23 +221,36 @@ export function withText(translations: Tr | undefined, lang: LocaleCode, field: 
  * "Editing language" switch for menu editors: the main language edits the
  * plain fields; the others edit translations (empty = falls back to the main one).
  */
-export function EditLanguageBar({ value, onChange, className }: { value: LocaleCode; onChange: (l: LocaleCode) => void; className?: string }) {
+export function EditLanguageBar({
+  value,
+  onChange,
+  className,
+}: {
+  value: LocaleCode;
+  onChange: (l: LocaleCode) => void;
+  className?: string;
+}) {
   const t = useT();
   if (brand.languages.length < 2) return null;
   const main = localeNames[brand.defaultLanguage];
   return (
     <div className={cn("rounded-2xl bg-muted/50 p-3 ring-1 ring-inset ring-gold-line", className)}>
-      <p className="mb-2 text-[11px] font-label uppercase tracking-[0.08em] text-primary">{t("admin.menu.editLanguage")}</p>
+      <p className="mb-2 text-[11px] font-label uppercase tracking-[0.08em] text-primary">
+        {t("admin.menu.editLanguage")}
+      </p>
       <Segmented<LocaleCode>
         label={t("admin.menu.editLanguage")}
         value={value}
         onChange={onChange}
         options={brand.languages.map((l) => ({
           value: l,
-          label: l === brand.defaultLanguage ? t("admin.menu.mainLanguage", { language: localeNames[l] }) : localeNames[l],
+          label:
+            l === brand.defaultLanguage ? t("admin.menu.mainLanguage", { language: localeNames[l] }) : localeNames[l],
         }))}
       />
-      {value !== brand.defaultLanguage && <p className="mt-2 text-xs text-fg-muted">{t("admin.menu.translationHint", { language: main })}</p>}
+      {value !== brand.defaultLanguage && (
+        <p className="mt-2 text-xs text-fg-muted">{t("admin.menu.translationHint", { language: main })}</p>
+      )}
     </div>
   );
 }

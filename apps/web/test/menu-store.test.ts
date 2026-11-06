@@ -6,7 +6,15 @@ import { localizeMenu, menuFromDTO } from "../src/store/menu-store";
 const dto: MenuDTO = {
   version: "v1",
   categories: [
-    { id: "c1", slug: "mains", name: "Asosiy taomlar", description: null, translations: { en: { name: "Mains" }, ru: { name: "Основные" } }, station: "kitchen", sortOrder: 0 },
+    {
+      id: "c1",
+      slug: "mains",
+      name: "Asosiy taomlar",
+      description: null,
+      translations: { en: { name: "Mains" }, ru: { name: "Основные" } },
+      station: "kitchen",
+      sortOrder: 0,
+    },
   ],
   items: [
     {
@@ -33,7 +41,13 @@ const dto: MenuDTO = {
           minSelect: 1,
           maxSelect: 1,
           options: [
-            { id: "o1", name: "Kam pishgan", translations: { en: { name: "Rare" } }, priceDeltaCents: 0, isDefault: false },
+            {
+              id: "o1",
+              name: "Kam pishgan",
+              translations: { en: { name: "Rare" } },
+              priceDeltaCents: 0,
+              isDefault: false,
+            },
             { id: "o2", name: "Vagyu", translations: {}, priceDeltaCents: 1500, isDefault: false },
           ],
         },
@@ -59,7 +73,15 @@ const dto: MenuDTO = {
     },
   ],
   suggestions: [{ itemId: "i1", suggestItemId: "i2" }],
-  combos: [{ id: "x1", name: "Steyk kechasi", translations: { en: { name: "Steak night" } }, discountCents: 200, itemIds: ["i1", "i2"] }],
+  combos: [
+    {
+      id: "x1",
+      name: "Steyk kechasi",
+      translations: { en: { name: "Steak night" } },
+      discountCents: 200,
+      itemIds: ["i1", "i2"],
+    },
+  ],
 };
 
 describe("menuFromDTO", () => {
@@ -82,7 +104,11 @@ describe("menuFromDTO", () => {
 
   it("turns suggestions and combos into upsell rules", () => {
     expect(suggestionsForItem("i1", menu.upsells, byId).map((i) => i.id)).toEqual(["i2"]);
-    expect(menu.upsells.find((u) => u.kind === "combo")).toMatchObject({ name: "Steyk kechasi", discount: 200, itemIds: ["i1", "i2"] });
+    expect(menu.upsells.find((u) => u.kind === "combo")).toMatchObject({
+      name: "Steyk kechasi",
+      discount: 200,
+      itemIds: ["i1", "i2"],
+    });
   });
 });
 

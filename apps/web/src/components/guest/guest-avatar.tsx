@@ -21,7 +21,17 @@ function toneFor(name: string): string {
  * gold ring for "you". Decorative: the text next to it ("Added by Aziz")
  * carries the meaning for screen readers.
  */
-export function GuestAvatar({ name, me, size = 24, className }: { name: string; me?: boolean; size?: number; className?: string }) {
+export function GuestAvatar({
+  name,
+  me,
+  size = 24,
+  className,
+}: {
+  name: string;
+  me?: boolean;
+  size?: number;
+  className?: string;
+}) {
   const letter = (name.trim().charAt(0) || "•").toUpperCase();
   return (
     <span

@@ -16,8 +16,11 @@ export function readSelection(json: unknown): ModifierSelection {
 }
 
 /** Base price + chosen (active) options, for one unit. */
-export function cartUnitPrice(
-  item: { priceCents: number; modifierGroups: { id: string; options: { id: string; priceDeltaCents: number; active: boolean }[] }[] },
+function cartUnitPrice(
+  item: {
+    priceCents: number;
+    modifierGroups: { id: string; options: { id: string; priceDeltaCents: number; active: boolean }[] }[];
+  },
   selection: ModifierSelection,
 ): number {
   let price = item.priceCents;
@@ -31,7 +34,7 @@ export function cartUnitPrice(
 }
 
 /** The authoritative bill (see billing/bill.ts). */
-export async function buildBill(db: Db, sessionId: string): Promise<BillDTO> {
+async function buildBill(db: Db, sessionId: string): Promise<BillDTO> {
   return (await computeSessionBill(db, sessionId)).dto;
 }
 
@@ -41,7 +44,14 @@ export async function buildCart(db: Db, sessionId: string): Promise<CartLineDTO[
     orderBy: { createdAt: "asc" },
     include: {
       guest: { select: { nickname: true } },
-      item: { select: { priceCents: true, modifierGroups: { select: { id: true, options: { select: { id: true, priceDeltaCents: true, active: true } } } } } },
+      item: {
+        select: {
+          priceCents: true,
+          modifierGroups: {
+            select: { id: true, options: { select: { id: true, priceDeltaCents: true, active: true } } },
+          },
+        },
+      },
     },
   });
   return cart.map((c) => {
@@ -60,7 +70,7 @@ export async function buildCart(db: Db, sessionId: string): Promise<CartLineDTO[
   });
 }
 
-export async function buildTickets(db: Db, sessionId: string): Promise<OrderTicketDTO[]> {
+async function buildTickets(db: Db, sessionId: string): Promise<OrderTicketDTO[]> {
   const orders = await db.order.findMany({
     where: { sessionId },
     orderBy: [{ round: "asc" }, { station: "asc" }],

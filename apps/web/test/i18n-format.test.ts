@@ -63,7 +63,10 @@ describe("translate", () => {
 describe("translations (uz / en / ru)", () => {
   const reference = leaves(en);
 
-  for (const [name, dict] of [["uz", uz], ["ru", ru]] as const) {
+  for (const [name, dict] of [
+    ["uz", uz],
+    ["ru", ru],
+  ] as const) {
     it(`${name} has exactly the English keys and the same {placeholders}`, () => {
       const got = leaves(dict);
       expect([...got.keys()].sort()).toEqual([...reference.keys()].sort());
@@ -85,7 +88,8 @@ describe("translations (uz / en / ru)", () => {
 
   it("covers one / few / many in every Russian plural and picks the right form", () => {
     for (const [key, value] of leaves(ru)) {
-      if (typeof value === "object") expect(Object.keys(value as object).sort(), key).toEqual(["few", "many", "one", "other"]);
+      if (typeof value === "object")
+        expect(Object.keys(value as object).sort(), key).toEqual(["few", "many", "one", "other"]);
     }
     expect(translate("ru", ru, en, "cart.items", { count: 1 })).toBe("1 позиция");
     expect(translate("ru", ru, en, "cart.items", { count: 3 })).toBe("3 позиции");

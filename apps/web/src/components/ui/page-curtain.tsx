@@ -52,7 +52,10 @@ export function PageCurtain() {
 
   useEffect(() => {
     if (state === "idle") return;
-    const timer = setTimeout(() => setState(state === "closed" ? "opening" : "idle"), state === "closed" ? GIVE_UP_MS : OPEN_MS);
+    const timer = setTimeout(
+      () => setState(state === "closed" ? "opening" : "idle"),
+      state === "closed" ? GIVE_UP_MS : OPEN_MS,
+    );
     return () => clearTimeout(timer);
   }, [state]);
 
@@ -68,7 +71,17 @@ export function PageCurtain() {
   });
 
   return (
-    <div aria-hidden style={{ position: "fixed", inset: 0, zIndex: 90, overflow: "hidden", pointerEvents: state === "closed" ? "auto" : "none", visibility: state === "idle" ? "hidden" : "visible" }}>
+    <div
+      aria-hidden
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 90,
+        overflow: "hidden",
+        pointerEvents: state === "closed" ? "auto" : "none",
+        visibility: state === "idle" ? "hidden" : "visible",
+      }}
+    >
       <div style={panel("top")} />
       <div style={panel("bottom")} />
     </div>

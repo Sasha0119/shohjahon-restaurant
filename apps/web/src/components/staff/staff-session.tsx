@@ -69,5 +69,4 @@ export function StaffGate({ roles, children }: { roles: StaffRole[]; children: R
   return <StaffSessionContext.Provider value={{ me, signOut }}>{children}</StaffSessionContext.Provider>;
 }
 
-
 export { safeNext } from "@/lib/safe-next";

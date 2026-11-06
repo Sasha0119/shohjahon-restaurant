@@ -47,7 +47,9 @@ export default function DiscountsPage() {
   const toggle = async (d: Discount) => {
     setBusy(d.id);
     try {
-      const { discount } = await api<{ discount: Discount }>("PATCH", `/api/admin/discounts/${d.id}`, { active: !d.active });
+      const { discount } = await api<{ discount: Discount }>("PATCH", `/api/admin/discounts/${d.id}`, {
+        active: !d.active,
+      });
       setList((l) => (l ?? []).map((x) => (x.id === d.id ? discount : x)));
       toast.success(t("admin.discounts.updated"));
     } catch (e) {
@@ -72,7 +74,11 @@ export default function DiscountsPage() {
 
       <div className="mt-8">
         {failed && !list ? (
-          <EmptyState icon={CloudOff} title={t("errors.generic")} action={<Button onClick={load}>{t("common.retry")}</Button>} />
+          <EmptyState
+            icon={CloudOff}
+            title={t("errors.generic")}
+            action={<Button onClick={load}>{t("common.retry")}</Button>}
+          />
         ) : !list ? (
           <div className="grid gap-4 sm:grid-cols-2">
             <Skeleton className="h-36 rounded-card" />
@@ -89,8 +95,14 @@ export default function DiscountsPage() {
                   className={`enter ${cn("relative overflow-hidden card p-5", !d.active && "opacity-60")}`}
                 >
                   {/* Ticket-style notches */}
-                  <span aria-hidden className="absolute -left-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line" />
-                  <span aria-hidden className="absolute -right-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line" />
+                  <span
+                    aria-hidden
+                    className="absolute -left-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line"
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute -right-3 top-1/2 size-6 -translate-y-1/2 rounded-full bg-bg ring-1 ring-line"
+                  />
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-mono text-xl font-bold tracking-wider">{d.code}</p>
@@ -103,17 +115,26 @@ export default function DiscountsPage() {
                     {busy === d.id ? (
                       <Loader2 className="size-5 animate-spin text-fg-muted" aria-hidden />
                     ) : (
-                      <Switch compact checked={d.active} onChange={() => void toggle(d)} label={`${d.code}: ${t("admin.discounts.active")}`} />
+                      <Switch
+                        compact
+                        checked={d.active}
+                        onChange={() => void toggle(d)}
+                        label={`${d.code}: ${t("admin.discounts.active")}`}
+                      />
                     )}
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2 text-sm">
-                    <Badge tone={d.active ? "success" : "muted"}>{d.active ? t("admin.discounts.active") : t("admin.discounts.inactive")}</Badge>
+                    <Badge tone={d.active ? "success" : "muted"}>
+                      {d.active ? t("admin.discounts.active") : t("admin.discounts.inactive")}
+                    </Badge>
                     <Badge>
                       {d.maxRedemptions
                         ? t("admin.discounts.usesOf", { count: d.redemptionCount, max: d.maxRedemptions })
                         : t("admin.discounts.uses", { count: d.redemptionCount })}
                     </Badge>
-                    {d.minSubtotalCents != null && <Badge>{t("admin.discounts.minOrder", { amount: formatPrice(d.minSubtotalCents) })}</Badge>}
+                    {d.minSubtotalCents != null && (
+                      <Badge>{t("admin.discounts.minOrder", { amount: formatPrice(d.minSubtotalCents) })}</Badge>
+                    )}
                     {d.startsAt && <Badge>{t("admin.discounts.from", { date: fmtDate(d.startsAt) })}</Badge>}
                     {d.endsAt && <Badge>{t("admin.discounts.until", { date: fmtDate(d.endsAt) })}</Badge>}
                   </div>
@@ -124,12 +145,24 @@ export default function DiscountsPage() {
         )}
       </div>
 
-      <CreateSheet open={creating} onClose={() => setCreating(false)} onCreated={(d) => setList((l) => [d, ...(l ?? [])])} />
+      <CreateSheet
+        open={creating}
+        onClose={() => setCreating(false)}
+        onCreated={(d) => setList((l) => [d, ...(l ?? [])])}
+      />
     </div>
   );
 }
 
-function CreateSheet({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (d: Discount) => void }) {
+function CreateSheet({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (d: Discount) => void;
+}) {
   const t = useT();
   const [code, setCode] = useState("");
   const [kind, setKind] = useState<"percent" | "fixed">("percent");
@@ -163,7 +196,7 @@ function CreateSheet({ open, onClose, onCreated }: { open: boolean; onClose: () 
       const { discount } = await api<{ discount: Discount }>("POST", "/api/admin/discounts", {
         code,
         kind,
-        value: kind === "percent" ? Number(percent) : fixed ?? 0,
+        value: kind === "percent" ? Number(percent) : (fixed ?? 0),
         ...(max ? { maxRedemptions: Number(max) } : {}),
         ...(min != null ? { minSubtotalCents: min } : {}),
         ...(startsAt ? { startsAt: new Date(startsAt).toISOString() } : {}),
@@ -188,7 +221,14 @@ function CreateSheet({ open, onClose, onCreated }: { open: boolean; onClose: () 
           <input
             className={cn(inputClass, "font-mono uppercase tracking-wider")}
             value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32))}
+            onChange={(e) =>
+              setCode(
+                e.target.value
+                  .toUpperCase()
+                  .replace(/[^A-Z0-9_-]/g, "")
+                  .slice(0, 32),
+              )
+            }
             required
           />
         </Field>
@@ -212,7 +252,9 @@ function CreateSheet({ open, onClose, onCreated }: { open: boolean; onClose: () 
                 value={percent}
                 onChange={(e) => setPercent(e.target.value.replace(/[^\d.]/g, "").slice(0, 5))}
               />
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 font-semibold text-fg-muted">%</span>
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 font-semibold text-fg-muted">
+                %
+              </span>
             </div>
           ) : (
             <MoneyField cents={fixed} onChange={setFixed} />
@@ -220,7 +262,12 @@ function CreateSheet({ open, onClose, onCreated }: { open: boolean; onClose: () 
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("admin.discounts.maxRedemptions")} error={errors.maxRedemptions}>
-            <input className={inputClass} inputMode="numeric" value={max} onChange={(e) => setMax(e.target.value.replace(/\D/g, "").slice(0, 6))} />
+            <input
+              className={inputClass}
+              inputMode="numeric"
+              value={max}
+              onChange={(e) => setMax(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            />
           </Field>
           <Field label={t("admin.discounts.minSubtotal")} error={errors.minSubtotalCents}>
             <MoneyField cents={min} onChange={setMin} />

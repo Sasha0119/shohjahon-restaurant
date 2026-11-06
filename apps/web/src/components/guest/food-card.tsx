@@ -66,7 +66,12 @@ export function FoodCard({ item, priority }: { item: MenuItem; priority?: boolea
         <div className={cn("p-4 pr-[4.5rem]", soldOut && "opacity-70")}>
           <h3 className="font-display text-[1.2rem] font-semibold leading-snug">{item.name}</h3>
           <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-fg-muted">{item.description}</p>
-          <p className={cn("mt-3 text-[15px] font-semibold tabular text-primary", soldOut && "text-fg-muted line-through")}>
+          <p
+            className={cn(
+              "mt-3 text-[15px] font-semibold tabular text-primary",
+              soldOut && "text-fg-muted line-through",
+            )}
+          >
             {formatPrice(item.price)}
           </p>
         </div>
@@ -76,7 +81,9 @@ export function FoodCard({ item, priority }: { item: MenuItem; priority?: boolea
         <button
           type="button"
           onClick={() => quickAdd(item)}
-          aria-label={needsChoices(item) ? t("menu.customize", { name: item.name }) : t("menu.quickAdd", { name: item.name })}
+          aria-label={
+            needsChoices(item) ? t("menu.customize", { name: item.name }) : t("menu.quickAdd", { name: item.name })
+          }
           className="pressable absolute bottom-4 right-4 grid size-12 place-items-center rounded-full bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.3),var(--shadow-glow)]"
         >
           <Plus className="size-6" strokeWidth={2.2} aria-hidden />
@@ -138,7 +145,11 @@ export function MiniItemCard({ item }: { item: MenuItem }) {
   const quickAdd = useQuickAdd();
   return (
     <div className="glass-card relative flex w-[16rem] shrink-0 snap-start items-center gap-3 rounded-2xl p-2.5 pr-14">
-      <button type="button" onClick={() => openItem(item.id)} className="pressable flex min-w-0 items-center gap-3 text-left">
+      <button
+        type="button"
+        onClick={() => openItem(item.id)}
+        className="pressable flex min-w-0 items-center gap-3 text-left"
+      >
         <span className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted">
           <Image src={item.image} alt="" fill sizes="64px" className="object-cover" />
         </span>

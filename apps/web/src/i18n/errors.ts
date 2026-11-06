@@ -1,8 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
 import { ApiClientError } from "@/lib/api";
-import { useT } from "./index";
 import type { MessageKey, Vars } from "./translate";
 
 type T = (key: MessageKey, vars?: Vars) => string;
@@ -20,10 +18,4 @@ export function translateError(e: unknown, t: T, fallback: MessageKey = "errors.
     if (text !== key) return text;
   }
   return t(fallback);
-}
-
-/** Hook form of translateError. */
-export function useErrorText() {
-  const t = useT();
-  return useCallback((e: unknown, fallback?: MessageKey) => translateError(e, t, fallback), [t]);
 }

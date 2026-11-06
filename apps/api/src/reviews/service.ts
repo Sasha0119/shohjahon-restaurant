@@ -8,7 +8,7 @@ import type { AuthedGuest } from "../sessions/service.ts";
 
 /** 4–5 stars are happy guests (shown public review links); 1–3 is private feedback for the manager. */
 export const PUBLIC_RATING_MIN = 4;
-export const isPublicRating = (rating: number) => rating >= PUBLIC_RATING_MIN;
+const isPublicRating = (rating: number) => rating >= PUBLIC_RATING_MIN;
 
 export const feedbackInclude = {
   session: { select: { table: { select: { number: true } } } },

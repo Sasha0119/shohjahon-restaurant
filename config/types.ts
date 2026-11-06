@@ -74,7 +74,10 @@ export type OpeningHours = Record<Weekday, OpeningSlot[]>;
 
 export type BrandLogo =
   /** A letter in a thin circle, next to the name set in the display font. */
-  | { type: "wordmark"; /** The letter(s) inside the circle. Defaults to the first letter of `name`. */ monogram?: string }
+  | {
+      type: "wordmark";
+      /** The letter(s) inside the circle. Defaults to the first letter of `name`. */ monogram?: string;
+    }
   | { type: "monogram"; /** Defaults to the initials of `name`. */ text?: string }
   | { type: "image"; src: string; alt: string };
 

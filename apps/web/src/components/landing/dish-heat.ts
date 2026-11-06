@@ -61,7 +61,12 @@ const FADE_OUT = 0.05;
 export function startDishHeat(track: HTMLElement): (() => void) | null {
   let renderer: Renderer;
   try {
-    renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio, 1.5), alpha: false, antialias: false, powerPreference: "low-power" });
+    renderer = new Renderer({
+      dpr: Math.min(window.devicePixelRatio, 1.5),
+      alpha: false,
+      antialias: false,
+      powerPreference: "low-power",
+    });
   } catch {
     return null; // No WebGL: the CSS hover stays.
   }
@@ -121,7 +126,13 @@ export function startDishHeat(track: HTMLElement): (() => void) | null {
     if (!image?.complete || !image.naturalWidth) return;
     let texture = textures.get(image);
     if (!texture) {
-      texture = new Texture(gl, { image, generateMipmaps: false, minFilter: gl.LINEAR, wrapS: gl.CLAMP_TO_EDGE, wrapT: gl.CLAMP_TO_EDGE });
+      texture = new Texture(gl, {
+        image,
+        generateMipmaps: false,
+        minFilter: gl.LINEAR,
+        wrapS: gl.CLAMP_TO_EDGE,
+        wrapT: gl.CLAMP_TO_EDGE,
+      });
       textures.set(image, texture);
     }
     const { width, height } = next.getBoundingClientRect();

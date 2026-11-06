@@ -17,11 +17,14 @@ test("an online booking reaches staff live, and warns whoever scans that table's
   // A visitor books tomorrow's first time from their phone.
   const { page: visitor } = await guestPage(browser, errors);
   await visitor.goto("/reserve");
-  const tomorrow = await visitor.getByLabel("Date").getAttribute("min").then((min) => {
-    const d = new Date(`${min}T00:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + 1);
-    return d.toISOString().slice(0, 10);
-  });
+  const tomorrow = await visitor
+    .getByLabel("Date")
+    .getAttribute("min")
+    .then((min) => {
+      const d = new Date(`${min}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + 1);
+      return d.toISOString().slice(0, 10);
+    });
   await visitor.getByLabel("Date").fill(tomorrow);
   await visitor.getByLabel("Your name").fill(NAME);
   await visitor.getByLabel("Phone number").fill("+998 90 123 45 67");
@@ -54,11 +57,15 @@ test("an online booking reaches staff live, and warns whoever scans that table's
 
   // Waiter and admin both see the table as reserved for that time.
   await waiter.reload();
-  await expect(waiter.getByRole("button", { name: new RegExp(`^${TABLE}\\b`) }).getByText(`Reserved ${time}`)).toBeVisible();
+  await expect(
+    waiter.getByRole("button", { name: new RegExp(`^${TABLE}\\b`) }).getByText(`Reserved ${time}`),
+  ).toBeVisible();
   await waiter.screenshot({ path: info.outputPath("waiter.png"), fullPage: true });
   await manager.goto("/admin/tables");
   await expect(manager.getByText(NAME)).toBeVisible();
-  await expect(manager.getByRole("button", { name: new RegExp(`^${TABLE}\\b`) }).getByText(`Reserved ${time}`)).toBeVisible();
+  await expect(
+    manager.getByRole("button", { name: new RegExp(`^${TABLE}\\b`) }).getByText(`Reserved ${time}`),
+  ).toBeVisible();
   await manager.screenshot({ path: info.outputPath("admin.png"), fullPage: true });
 
   // Someone scans the QR: the message comes first, and they can carry on if it's theirs.

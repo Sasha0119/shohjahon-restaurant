@@ -38,7 +38,6 @@ export function Landing() {
   const root = useRef<HTMLElement>(null);
   const loader = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
-  const [mode, setMode] = useState<IntroMode | null>(null);
   const [videoAllowed, setVideoAllowed] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
 
@@ -48,11 +47,11 @@ export function Landing() {
     const intro = (html.dataset.sjIntro as IntroMode | undefined) ?? decideIntro();
     html.dataset.sjIntro = intro;
     html.dataset.sjHydrated = "";
-    setMode(intro);
 
     // The video is the heaviest thing here, so it waits until everything else has loaded and the
     // curtain is open. Reduced motion, data-saver and very slow connections keep the still image.
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } })
+      .connection;
     const wantsVideo = intro !== "still" && !connection?.saveData && !/(^|-)2g$/.test(connection?.effectiveType ?? "");
     const startVideo = () => {
       if (wantsVideo) setVideoAllowed(true);
@@ -90,10 +89,13 @@ export function Landing() {
       window.scrollTo(0, 0);
       const elapsed = arrivedByLink ? 0 : performance.now();
       timers.push(
-        setTimeout(() => {
-          html.dataset.sjRevealed = "";
-          timers.push(setTimeout(finish, CURTAIN_MS));
-        }, Math.max(0, LOADER_MS - elapsed)),
+        setTimeout(
+          () => {
+            html.dataset.sjRevealed = "";
+            timers.push(setTimeout(finish, CURTAIN_MS));
+          },
+          Math.max(0, LOADER_MS - elapsed),
+        ),
       );
     } else {
       if (intro === "skip") requestAnimationFrame(() => (html.dataset.sjRevealed = ""));
@@ -106,7 +108,8 @@ export function Landing() {
       window.removeEventListener("load", startVideo);
       timers.forEach(clearTimeout);
       stopScroll?.();
-      for (const name of ["data-sj-intro", "data-sj-revealed", "data-sj-lock", "data-sj-hydrated"]) html.removeAttribute(name);
+      for (const name of ["data-sj-intro", "data-sj-revealed", "data-sj-lock", "data-sj-hydrated"])
+        html.removeAttribute(name);
     };
   }, []);
 

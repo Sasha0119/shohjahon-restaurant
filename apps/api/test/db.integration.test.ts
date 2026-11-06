@@ -71,9 +71,7 @@ describe.skipIf(!TEST_DATABASE_URL)("database schema (integration)", () => {
   it("rejects invalid data at the database level", async () => {
     const item = await db.menuItem.findFirstOrThrow();
     await expect(db.menuItem.update({ where: { id: item.id }, data: { priceCents: -1 } })).rejects.toThrow();
-    await expect(
-      db.staff.create({ data: { name: "No PIN", role: "WAITER" } }),
-    ).rejects.toThrow();
+    await expect(db.staff.create({ data: { name: "No PIN", role: "WAITER" } })).rejects.toThrow();
     await expect(
       db.staff.create({ data: { name: "No pw", role: "MANAGER", email: "x@example.com" } }),
     ).rejects.toThrow();

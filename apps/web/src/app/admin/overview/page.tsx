@@ -3,11 +3,28 @@
 import { brand } from "@app/config";
 import type { AnalyticsDTO, AnalyticsKpisDTO } from "@app/shared/api";
 import { BarChart3, CloudOff, Star } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { BarList, ChartCard, ColumnChart, DataTable, Heatmap, StatTile, compactMoney, formatCount, type Delta } from "@/components/admin/charts";
-import { DateRangeFilter, formatLocalDate, presetRange, rangeQuery, type DateRange } from "@/components/admin/date-range";
+import { useCallback, useEffect, useState } from "react";
+import {
+  BarList,
+  ChartCard,
+  ColumnChart,
+  DataTable,
+  Heatmap,
+  StatTile,
+  compactMoney,
+  formatCount,
+  type Delta,
+} from "@/components/admin/charts";
+import {
+  DateRangeFilter,
+  formatLocalDate,
+  presetRange,
+  rangeQuery,
+  type DateRange,
+} from "@/components/admin/date-range";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
+import { useLatestRequest } from "@/hooks/use-latest-request";
 import { useT } from "@/i18n";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -20,14 +37,18 @@ const weekdays = () =>
   Array.from({ length: 7 }, (_, i) =>
     formatDate(new Date(Date.UTC(2024, 0, 1 + i)), { weekday: "short", timeZone: "UTC" }),
   );
-const hourLabel = (h: number) =>
-  formatDate(new Date(Date.UTC(2024, 0, 1, h)), { hour: "numeric", timeZone: "UTC" });
+const hourLabel = (h: number) => formatDate(new Date(Date.UTC(2024, 0, 1, h)), { hour: "numeric", timeZone: "UTC" });
 const hourRange = (h: number) => {
-  const f = (at: number) => formatDate(new Date(Date.UTC(2024, 0, 1, at)), { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
+  const f = (at: number) =>
+    formatDate(new Date(Date.UTC(2024, 0, 1, at)), { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
   return [f(h), f(h + 1)] as const;
 };
-const pct = { format: (v: number) => new Intl.NumberFormat(formatLocale(), { style: "percent", maximumFractionDigits: 0 }).format(v) };
-const rating = (v: number) => new Intl.NumberFormat(formatLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v);
+const pct = {
+  format: (v: number) =>
+    new Intl.NumberFormat(formatLocale(), { style: "percent", maximumFractionDigits: 0 }).format(v),
+};
+const rating = (v: number) =>
+  new Intl.NumberFormat(formatLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v);
 
 export default function OverviewPage() {
   const t = useT();
@@ -36,39 +57,33 @@ export default function OverviewPage() {
   const dishName = (i: { itemId: string; name: string }) => itemsById.get(i.itemId)?.name ?? i.name;
   const WEEKDAYS = weekdays();
   const [range, setRange] = useState<DateRange>(() => presetRange("30"));
-  const [data, setData] = useState<AnalyticsDTO | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-  const req = useRef(0);
+  const { data, loading, failed, run } = useLatestRequest<AnalyticsDTO>();
 
-  const load = useCallback(async (r: DateRange) => {
-    const id = ++req.current;
-    setLoading(true);
-    try {
-      const res = await api<AnalyticsDTO>("GET", `/api/admin/analytics?${rangeQuery(r)}`);
-      if (id !== req.current) return; // a newer range was picked meanwhile
-      setData(res);
-      setFailed(false);
-    } catch {
-      if (id === req.current) setFailed(true);
-    } finally {
-      if (id === req.current) setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    (r: DateRange) => {
+      return run(() => api<AnalyticsDTO>("GET", `/api/admin/analytics?${rangeQuery(r)}`));
+    },
+    [run],
+  );
   useEffect(() => {
     void load(range);
   }, [load, range]);
 
-  const context = data && data.range.days === 1 ? t("admin.overview.vsPreviousDay") : t("admin.overview.vsPrevious", { days: data?.range.days ?? 0 });
+  const context =
+    data && data.range.days === 1
+      ? t("admin.overview.vsPreviousDay")
+      : t("admin.overview.vsPrevious", { days: data?.range.days ?? 0 });
   /** Relative change for counts and money; absolute change for the rating. */
   const delta = (key: keyof AnalyticsKpisDTO, kind: "relative" | "absolute" = "relative"): Delta | undefined => {
     if (!data) return undefined;
     const cur = data.kpis[key];
     const prev = data.previous[key];
-    if (cur === null || prev === null || prev === 0) return { direction: "none", text: t("admin.overview.noComparison"), context };
+    if (cur === null || prev === null || prev === 0)
+      return { direction: "none", text: t("admin.overview.noComparison"), context };
     const change = kind === "relative" ? (cur - prev) / prev : cur - prev;
     const shown = kind === "relative" ? pct.format(Math.abs(change)) : rating(Math.abs(change));
-    if (shown === pct.format(0) || shown === rating(0)) return { direction: "flat", text: t("admin.overview.unchanged"), context };
+    if (shown === pct.format(0) || shown === rating(0))
+      return { direction: "flat", text: t("admin.overview.unchanged"), context };
     return change > 0
       ? { direction: "up", text: t("admin.overview.up", { value: shown }), context }
       : { direction: "down", text: t("admin.overview.down", { value: shown }), context };
@@ -120,9 +135,21 @@ export default function OverviewPage() {
                 sub={t("admin.overview.kpi.itemsSold", { count: data.kpis.itemsSold })}
                 delta={delta("orders")}
               />
-              <StatTile label={t("admin.overview.kpi.avgBill")} value={formatPrice(data.kpis.avgBillCents)} delta={delta("avgBillCents")} />
-              <StatTile label={t("admin.overview.kpi.guests")} value={formatCount(data.kpis.guests)} delta={delta("guests")} />
-              <StatTile label={t("admin.overview.kpi.tips")} value={formatPrice(data.kpis.tipsCents)} delta={delta("tipsCents")} />
+              <StatTile
+                label={t("admin.overview.kpi.avgBill")}
+                value={formatPrice(data.kpis.avgBillCents)}
+                delta={delta("avgBillCents")}
+              />
+              <StatTile
+                label={t("admin.overview.kpi.guests")}
+                value={formatCount(data.kpis.guests)}
+                delta={delta("guests")}
+              />
+              <StatTile
+                label={t("admin.overview.kpi.tips")}
+                value={formatPrice(data.kpis.tipsCents)}
+                delta={delta("tipsCents")}
+              />
             </div>
 
             <ChartCard
@@ -130,8 +157,16 @@ export default function OverviewPage() {
               subtitle={t("admin.overview.sales.subtitle")}
               table={
                 <DataTable
-                  head={[t("admin.overview.table.date"), t("admin.overview.table.revenue"), t("admin.overview.table.orders")]}
-                  rows={data.salesByDay.map((d) => [formatLocalDate(d.date), formatPrice(d.revenueCents), formatCount(d.orders)])}
+                  head={[
+                    t("admin.overview.table.date"),
+                    t("admin.overview.table.revenue"),
+                    t("admin.overview.table.orders"),
+                  ]}
+                  rows={data.salesByDay.map((d) => [
+                    formatLocalDate(d.date),
+                    formatPrice(d.revenueCents),
+                    formatCount(d.orders),
+                  ])}
                 />
               }
             >
@@ -160,8 +195,16 @@ export default function OverviewPage() {
                 table={
                   data.topItems.length > 0 && (
                     <DataTable
-                      head={[t("admin.overview.table.item"), t("admin.overview.table.quantity"), t("admin.overview.table.revenue")]}
-                      rows={data.topItems.map((i) => [dishName(i), formatCount(i.quantity), formatPrice(i.revenueCents)])}
+                      head={[
+                        t("admin.overview.table.item"),
+                        t("admin.overview.table.quantity"),
+                        t("admin.overview.table.revenue"),
+                      ]}
+                      rows={data.topItems.map((i) => [
+                        dishName(i),
+                        formatCount(i.quantity),
+                        formatPrice(i.revenueCents),
+                      ])}
                     />
                   )
                 }
@@ -188,7 +231,10 @@ export default function OverviewPage() {
                   data.ratings.count > 0 && (
                     <DataTable
                       head={[t("admin.overview.table.rating"), t("admin.overview.table.count")]}
-                      rows={[5, 4, 3, 2, 1].map((s) => [t("admin.overview.ratings.stars", { count: s }), data.ratings.distribution[s - 1]!])}
+                      rows={[5, 4, 3, 2, 1].map((s) => [
+                        t("admin.overview.ratings.stars", { count: s }),
+                        data.ratings.distribution[s - 1]!,
+                      ])}
                     />
                   )
                 }
@@ -200,7 +246,9 @@ export default function OverviewPage() {
                     <div className="mb-5 flex items-end gap-3">
                       <p className="text-5xl font-semibold tracking-tight">{rating(data.ratings.average ?? 0)}</p>
                       <div className="pb-1.5">
-                        <p className="text-sm text-fg-muted">{t("admin.overview.kpi.ratingCount", { count: data.ratings.count })}</p>
+                        <p className="text-sm text-fg-muted">
+                          {t("admin.overview.kpi.ratingCount", { count: data.ratings.count })}
+                        </p>
                       </div>
                     </div>
                     <BarList
@@ -220,7 +268,11 @@ export default function OverviewPage() {
                     <div className="mt-4">
                       {(() => {
                         const d = delta("avgRating", "absolute");
-                        return d ? <p className="text-sm text-fg-muted">{d.direction === "none" ? d.text : `${d.text} ${d.context}`}</p> : null;
+                        return d ? (
+                          <p className="text-sm text-fg-muted">
+                            {d.direction === "none" ? d.text : `${d.text} ${d.context}`}
+                          </p>
+                        ) : null;
                       })()}
                     </div>
                   </>
@@ -233,7 +285,11 @@ export default function OverviewPage() {
               subtitle={t("admin.overview.hours.subtitle")}
               table={
                 <DataTable
-                  head={[t("admin.overview.table.day"), t("admin.overview.table.hour"), t("admin.overview.table.orders")]}
+                  head={[
+                    t("admin.overview.table.day"),
+                    t("admin.overview.table.hour"),
+                    t("admin.overview.table.orders"),
+                  ]}
                   rows={data.busiestHours.flatMap((row, d) =>
                     row.flatMap((v, h) => (v > 0 ? [[WEEKDAYS[d]!, hourRange(h).join("–"), v]] : [])),
                   )}
@@ -254,7 +310,8 @@ export default function OverviewPage() {
                     const [from, to] = hourRange(h);
                     return {
                       title: t("admin.overview.hours.cell", { day: WEEKDAYS[d]!, from, to }),
-                      value: v === 0 ? t("admin.overview.hours.noOrders") : t("admin.overview.hours.orders", { count: v }),
+                      value:
+                        v === 0 ? t("admin.overview.hours.noOrders") : t("admin.overview.hours.orders", { count: v }),
                     };
                   }}
                 />

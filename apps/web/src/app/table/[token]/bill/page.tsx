@@ -40,10 +40,15 @@ import { useSessionStore } from "@/store/session-store";
 import { useTableStore } from "@/store/table-store";
 
 type Method = "card" | "applePay" | "googlePay" | "cash";
-type Outcome = { kind: "success"; payment: PaymentDTO; settled: boolean } | { kind: "declined"; reason: string } | { kind: "cash"; amount: number };
+type Outcome =
+  | { kind: "success"; payment: PaymentDTO; settled: boolean }
+  | { kind: "declined"; reason: string }
+  | { kind: "cash"; amount: number };
 
 const newKey = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}-pay`;
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}-pay`;
 
 export default function BillPage() {
   const t = useT();
@@ -134,7 +139,9 @@ function Receipt({ bill }: { bill: BillDTO }) {
                       {t("pay.alreadyPaid")}
                     </Badge>
                   )}
-                  {text.modifiers.length > 0 && <span className="block text-sm text-fg-muted">{text.modifiers.join(" · ")}</span>}
+                  {text.modifiers.length > 0 && (
+                    <span className="block text-sm text-fg-muted">{text.modifiers.join(" · ")}</span>
+                  )}
                 </span>
                 <span className="shrink-0 tabular">{formatPrice(l.unitPriceCents * l.quantity)}</span>
               </li>
@@ -149,23 +156,38 @@ function Receipt({ bill }: { bill: BillDTO }) {
       </div>
       <dl className="space-y-2 p-5 text-[15px]">
         <Row label={t("bill.subtotal")} value={formatPrice(bill.subtotalCents)} />
-        {bill.comboDiscountCents > 0 && <Row label={t("bill.comboSavings")} value={`−${formatPrice(bill.comboDiscountCents)}`} tone="success" />}
+        {bill.comboDiscountCents > 0 && (
+          <Row label={t("bill.comboSavings")} value={`−${formatPrice(bill.comboDiscountCents)}`} tone="success" />
+        )}
         {bill.codeDiscountCents > 0 && bill.discountCode && (
-          <Row label={t("pay.codeDiscount", { code: bill.discountCode })} value={`−${formatPrice(bill.codeDiscountCents)}`} tone="success" />
+          <Row
+            label={t("pay.codeDiscount", { code: bill.discountCode })}
+            value={`−${formatPrice(bill.codeDiscountCents)}`}
+            tone="success"
+          />
         )}
         {brand.serviceChargePercent > 0 && (
-          <Row label={t("bill.serviceCharge", { percent: formatPercent(brand.serviceChargePercent) })} value={formatPrice(bill.serviceChargeCents)} />
+          <Row
+            label={t("bill.serviceCharge", { percent: formatPercent(brand.serviceChargePercent) })}
+            value={formatPrice(bill.serviceChargeCents)}
+          />
         )}
-        {brand.taxPercent > 0 && <Row label={t("bill.tax", { percent: formatPercent(brand.taxPercent) })} value={formatPrice(bill.taxCents)} />}
+        {brand.taxPercent > 0 && (
+          <Row label={t("bill.tax", { percent: formatPercent(brand.taxPercent) })} value={formatPrice(bill.taxCents)} />
+        )}
         <div className="flex items-baseline justify-between gap-4 border-t border-gold-line pt-3">
           <dt className="font-display text-xl font-semibold">{t("bill.total")}</dt>
           <dd className="font-display text-[1.85rem] font-semibold tabular text-primary">
             <Amount value={bill.totalCents} />
           </dd>
         </div>
-        {bill.paidCents > 0 && <Row label={t("pay.paidSoFar")} value={`−${formatPrice(bill.paidCents)}`} tone="success" />}
+        {bill.paidCents > 0 && (
+          <Row label={t("pay.paidSoFar")} value={`−${formatPrice(bill.paidCents)}`} tone="success" />
+        )}
         {bill.pendingCents > 0 && <Row label={t("pay.pending")} value={formatPrice(bill.pendingCents)} />}
-        {(bill.paidCents > 0 || bill.pendingCents > 0) && <Row label={t("pay.outstanding")} value={formatPrice(bill.outstandingCents)} strong />}
+        {(bill.paidCents > 0 || bill.pendingCents > 0) && (
+          <Row label={t("pay.outstanding")} value={formatPrice(bill.outstandingCents)} strong />
+        )}
         {brand.taxPercent === 0 && <p className="pt-1 text-xs text-fg-muted">{t("bill.vatIncluded")}</p>}
       </dl>
     </section>
@@ -176,7 +198,10 @@ function Receipt({ bill }: { bill: BillDTO }) {
 function StepTitle({ n, id, children, sub }: { n: number; id: string; children: string; sub?: string }) {
   return (
     <div className="flex items-start gap-3">
-      <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full font-display text-[15px] font-semibold text-primary ring-1 ring-gold-line">
+      <span
+        aria-hidden
+        className="grid size-8 shrink-0 place-items-center rounded-full font-display text-[15px] font-semibold text-primary ring-1 ring-gold-line"
+      >
         {n}
       </span>
       <div className="min-w-0 pt-0.5">
@@ -193,12 +218,22 @@ function StepTitle({ n, id, children, sub }: { n: number; id: string; children: 
 function byPerson(lines: OrderLineDTO[]): { name: string; lines: OrderLineDTO[]; subtotal: number }[] {
   const groups = new Map<string, OrderLineDTO[]>();
   for (const l of lines) groups.set(l.addedBy, [...(groups.get(l.addedBy) ?? []), l]);
-  return [...groups.entries()].map(([name, ls]) => ({ name, lines: ls, subtotal: ls.reduce((n, l) => n + l.unitPriceCents * l.quantity, 0) }));
+  return [...groups.entries()].map(([name, ls]) => ({
+    name,
+    lines: ls,
+    subtotal: ls.reduce((n, l) => n + l.unitPriceCents * l.quantity, 0),
+  }));
 }
 
 function Row({ label, value, tone, strong }: { label: string; value: string; tone?: "success"; strong?: boolean }) {
   return (
-    <div className={cn("flex justify-between gap-4", strong ? "font-semibold" : "text-fg-muted", tone === "success" && "text-success")}>
+    <div
+      className={cn(
+        "flex justify-between gap-4",
+        strong ? "font-semibold" : "text-fg-muted",
+        tone === "success" && "text-success",
+      )}
+    >
       <dt>{label}</dt>
       <dd className="tabular">{value}</dd>
     </div>
@@ -238,7 +273,10 @@ function DiscountCode({ bill }: { bill: BillDTO }) {
       toast.success(t("pay.codeApplied", { code: r.bill.discountCode ?? code.toUpperCase() }));
       setCode("");
     } catch (err) {
-      if (err instanceof ApiClientError && ["INVALID_CODE", "CODE_USED_UP", "CODE_MIN_SUBTOTAL", "PAYMENTS_STARTED"].includes(err.code)) {
+      if (
+        err instanceof ApiClientError &&
+        ["INVALID_CODE", "CODE_USED_UP", "CODE_MIN_SUBTOTAL", "PAYMENTS_STARTED"].includes(err.code)
+      ) {
         const min = (err.details as { minSubtotalCents?: number })?.minSubtotalCents ?? 0;
         setError(t(`pay.codeErrors.${err.code as "INVALID_CODE"}`, { amount: formatPrice(min) }));
       } else setError(t("errors.generic"));
@@ -264,7 +302,8 @@ function DiscountCode({ bill }: { bill: BillDTO }) {
       <section className="flex items-center gap-3 rounded-card bg-success/10 p-4 ring-1 ring-success/30">
         <Tag className="size-5 text-success" aria-hidden />
         <p className="flex-1 font-semibold">
-          {bill.discountCode} <span className="font-normal text-fg-muted">· −{formatPrice(bill.codeDiscountCents)}</span>
+          {bill.discountCode}{" "}
+          <span className="font-normal text-fg-muted">· −{formatPrice(bill.codeDiscountCents)}</span>
         </p>
         {!locked && (
           <Button variant="ghost" size="sm" onClick={() => void remove()} disabled={busy}>
@@ -286,7 +325,14 @@ function DiscountCode({ bill }: { bill: BillDTO }) {
         <input
           id="discount"
           value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32))}
+          onChange={(e) =>
+            setCode(
+              e.target.value
+                .toUpperCase()
+                .replace(/[^A-Z0-9_-]/g, "")
+                .slice(0, 32),
+            )
+          }
           placeholder={t("pay.discountPlaceholder")}
           autoCapitalize="characters"
           autoComplete="off"
@@ -341,7 +387,10 @@ function PayPanel({ bill }: { bill: BillDTO }) {
     [mode, bill, people, selectedSubtotal, customText],
   );
   const tipCents = tip.kind === "percent" ? applyPercent(amount, tip.value) : tip.value;
-  const evenShares = "exact" in allowedAmounts("even", ctx, { people }) ? (allowedAmounts("even", ctx, { people }) as { exact: number[] }).exact : [];
+  const evenShares =
+    "exact" in allowedAmounts("even", ctx, { people })
+      ? (allowedAmounts("even", ctx, { people }) as { exact: number[] }).exact
+      : [];
 
   // Cash confirmed by a waiter → show success.
   useEffect(() => {
@@ -364,7 +413,9 @@ function PayPanel({ bill }: { bill: BillDTO }) {
   if (bill.outstandingCents <= 0 && !outcome) {
     return (
       <section className="card p-5 text-center">
-        <p className="font-display text-lg font-semibold">{bill.pendingCents > 0 ? t("pay.cashTitle") : t("pay.nothingToPay")}</p>
+        <p className="font-display text-lg font-semibold">
+          {bill.pendingCents > 0 ? t("pay.cashTitle") : t("pay.nothingToPay")}
+        </p>
       </section>
     );
   }
@@ -389,14 +440,23 @@ function PayPanel({ bill }: { bill: BillDTO }) {
         }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new ApiClientError(res.status, data?.error?.code ?? "HTTP_ERROR", data?.error?.message ?? "", data?.error?.details);
+      if (!res.ok)
+        throw new ApiClientError(
+          res.status,
+          data?.error?.code ?? "HTTP_ERROR",
+          data?.error?.message ?? "",
+          data?.error?.details,
+        );
       keyRef.current = null;
       const payment = data.payment as PaymentDTO;
       useSessionStore.getState().setBill(data.bill as BillDTO);
       if (payment.status === "succeeded") {
         if (payment.receiptToken) useTableStore.getState().setLastReceipt(payment.receiptToken);
         setOutcome({ kind: "success", payment, settled: (data.bill as BillDTO).balanceCents === 0 });
-        celebrate(t("pay.successTitle"), t("pay.successBody", { amount: formatPrice(payment.amountCents + payment.tipCents) }));
+        celebrate(
+          t("pay.successTitle"),
+          t("pay.successBody", { amount: formatPrice(payment.amountCents + payment.tipCents) }),
+        );
         setPicked(new Set());
       } else if (payment.status === "failed") {
         setOutcome({ kind: "declined", reason: payment.failureReason ?? "declined" });
@@ -413,7 +473,9 @@ function PayPanel({ bill }: { bill: BillDTO }) {
         else if (code === "ITEMS_ALREADY_PAID") toast.info(t("pay.itemsTaken"));
         else if (code === "NOTHING_TO_PAY") toast.info(t("pay.nothingToPay"));
         else toast.error(translateError(err, t));
-        void api<{ bill: BillDTO }>("GET", "/api/session/bill").then(({ bill: b }) => useSessionStore.getState().setBill(b)).catch(() => {});
+        void api<{ bill: BillDTO }>("GET", "/api/session/bill")
+          .then(({ bill: b }) => useSessionStore.getState().setBill(b))
+          .catch(() => {});
       }
     } finally {
       setBusy(false);
@@ -448,56 +510,85 @@ function PayPanel({ bill }: { bill: BillDTO }) {
                 </div>
                 <div className="mt-4 flex items-baseline justify-between gap-4 rounded-2xl bg-muted/60 px-4 py-3 ring-1 ring-inset ring-line">
                   <span className="text-sm text-fg-muted">{t("bill.eachPays")}</span>
-                  <span className="text-lg font-semibold tabular">{formatPrice(Math.min(...(evenShares.length ? evenShares : [amount])))}</span>
+                  <span className="text-lg font-semibold tabular">
+                    {formatPrice(Math.min(...(evenShares.length ? evenShares : [amount])))}
+                  </span>
                 </div>
-                {evenShares.length > 1 && <p className="mt-2 text-xs text-fg-muted">{t("bill.unevenNote", { count: 1 })}</p>}
+                {evenShares.length > 1 && (
+                  <p className="mt-2 text-xs text-fg-muted">{t("bill.unevenNote", { count: 1 })}</p>
+                )}
               </div>
             )}
             {mode === "items" && (
               <div className="mt-5">
                 <p className="text-sm font-semibold text-fg-muted">{t("bill.selectItems")}</p>
                 <div className="mt-3 space-y-4">
-                {byPerson(lines).map((person) => (
-                <div key={person.name || "-"}>
-                  <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                    <GuestAvatar name={person.name || t("common.guest")} me={!!meName && person.name === meName} size={24} />
-                    <span className="min-w-0 flex-1 truncate">{meName && person.name === meName ? t("common.you") : person.name || t("common.guest")}</span>
-                    <span className="tabular text-fg-muted">{formatPrice(person.subtotal)}</span>
-                  </p>
-                <ul className="overflow-hidden rounded-2xl ring-1 ring-line">
-                  {person.lines.map((l, i) => {
-                    const taken = claimed.has(l.id);
-                    const on = picked.has(l.id);
-                    return (
-                      <li key={l.id} className={cn(i > 0 && "border-t border-line")}>
-                        <label className={cn("flex min-h-14 items-center gap-3 px-4 py-3", taken ? "cursor-not-allowed opacity-50" : "cursor-pointer", on && "bg-primary/8")}>
-                          <input
-                            type="checkbox"
-                            className="peer sr-only"
-                            checked={on}
-                            disabled={taken}
-                            onChange={() => {
-                              const next = new Set(picked);
-                              if (on) next.delete(l.id);
-                              else next.add(l.id);
-                              setPicked(next);
-                            }}
-                          />
-                          <span aria-hidden className={cn("grid size-[22px] shrink-0 place-items-center rounded-md border-2 peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2", on || taken ? "border-primary bg-primary text-on-primary" : "border-fg/25")}>
-                            {(on || taken) && <Check className="size-3.5" strokeWidth={3.2} />}
-                          </span>
-                          <span className="flex-1 text-[15px]">
-                            <span className="font-semibold tabular text-primary">{l.quantity}×</span> {lineText(l).name}
-                            {taken && <span className="ml-2 text-xs font-semibold text-success">{t("pay.alreadyPaid")}</span>}
-                          </span>
-                          <span className="text-sm text-fg-muted tabular">{formatPrice(l.unitPriceCents * l.quantity)}</span>
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
-                </div>
-                ))}
+                  {byPerson(lines).map((person) => (
+                    <div key={person.name || "-"}>
+                      <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                        <GuestAvatar
+                          name={person.name || t("common.guest")}
+                          me={!!meName && person.name === meName}
+                          size={24}
+                        />
+                        <span className="min-w-0 flex-1 truncate">
+                          {meName && person.name === meName ? t("common.you") : person.name || t("common.guest")}
+                        </span>
+                        <span className="tabular text-fg-muted">{formatPrice(person.subtotal)}</span>
+                      </p>
+                      <ul className="overflow-hidden rounded-2xl ring-1 ring-line">
+                        {person.lines.map((l, i) => {
+                          const taken = claimed.has(l.id);
+                          const on = picked.has(l.id);
+                          return (
+                            <li key={l.id} className={cn(i > 0 && "border-t border-line")}>
+                              <label
+                                className={cn(
+                                  "flex min-h-14 items-center gap-3 px-4 py-3",
+                                  taken ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+                                  on && "bg-primary/8",
+                                )}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="peer sr-only"
+                                  checked={on}
+                                  disabled={taken}
+                                  onChange={() => {
+                                    const next = new Set(picked);
+                                    if (on) next.delete(l.id);
+                                    else next.add(l.id);
+                                    setPicked(next);
+                                  }}
+                                />
+                                <span
+                                  aria-hidden
+                                  className={cn(
+                                    "grid size-[22px] shrink-0 place-items-center rounded-md border-2 peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2",
+                                    on || taken ? "border-primary bg-primary text-on-primary" : "border-fg/25",
+                                  )}
+                                >
+                                  {(on || taken) && <Check className="size-3.5" strokeWidth={3.2} />}
+                                </span>
+                                <span className="flex-1 text-[15px]">
+                                  <span className="font-semibold tabular text-primary">{l.quantity}×</span>{" "}
+                                  {lineText(l).name}
+                                  {taken && (
+                                    <span className="ml-2 text-xs font-semibold text-success">
+                                      {t("pay.alreadyPaid")}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-sm text-fg-muted tabular">
+                                  {formatPrice(l.unitPriceCents * l.quantity)}
+                                </span>
+                              </label>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
                 <p className="mt-2 text-xs text-fg-muted">{t("bill.includesExtras")}</p>
               </div>
@@ -508,7 +599,9 @@ function PayPanel({ bill }: { bill: BillDTO }) {
                   {t("bill.customLabel")}
                 </label>
                 <MoneyInput id="custom-amount" value={customText} onChange={setCustomText} />
-                <p className="mt-2 text-xs text-fg-muted">{t("bill.customMax", { amount: formatPrice(bill.outstandingCents) })}</p>
+                <p className="mt-2 text-xs text-fg-muted">
+                  {t("bill.customMax", { amount: formatPrice(bill.outstandingCents) })}
+                </p>
               </div>
             )}
           </div>
@@ -529,7 +622,11 @@ function PayPanel({ bill }: { bill: BillDTO }) {
               sub={pct === 0 ? undefined : formatPrice(applyPercent(amount, pct))}
             />
           ))}
-          <TipChip active={tip.kind === "amount"} onClick={() => setTip({ kind: "amount", value: parsePrice(tipText) ?? 0 })} title={t("bill.tipCustom")} />
+          <TipChip
+            active={tip.kind === "amount"}
+            onClick={() => setTip({ kind: "amount", value: parsePrice(tipText) ?? 0 })}
+            title={t("bill.tipCustom")}
+          />
         </div>
         {tip.kind === "amount" && (
           <div className="mt-4">
@@ -586,9 +683,19 @@ function PayPanel({ bill }: { bill: BillDTO }) {
               <Amount value={amount + tipCents} />
             </span>
           </div>
-          <Button size="lg" className="w-full" onClick={() => void pay()} disabled={busy || amount <= 0} aria-busy={busy}>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => void pay()}
+            disabled={busy || amount <= 0}
+            aria-busy={busy}
+          >
             {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Lock className="size-4.5" aria-hidden />}
-            {busy ? t("pay.paying") : mode === "items" && picked.size === 0 ? t("pay.selectSomething") : t("pay.payNow", { amount: formatPrice(amount + tipCents) })}
+            {busy
+              ? t("pay.paying")
+              : mode === "items" && picked.size === 0
+                ? t("pay.selectSomething")
+                : t("pay.payNow", { amount: formatPrice(amount + tipCents) })}
           </Button>
           <p className="mt-2 text-center text-xs text-fg-muted">{t("pay.secure")}</p>
         </div>
@@ -607,17 +714,28 @@ function OutcomeSheet({ outcome, onClose }: { outcome: Outcome | null; onClose: 
   const o = shown.current;
   if (!o) return null;
 
-  const title = o.kind === "success" ? t("pay.successTitle") : o.kind === "declined" ? t("pay.declinedTitle") : t("pay.cashTitle");
+  const title =
+    o.kind === "success" ? t("pay.successTitle") : o.kind === "declined" ? t("pay.declinedTitle") : t("pay.cashTitle");
   return (
     <Sheet open={!!outcome} onClose={onClose} title={title}>
       <div className="flex flex-col items-center pt-2 text-center">
         <div
           className={`enter ${cn(
             "my-4 grid size-20 place-items-center rounded-full",
-            o.kind === "success" ? "bg-primary text-on-primary shadow-glow" : o.kind === "declined" ? "bg-danger/12 text-danger ring-1 ring-danger/30" : "bg-primary/12 text-primary ring-1 ring-gold-line",
+            o.kind === "success"
+              ? "bg-primary text-on-primary shadow-glow"
+              : o.kind === "declined"
+                ? "bg-danger/12 text-danger ring-1 ring-danger/30"
+                : "bg-primary/12 text-primary ring-1 ring-gold-line",
           )}`}
         >
-          {o.kind === "success" ? <CircleCheckBig className="size-10" aria-hidden /> : o.kind === "declined" ? <X className="size-10" aria-hidden /> : <Banknote className="size-10" aria-hidden />}
+          {o.kind === "success" ? (
+            <CircleCheckBig className="size-10" aria-hidden />
+          ) : o.kind === "declined" ? (
+            <X className="size-10" aria-hidden />
+          ) : (
+            <Banknote className="size-10" aria-hidden />
+          )}
         </div>
         <p className="max-w-xs text-[15px] text-fg-muted">
           {o.kind === "success"
@@ -646,7 +764,17 @@ function OutcomeSheet({ outcome, onClose }: { outcome: Outcome | null; onClose: 
   );
 }
 
-function TipChip({ active, onClick, title, sub }: { active: boolean; onClick: () => void; title: string; sub?: string }) {
+function TipChip({
+  active,
+  onClick,
+  title,
+  sub,
+}: {
+  active: boolean;
+  onClick: () => void;
+  title: string;
+  sub?: string;
+}) {
   return (
     <button
       type="button"
@@ -656,7 +784,11 @@ function TipChip({ active, onClick, title, sub }: { active: boolean; onClick: ()
       className={`pressable ${cn("flex min-h-16 flex-col items-center justify-center rounded-2xl px-2 py-2 text-center leading-tight transition-colors", active ? "bg-primary text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.35),var(--shadow-glow)]" : "glass-chip hover:text-primary")}`}
     >
       <span className="max-w-full text-[14px] font-semibold [overflow-wrap:anywhere]">{title}</span>
-      {sub && <span className={cn("max-w-full truncate text-xs tabular", active ? "opacity-85" : "text-fg-muted")}>{sub}</span>}
+      {sub && (
+        <span className={cn("max-w-full truncate text-xs tabular", active ? "opacity-85" : "text-fg-muted")}>
+          {sub}
+        </span>
+      )}
     </button>
   );
 }
@@ -668,7 +800,14 @@ function MoneyInput({ id, value, onChange }: { id: string; value: string; onChan
   const whole = currencyDigits(brand.currency.code) === 0;
   return (
     <div className="relative mt-2">
-      <span className={cn("pointer-events-none absolute top-1/2 -translate-y-1/2 font-semibold text-fg-muted", suffix ? "right-4" : "left-4")}>{symbol}</span>
+      <span
+        className={cn(
+          "pointer-events-none absolute top-1/2 -translate-y-1/2 font-semibold text-fg-muted",
+          suffix ? "right-4" : "left-4",
+        )}
+      >
+        {symbol}
+      </span>
       <input
         id={id}
         inputMode={whole ? "numeric" : "decimal"}

@@ -105,9 +105,7 @@ describe("splitting", () => {
     // Property check: random inputs never lose or create a cent.
     for (let i = 0; i < 500; i++) {
       const amount = Math.floor(Math.random() * 1_000_000);
-      const weights = Array.from({ length: 1 + Math.floor(Math.random() * 8) }, () =>
-        Math.floor(Math.random() * 5000),
-      );
+      const weights = Array.from({ length: 1 + Math.floor(Math.random() * 8) }, () => Math.floor(Math.random() * 5000));
       const parts = allocateProportionally(amount, weights);
       expect(parts.reduce((a, b) => a + b, 0)).toBe(amount);
       parts.forEach((p) => expect(Number.isInteger(p) && p >= 0).toBe(true));

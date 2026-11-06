@@ -28,9 +28,7 @@ export default function WifiPage() {
         <section className="card relative overflow-hidden p-6 ring-1 ring-gold-line">
           <div aria-hidden className="absolute -right-12 -top-14 size-52 rounded-full border border-gold-line" />
           <div aria-hidden className="absolute -right-4 -top-6 size-36 rounded-full border border-gold-line/60" />
-          <div
-            className="enter relative grid size-14 place-items-center rounded-full text-primary ring-1 ring-gold-line"
-          >
+          <div className="enter relative grid size-14 place-items-center rounded-full text-primary ring-1 ring-gold-line">
             <Wifi className="size-7" strokeWidth={1.6} aria-hidden />
           </div>
           <p className="eyebrow relative mt-5">{t("wifi.network")}</p>
@@ -50,19 +48,14 @@ export default function WifiPage() {
           )}
         </section>
 
-        <section
-          aria-labelledby="wifi-qr"
-          className="card flex flex-col items-center p-6 text-center"
-        >
+        <section aria-labelledby="wifi-qr" className="card flex flex-col items-center p-6 text-center">
           <h2 id="wifi-qr" className="flex items-center gap-2 font-display text-xl font-semibold">
             <ScanLine className="size-5 text-primary" aria-hidden />
             {t("wifi.scan")}
           </h2>
           <p className="mt-1 text-sm text-fg-muted">{t("wifi.scanHint")}</p>
           {/* QR codes need dark-on-light to scan reliably, so the tile is always white. */}
-          <div
-            className="enter mt-5 rounded-3xl bg-white p-5 shadow-soft ring-4 ring-gold-line"
-          >
+          <div className="enter mt-5 rounded-3xl bg-white p-5 shadow-soft ring-4 ring-gold-line">
             <QRCodeSVG
               value={wifiQrPayload(wifi)}
               size={208}
@@ -111,7 +104,13 @@ function CopyRow({
       <Icon className="size-5 shrink-0 text-primary" strokeWidth={1.8} aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-label uppercase tracking-[0.08em] text-fg-muted">{label}</p>
-        <p className={mono ? "select-all break-all font-mono text-[17px] font-semibold" : "select-all break-all text-[17px] font-semibold"}>
+        <p
+          className={
+            mono
+              ? "select-all break-all font-mono text-[17px] font-semibold"
+              : "select-all break-all text-[17px] font-semibold"
+          }
+        >
           {value}
         </p>
       </div>
@@ -122,10 +121,7 @@ function CopyRow({
         className="pressable inline-flex size-11 shrink-0 items-center justify-center rounded-full text-primary ring-1 ring-gold-line hover:bg-primary/10"
       >
         <>
-          <span
-            key={copied ? "y" : "n"}
-            className="enter grid place-items-center"
-          >
+          <span key={copied ? "y" : "n"} className="enter grid place-items-center">
             {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
           </span>
         </>

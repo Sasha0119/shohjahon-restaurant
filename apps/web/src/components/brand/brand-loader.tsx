@@ -9,9 +9,19 @@ import { Logo } from "./logo";
  * server and animated in CSS, so it shows before any JavaScript has run. With
  * "reduce motion" on, the arc stays still.
  */
-export function BrandLoader({ label, heroBehind }: { label: string; /** The hero photo is behind it (see guest-shell.tsx): dim it, and use light text. */ heroBehind?: boolean }) {
+export function BrandLoader({
+  label,
+  heroBehind,
+}: {
+  label: string;
+  /** The hero photo is behind it (see guest-shell.tsx): dim it, and use light text. */ heroBehind?: boolean;
+}) {
   return (
-    <main className={`relative isolate grid min-h-svh place-items-center overflow-hidden px-6${heroBehind ? " text-white" : ""}`} role="status" aria-live="polite">
+    <main
+      className={`relative isolate grid min-h-svh place-items-center overflow-hidden px-6${heroBehind ? " text-white" : ""}`}
+      role="status"
+      aria-live="polite"
+    >
       {heroBehind && <div aria-hidden className="absolute inset-0 -z-10 bg-black/70" />}
       <div className="flex flex-col items-center text-center">
         <div className="relative grid size-20 place-items-center">
@@ -30,7 +40,9 @@ export function BrandLoader({ label, heroBehind }: { label: string; /** The hero
           </svg>
           <Logo size={52} />
         </div>
-        <p className="mt-6 font-display text-[clamp(3.25rem,18vw,8rem)] font-medium italic leading-tight tracking-[-0.02em]">{brand.name}</p>
+        <p className="mt-6 font-display text-[clamp(3.25rem,18vw,8rem)] font-medium italic leading-tight tracking-[-0.02em]">
+          {brand.name}
+        </p>
         <span aria-hidden className="gold-rule mt-4 w-14" />
         <p className={`mt-4 text-sm${heroBehind ? " text-white/80" : " text-fg-muted"}`}>{label}</p>
       </div>

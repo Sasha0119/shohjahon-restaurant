@@ -16,7 +16,10 @@ export const BASE_URL = `http://localhost:${WEB_PORT}`;
 
 /** Test-only values (never used outside this suite). */
 export const E2E_MANAGER = { email: "e2e-manager@example.test", password: "e2e-only-password-123" };
-export const E2E_STAFF = { kitchen: { name: "Demo Kitchen", pin: "4321" }, waiter: { name: "Demo Waiter", pin: "1234" } };
+export const E2E_STAFF = {
+  kitchen: { name: "Demo Kitchen", pin: "4321" },
+  waiter: { name: "Demo Waiter", pin: "1234" },
+};
 
 const apiEnv = {
   NODE_ENV: "test",
@@ -54,7 +57,12 @@ export default defineConfig({
   },
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
-    { name: "chromium", use: { ...devices["Desktop Chrome"], ...(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}) }, dependencies: ["setup"], testMatch: /.*\.spec\.ts/ },
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"], ...(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}) },
+      dependencies: ["setup"],
+      testMatch: /.*\.spec\.ts/,
+    },
   ],
   webServer: [
     {

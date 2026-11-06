@@ -1,6 +1,6 @@
 import type { en } from "./en";
 
-export type PluralForms = { other: string } & Partial<Record<Intl.LDMLPluralRule, string>>;
+type PluralForms = { other: string } & Partial<Record<Intl.LDMLPluralRule, string>>;
 
 /**
  * The shape every language file must match: the same keys as English, with any
@@ -39,22 +39,14 @@ function lookup(messages: unknown, key: string): unknown {
 /** Fill {placeholders}. Unknown placeholders are left visible so they get noticed. */
 export function interpolate(template: string, vars?: Vars): string {
   if (!vars) return template;
-  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in vars ? String(vars[name]) : match,
-  );
+  return template.replace(/\{(\w+)\}/g, (match, name: string) => (name in vars ? String(vars[name]) : match));
 }
 
 /**
  * Translate `key` using `messages`, falling back to `fallback` (English), then
  * to the key itself so a missing string never crashes the UI.
  */
-export function translate(
-  locale: string,
-  messages: unknown,
-  fallback: unknown,
-  key: string,
-  vars?: Vars,
-): string {
+export function translate(locale: string, messages: unknown, fallback: unknown, key: string, vars?: Vars): string {
   const value = lookup(messages, key) ?? lookup(fallback, key);
   if (typeof value === "string") return interpolate(value, vars);
   if (value && typeof value === "object" && "other" in value) {

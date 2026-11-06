@@ -52,9 +52,7 @@ export default function MenuPage() {
     const visible = new Set(categories.map((c) => c.id));
     return menu.items.filter((item) => {
       if (!visible.has(item.categoryId)) return false;
-      const haystack = normalize(
-        [item.name, item.description, ...item.tags.map((tag) => t(`tags.${tag}`))].join(" "),
-      );
+      const haystack = normalize([item.name, item.description, ...item.tags.map((tag) => t(`tags.${tag}`))].join(" "));
       return q.split(/\s+/).every((word) => haystack.includes(word));
     });
   }, [deferredQuery, menu, categories, t]);
@@ -99,7 +97,10 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="relative">
-      <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-fg-muted" aria-hidden />
+      <Search
+        className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-fg-muted"
+        aria-hidden
+      />
       <input
         ref={inputRef}
         type="search"
@@ -138,9 +139,7 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
 
   // Scroll-spy: highlight the category currently under the sticky chips.
   useEffect(() => {
-    const sections = categories
-      .map((c) => document.getElementById(c.slug))
-      .filter((el): el is HTMLElement => !!el);
+    const sections = categories.map((c) => document.getElementById(c.slug)).filter((el): el is HTMLElement => !!el);
     const observer = new IntersectionObserver(
       (entries) => {
         if (Date.now() < clickLock.current) return;
@@ -185,10 +184,7 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
   let cardIndex = 0;
   return (
     <>
-      <nav
-        aria-label={t("menu.categories")}
-        className="sticky top-16 z-20 mt-3 border-b border-gold-line/50 glass"
-      >
+      <nav aria-label={t("menu.categories")} className="sticky top-16 z-20 mt-3 border-b border-gold-line/50 glass">
         <div ref={chipsRef} className="no-scrollbar flex gap-1 overflow-x-auto px-2 lg:px-6">
           {categories.map((c) => {
             const isActive = c.slug === active;
@@ -206,10 +202,7 @@ function CategorizedMenu({ categories, items }: { categories: Category[]; items:
               >
                 <span className="relative">{c.name}</span>
                 {isActive && (
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-primary"
-                  />
+                  <span aria-hidden className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-primary" />
                 )}
               </button>
             );

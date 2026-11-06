@@ -1,12 +1,6 @@
 export { brand } from "./brand";
 export { themePresets } from "./themes";
-export {
-  resolveTheme,
-  buildThemeCss,
-  buildThemeBootScript,
-  fontVar,
-  type ResolvedTheme,
-} from "./theme-css";
+export { resolveTheme, buildThemeCss, buildThemeBootScript, fontVar, type ResolvedTheme } from "./theme-css";
 export * from "./types";
 
 import type { BrandConfig, LocaleCode, LocalizedText } from "./types";

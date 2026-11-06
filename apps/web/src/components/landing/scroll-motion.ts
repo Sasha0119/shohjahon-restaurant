@@ -66,7 +66,11 @@ export function startScrollMotion(root: HTMLElement): () => void {
         gsap.fromTo(
           element,
           { yPercent: speed },
-          { yPercent: -speed, ease: "none", scrollTrigger: { trigger: element, start: "top bottom", end: "bottom top", scrub: true } },
+          {
+            yPercent: -speed,
+            ease: "none",
+            scrollTrigger: { trigger: element, start: "top bottom", end: "bottom top", scrub: true },
+          },
         );
       }
     });

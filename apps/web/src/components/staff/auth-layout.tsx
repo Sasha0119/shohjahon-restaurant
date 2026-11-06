@@ -7,7 +7,12 @@ import { LanguageSwitcher } from "@/components/brand/language-switcher";
 import { ThemeToggle } from "@/components/brand/theme-toggle";
 
 /** Calm, branded backdrop for staff sign-in screens. */
-export function StaffAuthLayout({ title, subtitle, children, footer }: {
+export function StaffAuthLayout({
+  title,
+  subtitle,
+  children,
+  footer,
+}: {
   title: string;
   subtitle?: string;
   children: ReactNode;
@@ -19,9 +24,7 @@ export function StaffAuthLayout({ title, subtitle, children, footer }: {
         <LanguageSwitcher />
         <ThemeToggle />
       </div>
-      <div
-        className="enter my-auto w-full max-w-md"
-      >
+      <div className="enter my-auto w-full max-w-md">
         <div className="mb-7 flex flex-col items-center text-center">
           <Logo size={56} />
           <p className="mt-3 text-sm font-label uppercase tracking-[0.08em] text-fg-muted">{brand.name}</p>

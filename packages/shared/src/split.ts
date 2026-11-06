@@ -29,9 +29,7 @@ export function allocateProportionally(amount: Money, weights: number[]): Money[
   const exact = weights.map((w) => (amount * w) / totalWeight);
   const floors = exact.map(Math.floor);
   let leftover = amount - sum(floors);
-  const order = exact
-    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
-    .sort((a, b) => b.frac - a.frac || a.i - b.i);
+  const order = exact.map((v, i) => ({ i, frac: v - Math.floor(v) })).sort((a, b) => b.frac - a.frac || a.i - b.i);
   for (const { i } of order) {
     if (leftover <= 0) break;
     floors[i]! += 1;

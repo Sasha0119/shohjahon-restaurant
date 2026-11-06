@@ -240,7 +240,8 @@ export const en = {
   },
   join: {
     reservedTitle: "Table {table} is reserved",
-    reservedBody: "It's reserved for {time}. If this is your reservation, or staff seated you here, please continue. Otherwise, please ask a member of staff.",
+    reservedBody:
+      "It's reserved for {time}. If this is your reservation, or staff seated you here, please continue. Otherwise, please ask a member of staff.",
     reservedContinue: "Continue",
     connecting: "Finding your table…",
     occupiedTitle: "Table {table} already has an order going",
@@ -380,7 +381,8 @@ export const en = {
     view: "View",
     storyLabel: "Story",
     storyTitle: "The table comes first.",
-    storyBody: "Shohjahon is built around the dasturxon: the table where food is shared and nobody is in a hurry to leave. Everything here starts from that.",
+    storyBody:
+      "Shohjahon is built around the dasturxon: the table where food is shared and nobody is in a hurry to leave. Everything here starts from that.",
     menuTitle: "From the tandoor to the last cup of tea.",
     menuBody: "Starters, plov and lagman, shashlik from the grill, desserts and drinks. See what's on today.",
     reserveTitle: "Book ahead, or just sit down.",
@@ -455,7 +457,12 @@ export const en = {
     handled: "Marked as done",
     cashReceived: "Cash received",
     cashConfirmed: "Cash confirmed for Table {number}",
-    callTypes: { water: "Water refill", assistance: "Needs assistance", bill: "Wants the bill", cashPayment: "Paying cash" },
+    callTypes: {
+      water: "Water refill",
+      assistance: "Needs assistance",
+      bill: "Wants the bill",
+      cashPayment: "Paying cash",
+    },
     ago: "{time}",
     openCalls: { one: "{count} open call", other: "{count} open calls" },
     closeSession: "Close this table's session",
@@ -465,7 +472,16 @@ export const en = {
   admin: {
     title: "Admin",
     fieldInvalid: "Please check this value.",
-    nav: { overview: "Overview", tables: "Tables", orders: "Orders", menu: "Menu", discounts: "Discounts", feedback: "Feedback", audit: "Audit log", staff: "Staff" },
+    nav: {
+      overview: "Overview",
+      tables: "Tables",
+      orders: "Orders",
+      menu: "Menu",
+      discounts: "Discounts",
+      feedback: "Feedback",
+      audit: "Audit log",
+      staff: "Staff",
+    },
     feedback: {
       title: "Feedback",
       subtitle: "Private notes from guests who rated 1–3 stars. 4–5 star guests are sent to your public review pages.",
@@ -880,7 +896,8 @@ export const en = {
       STALE_STATUS: "Someone else just updated this order. Refreshing.",
       TABLE_OCCUPIED: "Someone at this table has already started an order.",
       TABLE_UNAVAILABLE: "This table isn't taking orders right now.",
-      TOO_LATE_TO_CANCEL: "The kitchen has already started this order, so it can't be cancelled. Please ask a member of staff.",
+      TOO_LATE_TO_CANCEL:
+        "The kitchen has already started this order, so it can't be cancelled. Please ask a member of staff.",
       TOO_MANY_LOGIN_ATTEMPTS: "Too many attempts. Please wait a minute.",
       UNAUTHORIZED: "Please sign in again.",
       UNSUPPORTED_IMAGE: "That file isn't a supported image (JPEG, PNG, WebP or AVIF).",

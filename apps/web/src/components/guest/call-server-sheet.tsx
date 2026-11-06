@@ -45,10 +45,7 @@ export function CallServerSheet({ open, onClose }: { open: boolean; onClose: () 
     >
       <>
         {justSent ? (
-          <div
-            key="sent"
-            className="enter flex flex-col items-center pt-4 pb-2 text-center"
-          >
+          <div key="sent" className="enter flex flex-col items-center pt-4 pb-2 text-center">
             <div className="relative my-4 grid size-24 place-items-center">
               <span className="absolute inset-0 animate-ping rounded-full border border-primary/50" aria-hidden />
               <span className="relative grid size-20 place-items-center rounded-full bg-primary text-on-primary shadow-glow">
@@ -94,9 +91,7 @@ export function CallServerSheet({ open, onClose }: { open: boolean; onClose: () 
                       <span className="block font-display text-[1.1rem] font-semibold">{t(`call.${type}`)}</span>
                       <span className="block text-sm text-fg-muted">
                         {pending && <span className="font-semibold text-success">{t("call.pending")} · </span>}
-                        {cooling
-                          ? t("call.cooldown", { time: formatCountdown(remaining) })
-                          : t(`call.${type}Hint`)}
+                        {cooling ? t("call.cooldown", { time: formatCountdown(remaining) }) : t(`call.${type}Hint`)}
                       </span>
                     </span>
                     {busy === type ? (

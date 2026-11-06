@@ -1,8 +1,8 @@
 import { addDays, eachDay, zonedDate, zonedStartOfDay } from "@app/shared";
 import { errors } from "../http/errors.ts";
 
-export const MAX_RANGE_DAYS = 366;
-export const DEFAULT_RANGE_DAYS = 30;
+const MAX_RANGE_DAYS = 366;
+const DEFAULT_RANGE_DAYS = 30;
 
 export interface ResolvedRange {
   /** Inclusive local dates. */
@@ -32,5 +32,11 @@ export function resolveRange(q: { from?: string; to?: string }, timeZone: string
 export function previousRange(r: ResolvedRange, timeZone: string): ResolvedRange {
   const to = addDays(r.from, -1);
   const from = addDays(to, -(r.days - 1));
-  return { from, to, days: r.days, start: zonedStartOfDay(from, timeZone), end: zonedStartOfDay(addDays(to, 1), timeZone) };
+  return {
+    from,
+    to,
+    days: r.days,
+    start: zonedStartOfDay(from, timeZone),
+    end: zonedStartOfDay(addDays(to, 1), timeZone),
+  };
 }

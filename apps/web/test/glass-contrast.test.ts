@@ -55,7 +55,15 @@ const BLACK: RGB = [0, 0, 0];
 for (const mode of ["light", "dark"] as const) {
   const p: Palette = themePresets.signature[mode];
   const v = mode === "light" ? lightVars : darkVars;
-  const [bg, surface, text, muted, primary, onPrimary, secondary] = [p.bg, p.surface, p.text, p.textMuted, p.primary, p.primaryContrast, p.secondary].map(hex) as RGB[];
+  const [bg, surface, text, muted, primary, onPrimary, secondary] = [
+    p.bg,
+    p.surface,
+    p.text,
+    p.textMuted,
+    p.primary,
+    p.primaryContrast,
+    p.secondary,
+  ].map(hex) as RGB[];
   const brightness = num(v["--glass-brightness"]);
 
   // The page as it shows through glass: plain, under each glow at full strength, and under both.
@@ -127,7 +135,16 @@ for (const mode of ["light", "dark"] as const) {
 
 describe("liquid glass tokens", () => {
   it("are all defined in one place (globals.css) for both modes", () => {
-    for (const key of ["--glass-blur", "--glass-tint", "--glass-tint-sheet", "--glass-tint-accent", "--glass-tint-card", "--glass-tint-chip", "--glass-edge", "--glass-highlight"]) {
+    for (const key of [
+      "--glass-blur",
+      "--glass-tint",
+      "--glass-tint-sheet",
+      "--glass-tint-accent",
+      "--glass-tint-card",
+      "--glass-tint-chip",
+      "--glass-edge",
+      "--glass-highlight",
+    ]) {
       expect(lightVars[key], key).toBeDefined();
       expect(darkVars[key], key).toBeDefined();
     }

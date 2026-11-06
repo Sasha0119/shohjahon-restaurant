@@ -43,7 +43,11 @@ export async function createStaffSession(
 }
 
 /** Raw cookie token → signed-in staff member, or null if invalid / expired / revoked / deactivated. */
-export async function resolveStaffSession(db: Db, token: string | undefined, now = new Date()): Promise<AuthedStaff | null> {
+export async function resolveStaffSession(
+  db: Db,
+  token: string | undefined,
+  now = new Date(),
+): Promise<AuthedStaff | null> {
   if (!token || token.length > 100) return null;
   const session = await db.staffSession.findUnique({
     where: { tokenHash: hashToken(token) },
@@ -65,13 +69,4 @@ export async function resolveStaffSession(db: Db, token: string | undefined, now
 
 export async function revokeSession(db: Db, sessionId: string): Promise<void> {
   await db.staffSession.updateMany({ where: { id: sessionId, revokedAt: null }, data: { revokedAt: new Date() } });
-}
-
-/** Sign a staff member out everywhere (PIN/password reset, deactivation). */
-export async function revokeAllSessions(db: Pick<Db, "staffSession">, staffId: string): Promise<number> {
-  const res = await db.staffSession.updateMany({
-    where: { staffId, revokedAt: null },
-    data: { revokedAt: new Date() },
-  });
-  return res.count;
 }

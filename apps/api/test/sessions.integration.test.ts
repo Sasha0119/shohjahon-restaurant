@@ -54,7 +54,12 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
   // ── helpers ────────────────────────────────────────────────────────────────
   const cookieOf = (res: request.Response, prev = "") => {
     const set = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
-    const jar = new Map(prev.split("; ").filter(Boolean).map((c) => c.split("=") as [string, string]));
+    const jar = new Map(
+      prev
+        .split("; ")
+        .filter(Boolean)
+        .map((c) => c.split("=") as [string, string]),
+    );
     for (const c of set) {
       const [kv] = c.split(";");
       const [k, v] = kv!.split("=") as [string, string];
@@ -101,7 +106,9 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
   let sessionId = "";
 
   it("first scan opens a session, sets an httpOnly guest cookie and tells the waiters", async () => {
-    const waiter = await connect(await signIn("/api/auth/pin", { staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin }));
+    const waiter = await connect(
+      await signIn("/api/auth/pin", { staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin }),
+    );
     const seated = waitFor(waiter, "table:status", (p: { number: number }) => p.number === 1);
 
     const res = await join(await tableToken(1));
@@ -143,7 +150,11 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
     const socketB = await connect(phoneB);
     const before = (await request(server).get("/api/session").set("Cookie", phoneB)).body.snapshot.version;
     const evt = waitFor<{ version: number; guests: { nickname: string }[] }>(socketB, "session:guests");
-    const res = await request(server).patch("/api/session/me").set("Origin", ORIGIN).set("Cookie", phoneA).send({ nickname: "  Sam " });
+    const res = await request(server)
+      .patch("/api/session/me")
+      .set("Origin", ORIGIN)
+      .set("Cookie", phoneA)
+      .send({ nickname: "  Sam " });
     expect(res.status).toBe(200);
     const p = await evt;
     expect(p.version).toBe(before + 1);
@@ -176,7 +187,10 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
 
     const manager = await signIn("/api/auth/login", TEST_MANAGER);
     const tb = await db.diningTable.findUniqueOrThrow({ where: { number: 3 } });
-    const rotated = await request(server).post(`/api/admin/tables/${tb.id}/rotate-qr`).set("Origin", ORIGIN).set("Cookie", manager);
+    const rotated = await request(server)
+      .post(`/api/admin/tables/${tb.id}/rotate-qr`)
+      .set("Origin", ORIGIN)
+      .set("Cookie", manager);
     expect(rotated.status).toBe(200);
     const old = await join(good);
     expect(old.status).toBe(410);
@@ -198,7 +212,10 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
     const closed = waitFor(sock, "session:closed");
 
     const waiter = await signIn("/api/auth/pin", { staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin });
-    const close = await request(server).post(`/api/waiter/sessions/${sid}/close`).set("Origin", ORIGIN).set("Cookie", waiter);
+    const close = await request(server)
+      .post(`/api/waiter/sessions/${sid}/close`)
+      .set("Origin", ORIGIN)
+      .set("Cookie", waiter);
     expect(close.status).toBe(200);
     expect((await closed).reason).toBe("staff");
 
@@ -210,7 +227,10 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
     expect(again.status).toBe(201);
     expect(again.body.snapshot.sessionId).not.toBe(sid);
 
-    const twice = await request(server).post(`/api/waiter/sessions/${sid}/close`).set("Origin", ORIGIN).set("Cookie", waiter);
+    const twice = await request(server)
+      .post(`/api/waiter/sessions/${sid}/close`)
+      .set("Origin", ORIGIN)
+      .set("Cookie", waiter);
     expect(twice.body.error.code).toBe("ALREADY_CLOSED");
     expect(await db.auditLog.count({ where: { action: "session.closed", entityId: sid } })).toBe(1);
   });
@@ -252,7 +272,11 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
     const ack = await s.emitWithAck("session:sync", { version: res.body.snapshot.version });
     expect(ack).toMatchObject({ ok: true, upToDate: true });
     const evt = waitFor(s, "session:guests");
-    await request(server).patch("/api/session/me").set("Origin", ORIGIN).set("Cookie", cookie).send({ nickname: "Poll" });
+    await request(server)
+      .patch("/api/session/me")
+      .set("Origin", ORIGIN)
+      .set("Cookie", cookie)
+      .send({ nickname: "Poll" });
     expect((await evt).guests[0].nickname).toBe("Poll");
     // Plain API calls still reach Express while Socket.io is attached.
     expect((await request(server).get("/api/health")).status).toBe(200);
@@ -262,7 +286,10 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
     await expect(connect()).rejects.toThrow("NO_SESSION");
     const res = await join(await tableToken(9));
     const cookie = cookieOf(res);
-    await db.tableSession.update({ where: { id: res.body.snapshot.sessionId }, data: { status: "CLOSED", closeReason: "STAFF" } });
+    await db.tableSession.update({
+      where: { id: res.body.snapshot.sessionId },
+      data: { status: "CLOSED", closeReason: "STAFF" },
+    });
     await expect(connect(cookie)).rejects.toThrow("SESSION_CLOSED");
   });
 
@@ -290,7 +317,8 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
 
     it("creates and edits tables, enforcing unique numbers", async () => {
       const manager = await signIn("/api/auth/login", TEST_MANAGER);
-      const post = (body: object) => request(server).post("/api/admin/tables").set("Origin", ORIGIN).set("Cookie", manager).send(body);
+      const post = (body: object) =>
+        request(server).post("/api/admin/tables").set("Origin", ORIGIN).set("Cookie", manager).send(body);
       const created = await post({ number: 20, label: "Terrace", seats: 6 });
       expect(created.status).toBe(201);
       expect(created.body.table).toMatchObject({ number: 20, label: "Terrace", status: "free" });
@@ -308,7 +336,10 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
     });
 
     it("is manager-only", async () => {
-      const waiter = await signIn("/api/auth/pin", { staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin });
+      const waiter = await signIn("/api/auth/pin", {
+        staffId: TEST_PIN_STAFF.waiter.id,
+        pin: TEST_PIN_STAFF.waiter.pin,
+      });
       expect((await request(server).get("/api/admin/tables").set("Cookie", waiter)).status).toBe(403);
     });
   });

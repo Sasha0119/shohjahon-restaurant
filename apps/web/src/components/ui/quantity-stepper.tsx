@@ -53,10 +53,7 @@ export function QuantityStepper({
         aria-live="polite"
       >
         <>
-          <span
-            key={value}
-            className="enter inline-block"
-          >
+          <span key={value} className="enter inline-block">
             {value}
           </span>
         </>

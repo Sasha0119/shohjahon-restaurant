@@ -40,10 +40,7 @@ const WHOLE_UNIT_CURRENCIES: Record<string, number> = { UZS: 0 };
 export function currencyDigits(currency: string): number {
   const override = WHOLE_UNIT_CURRENCIES[currency.toUpperCase()];
   if (override !== undefined) return override;
-  return (
-    new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions()
-      .maximumFractionDigits ?? 2
-  );
+  return new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2;
 }
 
 export function formatMoney(amount: Money, currency: string, locale: string): string {

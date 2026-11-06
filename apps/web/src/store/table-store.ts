@@ -45,7 +45,8 @@ export const useTableStore = create<TableState>()(
       setTip: (tip) => set({ tip }),
       setCooldown: (type, until) => set({ cooldownUntil: { ...get().cooldownUntil, [type]: until } }),
       setLastReceipt: (token) => set({ lastReceiptToken: token }),
-      markReviewed: (sessionId) => set({ reviewedSessions: [...get().reviewedSessions.filter((x) => x !== sessionId), sessionId].slice(-20) }),
+      markReviewed: (sessionId) =>
+        set({ reviewedSessions: [...get().reviewedSessions.filter((x) => x !== sessionId), sessionId].slice(-20) }),
     }),
     {
       name: "table-session",

@@ -25,7 +25,11 @@ import { setInStock, stockStore, useInStock, useStockErrorToast } from "@/lib/st
 
 const ROLES = ["kitchen", "manager"] as const;
 const COLUMNS = ["received", "preparing", "ready"] as const;
-const NEXT: Record<(typeof COLUMNS)[number], OrderStatus> = { received: "preparing", preparing: "ready", ready: "served" };
+const NEXT: Record<(typeof COLUMNS)[number], OrderStatus> = {
+  received: "preparing",
+  preparing: "ready",
+  ready: "served",
+};
 type Filter = "all" | Station;
 
 export default function KitchenPage() {
@@ -80,11 +84,15 @@ function KitchenDisplay() {
 
   const flash = (id: string) => {
     setFresh((s) => new Set(s).add(id));
-    setTimeout(() => setFresh((s) => {
-      const n = new Set(s);
-      n.delete(id);
-      return n;
-    }), 10_000);
+    setTimeout(
+      () =>
+        setFresh((s) => {
+          const n = new Set(s);
+          n.delete(id);
+          return n;
+        }),
+      10_000,
+    );
   };
 
   const stationsRef = useRef(stations);
@@ -112,7 +120,8 @@ function KitchenDisplay() {
         });
       },
       // Stock: update just that item (no menu reload). Menu edits: reload the stock list.
-      "menu:stock": ({ itemId, inStock, stockVersion }) => stockStore.getState().applyServer(itemId, inStock, stockVersion),
+      "menu:stock": ({ itemId, inStock, stockVersion }) =>
+        stockStore.getState().applyServer(itemId, inStock, stockVersion),
       "menu:updated": () => setStockVersion((v) => v + 1),
     },
     {
@@ -138,9 +147,13 @@ function KitchenDisplay() {
     const to = NEXT[ticket.status as (typeof COLUMNS)[number]];
     setBusy((s) => new Set(s).add(ticket.id));
     if (to === "served") servedRef.current.add(ticket.id);
-    setTickets((list) => (list ?? []).map((x) => (x.id === ticket.id ? { ...x, status: to } : x)).filter((x) => x.status !== "served"));
+    setTickets((list) =>
+      (list ?? []).map((x) => (x.id === ticket.id ? { ...x, status: to } : x)).filter((x) => x.status !== "served"),
+    );
     try {
-      const { ticket: saved } = await api<{ ticket: OrderTicketDTO }>("PATCH", `/api/kds/orders/${ticket.id}/status`, { status: to });
+      const { ticket: saved } = await api<{ ticket: OrderTicketDTO }>("PATCH", `/api/kds/orders/${ticket.id}/status`, {
+        status: to,
+      });
       if (saved.status !== "served") {
         setTickets((list) => (list ?? []).map((x) => (x.id === saved.id && isTicketUpdateNewer(x, saved) ? saved : x)));
       }
@@ -182,11 +195,20 @@ function KitchenDisplay() {
       {/* Phones: columns stacked. md+ (tablet portrait and up): three columns side by side. */}
       <main className="grid gap-4 p-4 md:grid-cols-3 md:gap-3 md:p-3 lg:min-h-0 lg:flex-1 lg:gap-4 lg:p-4">
         {columns.map((col) => (
-          <section key={col.status} aria-labelledby={`col-${col.status}`} className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
-            <h2 id={`col-${col.status}`} className="mb-3 flex shrink-0 items-center gap-3 px-1 text-[13px] font-label uppercase tracking-[0.08em] text-primary">
+          <section
+            key={col.status}
+            aria-labelledby={`col-${col.status}`}
+            className="min-w-0 lg:flex lg:min-h-0 lg:flex-col"
+          >
+            <h2
+              id={`col-${col.status}`}
+              className="mb-3 flex shrink-0 items-center gap-3 px-1 text-[13px] font-label uppercase tracking-[0.08em] text-primary"
+            >
               <span aria-hidden className="h-px w-6 bg-primary" />
               {t(`kitchen.columns.${col.status}`)}
-              <span className="grid h-6 min-w-6 place-items-center rounded-full px-2 text-xs tabular text-fg ring-1 ring-gold-line">{col.items.length}</span>
+              <span className="grid h-6 min-w-6 place-items-center rounded-full px-2 text-xs tabular text-fg ring-1 ring-gold-line">
+                {col.items.length}
+              </span>
             </h2>
             <div className="space-y-3 lg:-mx-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:px-1 lg:pb-4 min-[1800px]:grid min-[1800px]:auto-rows-min min-[1800px]:grid-cols-2 min-[1800px]:gap-3 min-[1800px]:space-y-0">
               {!tickets ? (
@@ -198,7 +220,13 @@ function KitchenDisplay() {
               ) : (
                 <>
                   {col.items.map((ticket) => (
-                    <TicketCard key={ticket.id} ticket={ticket} fresh={fresh.has(ticket.id)} busy={busy.has(ticket.id)} onAdvance={() => void advance(ticket)} />
+                    <TicketCard
+                      key={ticket.id}
+                      ticket={ticket}
+                      fresh={fresh.has(ticket.id)}
+                      busy={busy.has(ticket.id)}
+                      onAdvance={() => void advance(ticket)}
+                    />
                   ))}
                 </>
               )}
@@ -212,38 +240,73 @@ function KitchenDisplay() {
   );
 }
 
-function TicketCard({ ticket, fresh, busy, onAdvance }: { ticket: OrderTicketDTO; fresh: boolean; busy: boolean; onAdvance: () => void }) {
+function TicketCard({
+  ticket,
+  fresh,
+  busy,
+  onAdvance,
+}: {
+  ticket: OrderTicketDTO;
+  fresh: boolean;
+  busy: boolean;
+  onAdvance: () => void;
+}) {
   const t = useT();
   const lineText = useLineText();
   const now = useNow(1000) ?? Date.now();
   const created = Date.parse(ticket.createdAt);
   const urgency = ticketUrgency(created, now, brand.kitchen);
   const status = ticket.status as (typeof COLUMNS)[number];
-  const label = status === "received" ? t("kitchen.start") : status === "preparing" ? t("kitchen.ready") : t("kitchen.served");
+  const label =
+    status === "received" ? t("kitchen.start") : status === "preparing" ? t("kitchen.ready") : t("kitchen.served");
   const Icon = status === "received" ? ChefHat : status === "preparing" ? CheckCheck : ArrowRight;
 
   return (
     <article
       className={`enter ${cn(
         "glass-card overflow-hidden rounded-card outline-2 -outline-offset-2",
-        urgency === "late" ? "outline-danger" : urgency === "warn" ? "outline-warning" : fresh ? "outline-primary" : "outline-transparent",
+        urgency === "late"
+          ? "outline-danger"
+          : urgency === "warn"
+            ? "outline-warning"
+            : fresh
+              ? "outline-primary"
+              : "outline-transparent",
         fresh && "animate-pulse-ring",
       )}`}
     >
       <header
         className={cn(
           "flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3",
-          urgency === "late" ? "bg-danger text-white" : urgency === "warn" ? "bg-warning/20" : "bg-muted/60 border-b border-line",
+          urgency === "late"
+            ? "bg-danger text-white"
+            : urgency === "warn"
+              ? "bg-warning/20"
+              : "bg-muted/60 border-b border-line",
         )}
       >
         <div className="min-w-0">
-          <p className="font-display text-[1.75rem] font-semibold leading-none">{t("kitchen.table", { number: ticket.tableNumber })}</p>
-          <p className={cn("mt-1 text-xs font-semibold uppercase tracking-wider", urgency === "late" ? "text-white/85" : "text-fg-muted")}>
+          <p className="font-display text-[1.75rem] font-semibold leading-none">
+            {t("kitchen.table", { number: ticket.tableNumber })}
+          </p>
+          <p
+            className={cn(
+              "mt-1 text-xs font-semibold uppercase tracking-wider",
+              urgency === "late" ? "text-white/85" : "text-fg-muted",
+            )}
+          >
             {t("kitchen.round", { number: ticket.round })} · {t(`kitchen.stations.${ticket.station}`)}
-            {fresh && <span className="ml-2 rounded-card bg-primary px-1.5 py-0.5 text-on-primary">{t("kitchen.newBadge")}</span>}
+            {fresh && (
+              <span className="ml-2 rounded-card bg-primary px-1.5 py-0.5 text-on-primary">
+                {t("kitchen.newBadge")}
+              </span>
+            )}
           </p>
         </div>
-        <p className="flex shrink-0 items-center gap-1.5 text-xl font-bold tabular" aria-label={formatCountdown(now - created)}>
+        <p
+          className="flex shrink-0 items-center gap-1.5 text-xl font-bold tabular"
+          aria-label={formatCountdown(now - created)}
+        >
           <Clock className="size-4" aria-hidden />
           {formatCountdown(now - created)}
         </p>
@@ -252,26 +315,33 @@ function TicketCard({ ticket, fresh, busy, onAdvance }: { ticket: OrderTicketDTO
         {ticket.lines.map((l) => {
           const text = lineText(l);
           return (
-          <li key={l.id}>
-            <p className="flex gap-2 text-[19px] font-semibold leading-snug md:text-[17px] lg:text-[19px]">
-              <span className="min-w-8 tabular text-primary">{l.quantity}×</span>
-              <span className="min-w-0">{text.name}</span>
-            </p>
-            {text.modifiers.length > 0 && (
-              <p className="ml-10 text-[15px] text-fg-muted">{text.modifiers.join(" · ")}</p>
-            )}
-            {l.note && (
-              <p className="ml-10 mt-1.5 flex items-start gap-1.5 rounded-lg bg-warning/15 px-2.5 py-1.5 text-[15px] font-semibold ring-1 ring-inset ring-warning/30">
-                <MessageSquareText className="mt-0.5 size-4 shrink-0" aria-label={t("kitchen.note")} />
-                {l.note}
+            <li key={l.id}>
+              <p className="flex gap-2 text-[19px] font-semibold leading-snug md:text-[17px] lg:text-[19px]">
+                <span className="min-w-8 tabular text-primary">{l.quantity}×</span>
+                <span className="min-w-0">{text.name}</span>
               </p>
-            )}
-          </li>
+              {text.modifiers.length > 0 && (
+                <p className="ml-10 text-[15px] text-fg-muted">{text.modifiers.join(" · ")}</p>
+              )}
+              {l.note && (
+                <p className="ml-10 mt-1.5 flex items-start gap-1.5 rounded-lg bg-warning/15 px-2.5 py-1.5 text-[15px] font-semibold ring-1 ring-inset ring-warning/30">
+                  <MessageSquareText className="mt-0.5 size-4 shrink-0" aria-label={t("kitchen.note")} />
+                  {l.note}
+                </p>
+              )}
+            </li>
           );
         })}
       </ul>
       <div className="px-3 pb-3">
-        <Button size="lg" className="min-h-16 w-full text-lg" variant={status === "ready" ? "outline" : "primary"} onClick={onAdvance} disabled={busy} aria-busy={busy}>
+        <Button
+          size="lg"
+          className="min-h-16 w-full text-lg"
+          variant={status === "ready" ? "outline" : "primary"}
+          onClick={onAdvance}
+          disabled={busy}
+          aria-busy={busy}
+        >
           {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Icon className="size-5" aria-hidden />}
           {label}
         </Button>

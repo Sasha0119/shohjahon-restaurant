@@ -21,14 +21,14 @@ export function CartRow({ line, compact }: { line: CartLineDTO; compact?: boolea
   const item = menuState.itemsById.get(line.itemId);
   const by = line.guestId === meId ? t("common.you") : line.addedBy || t("common.guest");
   const options = item
-    ? item.modifierGroups.flatMap((g) => (line.selection[g.id] ?? []).map((id) => g.options.find((o) => o.id === id)?.name).filter(Boolean))
+    ? item.modifierGroups.flatMap((g) =>
+        (line.selection[g.id] ?? []).map((id) => g.options.find((o) => o.id === id)?.name).filter(Boolean),
+      )
     : [];
   const name = item?.name ?? t("cart.unavailableItem");
 
   return (
-    <li
-      className="enter border-b border-line last:border-b-0"
-    >
+    <li className="enter border-b border-line last:border-b-0">
       <div className={cn("flex gap-3.5", compact ? "p-3" : "p-4")}>
         <button
           type="button"
@@ -39,14 +39,35 @@ export function CartRow({ line, compact }: { line: CartLineDTO; compact?: boolea
           )}
           aria-label={name}
         >
-          {item && <Image src={item.image} alt="" fill sizes="80px" className={item.inStock ? "object-cover" : "object-cover grayscale"} />}
+          {item && (
+            <Image
+              src={item.image}
+              alt=""
+              fill
+              sizes="80px"
+              className={item.inStock ? "object-cover" : "object-cover grayscale"}
+            />
+          )}
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
-            <p className={cn("min-w-0 font-display font-semibold leading-snug", compact ? "text-[15px]" : "text-[1.05rem]")}>{name}</p>
-            <p className="shrink-0 font-semibold tabular text-primary">{formatPrice(line.unitPriceCents * line.quantity)}</p>
+            <p
+              className={cn(
+                "min-w-0 font-display font-semibold leading-snug",
+                compact ? "text-[15px]" : "text-[1.05rem]",
+              )}
+            >
+              {name}
+            </p>
+            <p className="shrink-0 font-semibold tabular text-primary">
+              {formatPrice(line.unitPriceCents * line.quantity)}
+            </p>
           </div>
-          {item && !item.inStock && <Badge tone="danger" className="mt-1">{t("menu.soldOut")}</Badge>}
+          {item && !item.inStock && (
+            <Badge tone="danger" className="mt-1">
+              {t("menu.soldOut")}
+            </Badge>
+          )}
           {options.length > 0 && <p className="mt-0.5 text-sm text-fg-muted">{options.join(" · ")}</p>}
           {line.note && <p className="mt-0.5 text-sm italic text-fg-muted">“{line.note}”</p>}
           {!compact && (

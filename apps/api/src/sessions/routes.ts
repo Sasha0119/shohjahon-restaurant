@@ -9,7 +9,7 @@ import { buildSnapshot } from "./snapshot.ts";
 
 type On = ReturnType<typeof createRegistrar>["on"];
 
-export function guestCookieOptions(secure: boolean) {
+function guestCookieOptions(secure: boolean) {
   return {
     httpOnly: true,
     secure,

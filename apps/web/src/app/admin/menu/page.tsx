@@ -17,7 +17,18 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { apiMessage, EditLanguageBar, Field, inputClass, MoneyField, slugify, Switch, textIn, ToggleChip, withText } from "@/components/admin/form";
+import {
+  apiMessage,
+  EditLanguageBar,
+  Field,
+  inputClass,
+  MoneyField,
+  slugify,
+  Switch,
+  textIn,
+  ToggleChip,
+  withText,
+} from "@/components/admin/form";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Badge, EmptyState, Segmented, Skeleton } from "@/components/ui/misc";
 import { Sheet } from "@/components/ui/sheet";
@@ -62,12 +73,19 @@ export default function MenuAdminPage() {
         label={t("admin.menu.title")}
         value={tab}
         onChange={setTab}
-        options={(["items", "categories", "combos"] as const).map((v) => ({ value: v, label: t(`admin.menu.tabs.${v}`) }))}
+        options={(["items", "categories", "combos"] as const).map((v) => ({
+          value: v,
+          label: t(`admin.menu.tabs.${v}`),
+        }))}
       />
 
       <div className="mt-6">
         {failed && !menu ? (
-          <EmptyState icon={CloudOff} title={t("admin.menu.loadError")} action={<Button onClick={() => void reload()}>{t("common.retry")}</Button>} />
+          <EmptyState
+            icon={CloudOff}
+            title={t("admin.menu.loadError")}
+            action={<Button onClick={() => void reload()}>{t("common.retry")}</Button>}
+          />
         ) : !menu ? (
           <div className="space-y-3" aria-busy="true">
             {Array.from({ length: 6 }, (_, i) => (
@@ -87,7 +105,15 @@ export default function MenuAdminPage() {
 }
 
 // ── Items ──────────────────────────────────────────────────────────────────
-function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categories: AdminCategory[]; reload: () => Promise<void> }) {
+function ItemsTab({
+  items,
+  categories,
+  reload,
+}: {
+  items: AdminItem[];
+  categories: AdminCategory[];
+  reload: () => Promise<void>;
+}) {
   const nameIn = useNameIn();
   const t = useT();
   const [cat, setCat] = useState<string>("all");
@@ -100,7 +126,9 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
     (i) =>
       (archived || !i.archived) &&
       (cat === "all" || i.categoryId === cat) &&
-      (!query.trim() || nameIn(i).toLowerCase().includes(query.trim().toLowerCase()) || i.name.toLowerCase().includes(query.trim().toLowerCase())),
+      (!query.trim() ||
+        nameIn(i).toLowerCase().includes(query.trim().toLowerCase()) ||
+        i.name.toLowerCase().includes(query.trim().toLowerCase())),
   );
   const canReorder = cat !== "all" && !query.trim() && !archived;
 
@@ -118,7 +146,10 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
     <div>
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-56 flex-1">
-          <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-fg-muted" aria-hidden />
+          <Search
+            className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-fg-muted"
+            aria-hidden
+          />
           <input
             className={cn(inputClass, "bg-surface pl-12 ring-1 ring-line")}
             placeholder={t("admin.menu.search")}
@@ -147,7 +178,10 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
       ) : (
         <div className="mt-4 overflow-hidden card">
           {/* lg+: column headings, so the list reads as a table. */}
-          <div aria-hidden className="hidden items-center gap-3 border-b border-line px-4 py-3 text-xs font-semibold uppercase tracking-wider text-fg-muted lg:flex">
+          <div
+            aria-hidden
+            className="hidden items-center gap-3 border-b border-line px-4 py-3 text-xs font-semibold uppercase tracking-wider text-fg-muted lg:flex"
+          >
             <span className="w-14 shrink-0" />
             <span className="min-w-0 flex-1">{t("admin.menu.item.name")}</span>
             <span className="w-44 shrink-0">{t("admin.menu.item.category")}</span>
@@ -156,19 +190,19 @@ function ItemsTab({ items, categories, reload }: { items: AdminItem[]; categorie
             <span className="w-44 shrink-0 text-right">{t("kitchen.stock")}</span>
             <span className="w-11 shrink-0" />
           </div>
-        <ul>
-          {visible.map((item, i) => (
-            <ItemRow
-              key={item.id}
-              item={item}
-              categoryName={catName.get(item.categoryId)}
-              canMoveUp={canReorder && i > 0}
-              canMoveDown={canReorder && i < visible.length - 1}
-              showMove={canReorder}
-              onMove={(delta) => void move(i, delta)}
-            />
-          ))}
-        </ul>
+          <ul>
+            {visible.map((item, i) => (
+              <ItemRow
+                key={item.id}
+                item={item}
+                categoryName={catName.get(item.categoryId)}
+                canMoveUp={canReorder && i > 0}
+                canMoveDown={canReorder && i < visible.length - 1}
+                showMove={canReorder}
+                onMove={(delta) => void move(i, delta)}
+              />
+            ))}
+          </ul>
         </div>
       )}
     </div>
@@ -196,7 +230,12 @@ function ItemRow({
   const inStock = useInStock(item.id, item.inStock);
 
   return (
-    <li className={cn("flex items-center gap-3 border-b border-line px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/30", item.archived && "opacity-55")}>
+    <li
+      className={cn(
+        "flex items-center gap-3 border-b border-line px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/30",
+        item.archived && "opacity-55",
+      )}
+    >
       <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
         <Image src={item.imageUrl} alt="" fill sizes="64px" className={cn("object-cover", !inStock && "grayscale")} />
       </span>
@@ -216,13 +255,27 @@ function ItemRow({
         </p>
       </div>
       <span className="hidden w-44 shrink-0 truncate text-sm text-fg-muted lg:block">{categoryName}</span>
-      <span className="hidden w-28 shrink-0 text-right font-semibold tabular lg:block">{formatPrice(item.priceCents)}</span>
+      <span className="hidden w-28 shrink-0 text-right font-semibold tabular lg:block">
+        {formatPrice(item.priceCents)}
+      </span>
       {showMove && (
         <div className="hidden w-8 shrink-0 flex-col sm:flex">
-          <button type="button" disabled={!canMoveUp} onClick={() => onMove(-1)} aria-label={t("admin.menu.moveUp", { name: item.name })} className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30">
+          <button
+            type="button"
+            disabled={!canMoveUp}
+            onClick={() => onMove(-1)}
+            aria-label={t("admin.menu.moveUp", { name: item.name })}
+            className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30"
+          >
             <ArrowUp className="size-4" aria-hidden />
           </button>
-          <button type="button" disabled={!canMoveDown} onClick={() => onMove(1)} aria-label={t("admin.menu.moveDown", { name: item.name })} className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30">
+          <button
+            type="button"
+            disabled={!canMoveDown}
+            onClick={() => onMove(1)}
+            aria-label={t("admin.menu.moveDown", { name: item.name })}
+            className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30"
+          >
             <ArrowDown className="size-4" aria-hidden />
           </button>
         </div>
@@ -234,7 +287,12 @@ function ItemRow({
           <span className={cn("hidden text-xs font-semibold sm:inline", inStock ? "text-success" : "text-danger")}>
             {inStock ? t("admin.menu.inStock") : t("admin.menu.soldOut")}
           </span>
-          <Switch compact checked={inStock} onChange={(v) => setInStock(item.id, v)} label={`${item.name}: ${t("admin.menu.inStock")}`} />
+          <Switch
+            compact
+            checked={inStock}
+            onChange={(v) => setInStock(item.id, v)}
+            label={`${item.name}: ${t("admin.menu.inStock")}`}
+          />
         </div>
       )}
       <Link
@@ -276,12 +334,30 @@ function CategoriesTab({ categories, reload }: { categories: AdminCategory[]; re
       </div>
       <ul className="mt-4 overflow-hidden card">
         {categories.map((c, i) => (
-          <li key={c.id} className={cn("flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0", !c.active && "opacity-55")}>
+          <li
+            key={c.id}
+            className={cn(
+              "flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0",
+              !c.active && "opacity-55",
+            )}
+          >
             <div className="flex flex-col">
-              <button type="button" disabled={i === 0} onClick={() => void move(i, -1)} aria-label={t("admin.menu.moveUp", { name: c.name })} className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30">
+              <button
+                type="button"
+                disabled={i === 0}
+                onClick={() => void move(i, -1)}
+                aria-label={t("admin.menu.moveUp", { name: c.name })}
+                className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30"
+              >
                 <ArrowUp className="size-4" aria-hidden />
               </button>
-              <button type="button" disabled={i === categories.length - 1} onClick={() => void move(i, 1)} aria-label={t("admin.menu.moveDown", { name: c.name })} className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30">
+              <button
+                type="button"
+                disabled={i === categories.length - 1}
+                onClick={() => void move(i, 1)}
+                aria-label={t("admin.menu.moveDown", { name: c.name })}
+                className="grid size-8 place-items-center rounded-lg text-fg-muted hover:bg-muted disabled:opacity-30"
+              >
                 <ArrowDown className="size-4" aria-hidden />
               </button>
             </div>
@@ -291,13 +367,24 @@ function CategoriesTab({ categories, reload }: { categories: AdminCategory[]; re
                 {!c.active && <Badge>{t("admin.menu.hidden")}</Badge>}
               </p>
               <p className="text-sm text-fg-muted">
-                {t("admin.menu.category.items", { count: c.itemCount })} · {t(`admin.menu.category.stations.${c.station}`)} ·{" "}
+                {t("admin.menu.category.items", { count: c.itemCount })} ·{" "}
+                {t(`admin.menu.category.stations.${c.station}`)} ·{" "}
                 {c.availability.length
-                  ? c.availability.map((w) => `${w.days.length ? w.days.map((d) => d.slice(0, 1).toUpperCase() + d.slice(1)).join(", ") + " " : ""}${w.from}–${w.to}`).join("; ")
+                  ? c.availability
+                      .map(
+                        (w) =>
+                          `${w.days.length ? w.days.map((d) => d.slice(0, 1).toUpperCase() + d.slice(1)).join(", ") + " " : ""}${w.from}–${w.to}`,
+                      )
+                      .join("; ")
                   : t("admin.menu.category.allDay")}
               </p>
             </div>
-            <button type="button" onClick={() => setEditing(c)} aria-label={t("admin.menu.edit", { name: c.name })} className="grid size-11 place-items-center rounded-full text-fg-muted hover:bg-muted hover:text-fg">
+            <button
+              type="button"
+              onClick={() => setEditing(c)}
+              aria-label={t("admin.menu.edit", { name: c.name })}
+              className="grid size-11 place-items-center rounded-full text-fg-muted hover:bg-muted hover:text-fg"
+            >
               <Pencil className="size-5" aria-hidden />
             </button>
           </li>
@@ -332,14 +419,19 @@ function CategorySheet({
   const targetKey = target === null ? null : target === "new" ? "new" : target.id;
   if (targetKey !== key) {
     setKey(targetKey);
-    setForm(existing ? { ...categoryToInput(existing), description: existing.description ?? "" } : blankCategory(nextSort));
+    setForm(
+      existing ? { ...categoryToInput(existing), description: existing.description ?? "" } : blankCategory(nextSort),
+    );
     setSlugTouched(!!existing);
     setError(null);
   }
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setWindow = (i: number, patch: Partial<Window>) =>
-    set("availability", form.availability.map((w, j) => (j === i ? { ...w, ...patch } : w)));
+    set(
+      "availability",
+      form.availability.map((w, j) => (j === i ? { ...w, ...patch } : w)),
+    );
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -375,7 +467,11 @@ function CategorySheet({
   };
 
   return (
-    <Sheet open={!!target} onClose={onClose} title={existing ? t("admin.menu.category.edit") : t("admin.menu.category.new")}>
+    <Sheet
+      open={!!target}
+      onClose={onClose}
+      title={existing ? t("admin.menu.category.edit") : t("admin.menu.category.new")}
+    >
       <form onSubmit={save} className="mt-5 space-y-4">
         <EditLanguageBar value={lang} onChange={setLang} />
         <Field label={t("admin.menu.category.name")} htmlFor="cat-name">
@@ -395,7 +491,16 @@ function CategorySheet({
           />
         </Field>
         <Field label={t("admin.menu.category.slug")} hint={t("admin.menu.category.slugHint")} htmlFor="cat-slug">
-          <input id="cat-slug" className={cn(inputClass, "font-mono text-sm")} value={form.slug} onChange={(e) => { setSlugTouched(true); set("slug", e.target.value); }} required />
+          <input
+            id="cat-slug"
+            className={cn(inputClass, "font-mono text-sm")}
+            value={form.slug}
+            onChange={(e) => {
+              setSlugTouched(true);
+              set("slug", e.target.value);
+            }}
+            required
+          />
         </Field>
         <Field label={t("admin.menu.category.description")} htmlFor="cat-desc">
           <input
@@ -406,7 +511,9 @@ function CategorySheet({
             placeholder={main ? undefined : form.description}
             maxLength={200}
             onChange={(e) =>
-              main ? set("description", e.target.value) : set("translations", withText(form.translations, lang, "description", e.target.value))
+              main
+                ? set("description", e.target.value)
+                : set("translations", withText(form.translations, lang, "description", e.target.value))
             }
           />
         </Field>
@@ -415,7 +522,10 @@ function CategorySheet({
             label={t("admin.menu.category.station")}
             value={form.station}
             onChange={(v) => set("station", v)}
-            options={(["kitchen", "bar"] as const).map((v) => ({ value: v, label: t(`admin.menu.category.stations.${v}`) }))}
+            options={(["kitchen", "bar"] as const).map((v) => ({
+              value: v,
+              label: t(`admin.menu.category.stations.${v}`),
+            }))}
           />
         </Field>
         <Switch checked={form.active} onChange={(v) => set("active", v)} label={t("admin.menu.category.visible")} />
@@ -428,27 +538,60 @@ function CategorySheet({
               <div key={i} className="enter mt-3 overflow-hidden rounded-2xl bg-muted/50 p-3">
                 <div className="flex flex-wrap gap-1.5">
                   {DAYS.map((d) => (
-                    <ToggleChip key={d} on={w.days.includes(d)} onClick={() => setWindow(i, { days: w.days.includes(d) ? w.days.filter((x) => x !== d) : [...w.days, d] })}>
+                    <ToggleChip
+                      key={d}
+                      on={w.days.includes(d)}
+                      onClick={() =>
+                        setWindow(i, { days: w.days.includes(d) ? w.days.filter((x) => x !== d) : [...w.days, d] })
+                      }
+                    >
                       {d.slice(0, 1).toUpperCase() + d.slice(1)}
                     </ToggleChip>
                   ))}
                 </div>
-                {w.days.length === 0 && <p className="mt-1.5 text-xs text-fg-muted">{t("admin.menu.category.everyDay")}</p>}
+                {w.days.length === 0 && (
+                  <p className="mt-1.5 text-xs text-fg-muted">{t("admin.menu.category.everyDay")}</p>
+                )}
                 <div className="mt-3 flex items-end gap-3">
                   <Field label={t("admin.menu.category.from")} className="flex-1">
-                    <input type="time" className={inputClass} value={w.from} onChange={(e) => setWindow(i, { from: e.target.value })} />
+                    <input
+                      type="time"
+                      className={inputClass}
+                      value={w.from}
+                      onChange={(e) => setWindow(i, { from: e.target.value })}
+                    />
                   </Field>
                   <Field label={t("admin.menu.category.to")} className="flex-1">
-                    <input type="time" className={inputClass} value={w.to} onChange={(e) => setWindow(i, { to: e.target.value })} />
+                    <input
+                      type="time"
+                      className={inputClass}
+                      value={w.to}
+                      onChange={(e) => setWindow(i, { to: e.target.value })}
+                    />
                   </Field>
-                  <button type="button" onClick={() => set("availability", form.availability.filter((_, j) => j !== i))} aria-label={t("admin.menu.category.remove")} className="grid size-12 shrink-0 place-items-center rounded-2xl text-danger hover:bg-danger/10">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      set(
+                        "availability",
+                        form.availability.filter((_, j) => j !== i),
+                      )
+                    }
+                    aria-label={t("admin.menu.category.remove")}
+                    className="grid size-12 shrink-0 place-items-center rounded-2xl text-danger hover:bg-danger/10"
+                  >
                     <Trash2 className="size-5" aria-hidden />
                   </button>
                 </div>
               </div>
             ))}
           </>
-          <Button variant="ghost" size="sm" className="mt-2" onClick={() => set("availability", [...form.availability, { days: [], from: "08:00", to: "11:30" }])}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2"
+            onClick={() => set("availability", [...form.availability, { days: [], from: "08:00", to: "11:30" }])}
+          >
             <Plus className="size-4" aria-hidden />
             {t("admin.menu.category.addWindow")}
           </Button>
@@ -488,7 +631,15 @@ function blankCategory(sortOrder: number) {
 }
 
 // ── Combos ─────────────────────────────────────────────────────────────────
-function CombosTab({ combos, items, reload }: { combos: AdminCombo[]; items: AdminItem[]; reload: () => Promise<void> }) {
+function CombosTab({
+  combos,
+  items,
+  reload,
+}: {
+  combos: AdminCombo[];
+  items: AdminItem[];
+  reload: () => Promise<void>;
+}) {
   const t = useT();
   const nameIn = useNameIn();
   const [editing, setEditing] = useState<AdminCombo | "new" | null>(null);
@@ -508,22 +659,38 @@ function CombosTab({ combos, items, reload }: { combos: AdminCombo[]; items: Adm
         <ul className="mt-4 grid gap-4 sm:grid-cols-2">
           {combos.map((c) => (
             <li key={c.id}>
-              <button type="button" onClick={() => setEditing(c)} className={cn("glass-card lift w-full rounded-card p-5 text-left", !c.active && "opacity-55")}>
+              <button
+                type="button"
+                onClick={() => setEditing(c)}
+                className={cn("glass-card lift w-full rounded-card p-5 text-left", !c.active && "opacity-55")}
+              >
                 <p className="flex items-center justify-between gap-2">
                   <span className="font-display text-xl font-semibold">{nameIn(c)}</span>
-                  <Badge tone={c.active ? "success" : "muted"}>{t("admin.menu.combo.saves", { amount: formatPrice(c.discountCents) })}</Badge>
+                  <Badge tone={c.active ? "success" : "muted"}>
+                    {t("admin.menu.combo.saves", { amount: formatPrice(c.discountCents) })}
+                  </Badge>
                 </p>
                 <div className="mt-3 flex -space-x-3">
                   {c.itemIds.map((id) => {
                     const it = byId.get(id);
                     return it ? (
-                      <span key={id} className="relative size-12 overflow-hidden rounded-full ring-2 ring-surface" title={nameIn(it)}>
+                      <span
+                        key={id}
+                        className="relative size-12 overflow-hidden rounded-full ring-2 ring-surface"
+                        title={nameIn(it)}
+                      >
                         <Image src={it.imageUrl} alt="" fill sizes="48px" className="object-cover" />
                       </span>
                     ) : null;
                   })}
                 </div>
-                <p className="mt-2 text-sm text-fg-muted">{c.itemIds.map((id) => byId.get(id)).filter(Boolean).map((x) => nameIn(x!)).join(" + ")}</p>
+                <p className="mt-2 text-sm text-fg-muted">
+                  {c.itemIds
+                    .map((id) => byId.get(id))
+                    .filter(Boolean)
+                    .map((x) => nameIn(x!))
+                    .join(" + ")}
+                </p>
               </button>
             </li>
           ))}
@@ -594,7 +761,8 @@ function ComboSheet({
         onSubmit={(e) => {
           e.preventDefault();
           void run(
-            () => (existing ? api("PUT", `/api/admin/combos/${existing.id}`, body) : api("POST", "/api/admin/combos", body)),
+            () =>
+              existing ? api("PUT", `/api/admin/combos/${existing.id}`, body) : api("POST", "/api/admin/combos", body),
             t("admin.menu.combo.saved"),
           );
         }}
@@ -609,7 +777,9 @@ function ComboSheet({
               value={textIn(lang, name, translations, "name")}
               placeholder={main ? undefined : name}
               maxLength={60}
-              onChange={(e) => (main ? setName(e.target.value) : setTranslations(withText(translations, lang, "name", e.target.value)))}
+              onChange={(e) =>
+                main ? setName(e.target.value) : setTranslations(withText(translations, lang, "name", e.target.value))
+              }
               required={main}
             />
           </Field>
@@ -623,7 +793,11 @@ function ComboSheet({
               <ToggleChip
                 key={i.id}
                 on={itemIds.includes(i.id)}
-                onClick={() => setItemIds((ids) => (ids.includes(i.id) ? ids.filter((x) => x !== i.id) : ids.length < 6 ? [...ids, i.id] : ids))}
+                onClick={() =>
+                  setItemIds((ids) =>
+                    ids.includes(i.id) ? ids.filter((x) => x !== i.id) : ids.length < 6 ? [...ids, i.id] : ids,
+                  )
+                }
               >
                 {nameIn(i)}
               </ToggleChip>
@@ -636,12 +810,22 @@ function ComboSheet({
         </p>
         <div className="flex flex-wrap gap-3">
           {existing && (
-            <Button variant="danger" disabled={busy} onClick={() => void run(() => api("DELETE", `/api/admin/combos/${existing.id}`), t("admin.menu.combo.deleted"))}>
+            <Button
+              variant="danger"
+              disabled={busy}
+              onClick={() =>
+                void run(() => api("DELETE", `/api/admin/combos/${existing.id}`), t("admin.menu.combo.deleted"))
+              }
+            >
               <Trash2 className="size-4" aria-hidden />
               {t("admin.menu.combo.delete")}
             </Button>
           )}
-          <Button type="submit" className="ml-auto min-w-32" disabled={busy || !name.trim() || !discount || itemIds.length < 2}>
+          <Button
+            type="submit"
+            className="ml-auto min-w-32"
+            disabled={busy || !name.trim() || !discount || itemIds.length < 2}
+          >
             {busy && <Loader2 className="size-5 animate-spin" aria-hidden />}
             {t("admin.menu.combo.save")}
           </Button>

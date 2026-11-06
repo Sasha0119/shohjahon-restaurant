@@ -26,7 +26,11 @@ export function toTicketDTO(o: OrderWithTicket): OrderTicketDTO {
       name: i.name,
       quantity: i.quantity,
       unitPriceCents: i.unitPriceCents,
-      modifiers: i.modifiers.map((m) => ({ group: m.groupName, option: m.optionName, priceDeltaCents: m.priceDeltaCents })),
+      modifiers: i.modifiers.map((m) => ({
+        group: m.groupName,
+        option: m.optionName,
+        priceDeltaCents: m.priceDeltaCents,
+      })),
       note: i.note,
       addedBy: i.addedByName,
     })),

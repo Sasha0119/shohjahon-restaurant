@@ -20,7 +20,7 @@ export function isIdleExpired(
 }
 
 /** Activity is written at most this often, to keep writes cheap. */
-export const TOUCH_THROTTLE_MS = 30_000;
+const TOUCH_THROTTLE_MS = 30_000;
 
 export function shouldTouch(lastActivityAt: Date, now: Date): boolean {
   return now.getTime() - lastActivityAt.getTime() >= TOUCH_THROTTLE_MS;

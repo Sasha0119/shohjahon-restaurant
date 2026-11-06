@@ -37,7 +37,9 @@ export async function idempotent(
     throw new ApiError(400, "IDEMPOTENCY_KEY_REQUIRED", "Send a unique Idempotency-Key header (16–128 characters).");
   }
   const key = `${scope}:${owner}:${parsed.data}`;
-  const requestHash = createHash("sha256").update(JSON.stringify(req.body ?? null)).digest("hex");
+  const requestHash = createHash("sha256")
+    .update(JSON.stringify(req.body ?? null))
+    .digest("hex");
 
   const replay = async (): Promise<IdemResult | null> => {
     const rec = await db.idempotencyRecord.findUnique({ where: { key } });

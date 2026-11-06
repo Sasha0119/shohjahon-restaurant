@@ -22,13 +22,13 @@ export function registerUploadRoutes(on: On, db: Db, store: ImageStore, maxMb: n
         if (err.code === "LIMIT_FILE_SIZE") {
           return next(new ApiError(413, "IMAGE_TOO_LARGE", `Photos can be up to ${maxMb} MB.`));
         }
-        return next(errors.badRequest("BAD_UPLOAD", "Send one photo in the \"image\" field."));
+        return next(errors.badRequest("BAD_UPLOAD", 'Send one photo in the "image" field.'));
       }
       next(err);
     });
 
   on("POST", "/api/admin/uploads/images", receive, async (req, res) => {
-    if (!req.file) throw errors.badRequest("BAD_UPLOAD", "Send one photo in the \"image\" field.");
+    if (!req.file) throw errors.badRequest("BAD_UPLOAD", 'Send one photo in the "image" field.');
     const saved = await store.save(req.file.buffer);
     await audit(db, {
       actor: { type: "staff", staffId: req.staff!.id },
@@ -41,4 +41,3 @@ export function registerUploadRoutes(on: On, db: Db, store: ImageStore, maxMb: n
     res.status(201).json(saved);
   });
 }
-

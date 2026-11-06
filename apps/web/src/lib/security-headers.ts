@@ -47,7 +47,10 @@ export const STATIC_SECURITY_HEADERS: { key: string; value: string }[] = [
   // Table links contain the signed table token — never leak paths to other sites
   // (e.g. when a guest opens a public review link).
   { key: "Referrer-Policy", value: "same-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=(), interest-cohort=()" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), browsing-topics=(), interest-cohort=()",
+  },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
   // Browsers ignore HSTS over plain HTTP, so this is safe in development too.

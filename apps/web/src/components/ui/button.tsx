@@ -43,14 +43,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   { variant = "primary", size = "md", className, type = "button", ...props },
   ref,
 ) {
-  return (
-    <button
-      ref={ref}
-      type={type}
-      className={buttonClasses(variant, size, className)}
-      {...props}
-    />
-  );
+  return <button ref={ref} type={type} className={buttonClasses(variant, size, className)} {...props} />;
 });
 
 interface LinkButtonProps extends ComponentProps<typeof Link> {

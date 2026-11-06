@@ -67,12 +67,21 @@ export async function createCall(
   return dto;
 }
 
-export async function handleCall(db: Db, realtime: Realtime, callId: string, staffId: string, ip?: string): Promise<CallDTO> {
+export async function handleCall(
+  db: Db,
+  realtime: Realtime,
+  callId: string,
+  staffId: string,
+  ip?: string,
+): Promise<CallDTO> {
   const res = await db.waiterCall.updateMany({
     where: { id: callId, status: "OPEN" },
     data: { status: "HANDLED", handledAt: new Date(), handledById: staffId },
   });
-  const call = await db.waiterCall.findUnique({ where: { id: callId }, include: { table: { select: { number: true } } } });
+  const call = await db.waiterCall.findUnique({
+    where: { id: callId },
+    include: { table: { select: { number: true } } },
+  });
   if (!call) throw new ApiError(404, "NOT_FOUND", "Call not found.");
   if (res.count === 0) throw new ApiError(409, "ALREADY_HANDLED", "Someone has already taken this one.");
   await audit(db, {

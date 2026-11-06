@@ -1,13 +1,10 @@
 "use client";
 
-import { brand } from "@app/config";
 import { isAvailableAt, type Category, type MenuItem } from "@app/shared";
 import { CloudOff, ScanLine } from "lucide-react";
 import Image from "next/image";
 import { useMemo } from "react";
-import { LanguageSwitcher } from "@/components/brand/language-switcher";
-import { Logo } from "@/components/brand/logo";
-import { ThemeToggle } from "@/components/brand/theme-toggle";
+import { PublicHeader } from "@/components/brand/public-header";
 import { DietaryTags } from "@/components/guest/dietary-tags";
 import { Button } from "@/components/ui/button";
 import { CurtainLink } from "@/components/ui/page-curtain";
@@ -35,18 +32,7 @@ export function PublicMenu() {
 
   return (
     <main className="min-h-svh">
-      <header className="sticky top-0 z-30 glass border-b border-gold-line/50">
-        <div className="flex h-16 items-center gap-3 px-4 lg:px-8">
-          <CurtainLink href="/" aria-label={`${brand.name} — ${t("common.home")}`} className="pressable rounded-full">
-            <Logo size={38} />
-          </CurtainLink>
-          <h1 className="min-w-0 flex-1 truncate font-display text-[1.35rem] font-semibold leading-tight">
-            {t("menu.title")}
-          </h1>
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </div>
-      </header>
+      <PublicHeader title={t("menu.title")} />
 
       <div className="mx-auto max-w-6xl">
         <aside className="mx-4 mt-5 flex gap-4 border-y border-gold-line/50 py-5 lg:mx-8">
@@ -54,7 +40,10 @@ export function PublicMenu() {
           <div>
             <h2 className="text-xl leading-snug">{t("landing.title")}</h2>
             <p className="mt-1 text-[15px] text-fg-muted">{t("landing.body")}</p>
-            <CurtainLink href="/reserve" className="mt-2 inline-block font-semibold text-primary underline underline-offset-4">
+            <CurtainLink
+              href="/reserve"
+              className="mt-2 inline-block font-semibold text-primary underline underline-offset-4"
+            >
               {t("reserve.cta")}
             </CurtainLink>
           </div>
@@ -137,7 +126,9 @@ function MenuEntry({ item }: { item: MenuItem }) {
         <h3 className="text-[1.2rem] leading-snug">{item.name}</h3>
         <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-fg-muted">{item.description}</p>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <span className={cn("text-[15px] font-semibold tabular text-primary", soldOut && "text-fg-muted line-through")}>
+          <span
+            className={cn("text-[15px] font-semibold tabular text-primary", soldOut && "text-fg-muted line-through")}
+          >
             {formatPrice(item.price)}
           </span>
           {soldOut ? (

@@ -27,7 +27,11 @@ import { chargePending, confirmCash, publishStarted, settlePayment, startPayment
 import type { PaymentProvider } from "./provider.ts";
 
 type On = ReturnType<typeof createRegistrar>["on"];
-const zReceiptToken = z.string().min(20).max(64).regex(/^[A-Za-z0-9_-]+$/);
+const zReceiptToken = z
+  .string()
+  .min(20)
+  .max(64)
+  .regex(/^[A-Za-z0-9_-]+$/);
 const money = (c: number) => formatMoney(c, brand.currency.code, brand.currency.locale);
 
 export function registerBillingRoutes(
@@ -69,8 +73,13 @@ export function registerBillingRoutes(
     if (started) await publishStarted(db, realtime, guest.sessionId, started);
     // Charge (or re-check, on a retried request) — the provider is idempotent on our payment id.
     await chargePending(db, realtime, provider, paymentId);
-    const payment = await db.payment.findUniqueOrThrow({ where: { id: paymentId }, include: { receipt: { select: { publicToken: true } } } });
-    res.status(result.status).json({ payment: toPaymentDTO(payment), bill: (await computeSessionBill(db, guest.sessionId)).dto });
+    const payment = await db.payment.findUniqueOrThrow({
+      where: { id: paymentId },
+      include: { receipt: { select: { publicToken: true } } },
+    });
+    res
+      .status(result.status)
+      .json({ payment: toPaymentDTO(payment), bill: (await computeSessionBill(db, guest.sessionId)).dto });
   });
 
   on("GET", "/api/session/payments/:paymentId", async (req, res) => {
@@ -101,7 +110,10 @@ export function registerBillingRoutes(
     const sessionId = parse(zId, req.params.sessionId);
     const { paymentId } = parse(confirmCashBody, req.body);
     await confirmCash(db, realtime, sessionId, paymentId, req.staff!.id, req.ip);
-    const payment = await db.payment.findUniqueOrThrow({ where: { id: paymentId }, include: { receipt: { select: { publicToken: true } } } });
+    const payment = await db.payment.findUniqueOrThrow({
+      where: { id: paymentId },
+      include: { receipt: { select: { publicToken: true } } },
+    });
     res.json({ payment: toPaymentDTO(payment) });
   });
 
@@ -136,7 +148,10 @@ export function registerBillingRoutes(
       throw new ApiError(429, "RATE_LIMITED", "Please wait a minute before sending this receipt again.");
     }
     const receipt = receiptDTO(r);
-    const rows = receipt.lines.map((l) => `${l.quantity}× ${l.name}${l.options.length ? ` (${l.options.join(", ")})` : ""} — ${money(l.unitPriceCents * l.quantity)}`);
+    const rows = receipt.lines.map(
+      (l) =>
+        `${l.quantity}× ${l.name}${l.options.length ? ` (${l.options.join(", ")})` : ""} — ${money(l.unitPriceCents * l.quantity)}`,
+    );
     const text = [
       `${brand.name} — receipt #${receipt.number}`,
       `Table ${receipt.tableNumber} · ${new Date(receipt.issuedAt).toLocaleString(brand.currency.locale, { timeZone: brand.timezone })}`,
@@ -182,10 +197,18 @@ export function registerBillingRoutes(
           createdById: req.staff!.id,
         },
       });
-      await audit(db, { actor: { type: "staff", staffId: req.staff!.id }, action: "discount.created", entityType: "discount_code", entityId: d.id, data: { code: d.code }, ip: req.ip });
+      await audit(db, {
+        actor: { type: "staff", staffId: req.staff!.id },
+        action: "discount.created",
+        entityType: "discount_code",
+        entityId: d.id,
+        data: { code: d.code },
+        ip: req.ip,
+      });
       res.status(201).json({ discount: toDiscountDTO(d) });
     } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") throw errors.conflict("CODE_TAKEN", "That code already exists.");
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")
+        throw errors.conflict("CODE_TAKEN", "That code already exists.");
       throw e;
     }
   });
@@ -196,7 +219,14 @@ export function registerBillingRoutes(
     const found = await db.discountCode.findUnique({ where: { id } });
     if (!found) throw errors.notFound("Discount code");
     const d = await db.discountCode.update({ where: { id }, data: { active } });
-    await audit(db, { actor: { type: "staff", staffId: req.staff!.id }, action: "discount.updated", entityType: "discount_code", entityId: id, data: { active }, ip: req.ip });
+    await audit(db, {
+      actor: { type: "staff", staffId: req.staff!.id },
+      action: "discount.updated",
+      entityType: "discount_code",
+      entityId: id,
+      data: { active },
+      ip: req.ip,
+    });
     res.json({ discount: toDiscountDTO(d) });
   });
 }

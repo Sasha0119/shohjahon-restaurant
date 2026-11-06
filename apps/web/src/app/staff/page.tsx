@@ -201,8 +201,7 @@ function PinPad({ person, onBack }: { person: StaffMe; onBack: () => void }) {
 
       <div className="mx-auto mt-4 grid max-w-xs grid-cols-3 gap-3">
         {KEYS.map((key) => {
-          const label =
-            key === "del" ? t("staff.deleteDigit") : key === "ok" ? t("staff.signIn") : undefined;
+          const label = key === "del" ? t("staff.deleteDigit") : key === "ok" ? t("staff.signIn") : undefined;
           return (
             <button
               key={key}
@@ -218,7 +217,11 @@ function PinPad({ person, onBack }: { person: StaffMe; onBack: () => void }) {
               {key === "del" ? (
                 <Delete className="size-6" aria-hidden />
               ) : key === "ok" ? (
-                busy ? <Loader2 className="size-6 animate-spin" aria-hidden /> : <Check className="size-7" aria-hidden />
+                busy ? (
+                  <Loader2 className="size-6 animate-spin" aria-hidden />
+                ) : (
+                  <Check className="size-7" aria-hidden />
+                )
               ) : (
                 key
               )}

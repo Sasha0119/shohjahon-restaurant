@@ -15,7 +15,7 @@ describe("CSV", () => {
   });
 
   it("neutralises spreadsheet formulas in text cells", () => {
-    expect(csvCell("=HYPERLINK(\"http://evil\")")).toBe("\"'=HYPERLINK(\"\"http://evil\"\")\"");
+    expect(csvCell('=HYPERLINK("http://evil")')).toBe('"\'=HYPERLINK(""http://evil"")"');
     expect(csvCell("+1+1")).toBe("'+1+1");
     expect(csvCell("-cmd")).toBe("'-cmd");
     expect(csvCell("@SUM(A1)")).toBe("'@SUM(A1)");
@@ -23,7 +23,13 @@ describe("CSV", () => {
   });
 
   it("writes an Excel-friendly document", () => {
-    const doc = csvDocument(["a", "b"], [[1, "x"], [2, "y,z"]]);
+    const doc = csvDocument(
+      ["a", "b"],
+      [
+        [1, "x"],
+        [2, "y,z"],
+      ],
+    );
     expect(doc.startsWith("﻿")).toBe(true);
     expect(doc).toBe('﻿a,b\r\n1,x\r\n2,"y,z"\r\n');
     expect(centsToDecimal(1250)).toBe("12.50");

@@ -28,14 +28,22 @@ describe.skipIf(!TEST_DATABASE_URL)("reservations (integration)", () => {
     request(app)
       .post("/api/reservations")
       .set("Origin", ORIGIN)
-      .send({ date, time, partySize: 2, name: "Dilshod", phone: `+99890${String(++phoneCounter).padStart(7, "0")}`, ...over });
+      .send({
+        date,
+        time,
+        partySize: 2,
+        name: "Dilshod",
+        phone: `+99890${String(++phoneCounter).padStart(7, "0")}`,
+        ...over,
+      });
 
   const signIn = async (path: string, body: object) => {
     const res = await request(app).post(path).set("Origin", ORIGIN).send(body);
     return (res.headers["set-cookie"] as unknown as string[])[0]!.split(";")[0]!;
   };
   const waiter = () => signIn("/api/auth/pin", { staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin });
-  const kitchen = () => signIn("/api/auth/pin", { staffId: TEST_PIN_STAFF.kitchen.id, pin: TEST_PIN_STAFF.kitchen.pin });
+  const kitchen = () =>
+    signIn("/api/auth/pin", { staffId: TEST_PIN_STAFF.kitchen.id, pin: TEST_PIN_STAFF.kitchen.pin });
   const manager = () => signIn("/api/auth/login", TEST_MANAGER);
 
   const table = (number: number) => db.diningTable.findUniqueOrThrow({ where: { number } });
@@ -76,7 +84,10 @@ describe.skipIf(!TEST_DATABASE_URL)("reservations (integration)", () => {
   });
 
   beforeEach(async () => {
-    await db.tableSession.updateMany({ where: { status: "OPEN" }, data: { status: "CLOSED", closedAt: new Date(), closeReason: "STAFF" } });
+    await db.tableSession.updateMany({
+      where: { status: "OPEN" },
+      data: { status: "CLOSED", closedAt: new Date(), closeReason: "STAFF" },
+    });
     await db.reservation.deleteMany();
     realtime.clear();
   });
@@ -130,7 +141,11 @@ describe.skipIf(!TEST_DATABASE_URL)("reservations (integration)", () => {
     it("frees the table for the same time once a booking is cancelled", async () => {
       const first = await book({ partySize: 1 }).expect(201);
       const row = await db.reservation.findFirstOrThrow();
-      await request(app).post(`/api/waiter/reservations/${row.id}/cancel`).set("Origin", ORIGIN).set("Cookie", await waiter()).expect(200);
+      await request(app)
+        .post(`/api/waiter/reservations/${row.id}/cancel`)
+        .set("Origin", ORIGIN)
+        .set("Cookie", await waiter())
+        .expect(200);
       const again = await book({ partySize: 1 }).expect(201);
       expect(again.body.reservation.tableNumber).toBe(first.body.reservation.tableNumber);
     });
@@ -184,25 +199,41 @@ describe.skipIf(!TEST_DATABASE_URL)("reservations (integration)", () => {
       await book({ name: "Dilshod", phone: "+998 90 555 66 77" }).expect(201);
       for (const cookie of [await waiter(), await manager()]) {
         const res = await request(app).get("/api/waiter/reservations").set("Cookie", cookie).expect(200);
-        expect(res.body.reservations[0]).toMatchObject({ guestName: "Dilshod", guestPhone: "+998905556677", partySize: 2 });
+        expect(res.body.reservations[0]).toMatchObject({
+          guestName: "Dilshod",
+          guestPhone: "+998905556677",
+          partySize: 2,
+        });
       }
       await request(app).get("/api/waiter/reservations").expect(401);
-      await request(app).get("/api/waiter/reservations").set("Cookie", await kitchen()).expect(403);
+      await request(app)
+        .get("/api/waiter/reservations")
+        .set("Cookie", await kitchen())
+        .expect(403);
     });
 
     it("marks the table as reserved on both table lists when it's within a day", async () => {
       const r = await reserveDirectly(2, 90);
       const expected = { startsAt: r.startsAt.toISOString(), partySize: 2, guestName: "Malika" };
-      const floor = await request(app).get("/api/waiter/tables").set("Cookie", await waiter()).expect(200);
+      const floor = await request(app)
+        .get("/api/waiter/tables")
+        .set("Cookie", await waiter())
+        .expect(200);
       expect(floor.body.tables.find((x: { number: number }) => x.number === 2).reservation).toEqual(expected);
       expect(floor.body.tables.find((x: { number: number }) => x.number === 3).reservation).toBeNull();
-      const admin = await request(app).get("/api/admin/tables").set("Cookie", await manager()).expect(200);
+      const admin = await request(app)
+        .get("/api/admin/tables")
+        .set("Cookie", await manager())
+        .expect(200);
       expect(admin.body.tables.find((x: { number: number }) => x.number === 2).reservation).toEqual(expected);
     });
 
     it("doesn't mark a table for a booking days away", async () => {
       await reserveDirectly(2, 3 * 24 * 60);
-      const floor = await request(app).get("/api/waiter/tables").set("Cookie", await waiter()).expect(200);
+      const floor = await request(app)
+        .get("/api/waiter/tables")
+        .set("Cookie", await waiter())
+        .expect(200);
       expect(floor.body.tables.find((x: { number: number }) => x.number === 2).reservation).toBeNull();
     });
 
@@ -210,9 +241,16 @@ describe.skipIf(!TEST_DATABASE_URL)("reservations (integration)", () => {
       const r = await reserveDirectly(2, 60);
       const cookie = await waiter();
       realtime.clear();
-      await request(app).post(`/api/waiter/reservations/${r.id}/cancel`).set("Origin", ORIGIN).set("Cookie", cookie).expect(200);
+      await request(app)
+        .post(`/api/waiter/reservations/${r.id}/cancel`)
+        .set("Origin", ORIGIN)
+        .set("Cookie", cookie)
+        .expect(200);
       expect(realtime.events.map((e) => e.event)).toContain("table:status");
-      const again = await request(app).post(`/api/waiter/reservations/${r.id}/cancel`).set("Origin", ORIGIN).set("Cookie", cookie);
+      const again = await request(app)
+        .post(`/api/waiter/reservations/${r.id}/cancel`)
+        .set("Origin", ORIGIN)
+        .set("Cookie", cookie);
       expect([again.status, again.body.error.code]).toEqual([409, "ALREADY_CANCELLED"]);
       expect(await db.auditLog.count({ where: { action: "reservation.cancelled", entityId: r.id } })).toBe(1);
       expect((await request(app).get("/api/waiter/reservations").set("Cookie", cookie)).body.reservations).toEqual([]);

@@ -111,7 +111,10 @@ export function registerTableAdminRoutes(on: On, db: Db, env: Env, realtime: Rea
     }
     // Deactivating a table ends its current visit.
     if (table.active && !input.active) {
-      const open = await db.tableSession.findFirst({ where: { tableId: table.id, status: "OPEN" }, select: { id: true } });
+      const open = await db.tableSession.findFirst({
+        where: { tableId: table.id, status: "OPEN" },
+        select: { id: true },
+      });
       if (open) await closeSession(db, realtime, open.id, "STAFF", { staffId: req.staff!.id, ip: req.ip });
     }
     await audit(db, {
@@ -130,7 +133,12 @@ export function registerTableAdminRoutes(on: On, db: Db, env: Env, realtime: Rea
     const table = await loadOne(req.params.tableId);
     const { format, size } = parse(qrQuery, req.query);
     const url = urlFor(table);
-    const opts = { errorCorrectionLevel: "M" as const, margin: 2, width: size, color: { dark: "#111111", light: "#ffffff" } };
+    const opts = {
+      errorCorrectionLevel: "M" as const,
+      margin: 2,
+      width: size,
+      color: { dark: "#111111", light: "#ffffff" },
+    };
     res.setHeader("Cache-Control", "private, no-store");
     res.setHeader("Content-Disposition", `inline; filename="table-${table.number}-qr.${format}"`);
     if (format === "png") {

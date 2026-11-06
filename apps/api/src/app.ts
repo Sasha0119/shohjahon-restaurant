@@ -40,7 +40,16 @@ export interface AppDeps {
   disableRateLimits?: boolean;
 }
 
-export function createApp({ db, env, logger, realtime, imageStore, paymentProvider, mailer, disableRateLimits }: AppDeps) {
+export function createApp({
+  db,
+  env,
+  logger,
+  realtime,
+  imageStore,
+  paymentProvider,
+  mailer,
+  disableRateLimits,
+}: AppDeps) {
   const provider = paymentProvider ?? defaultProvider(env);
   const app = express();
   app.disable("x-powered-by");
@@ -52,7 +61,8 @@ export function createApp({ db, env, logger, realtime, imageStore, paymentProvid
     pinoHttp({
       logger,
       redact: ["req.headers.cookie", "res.headers['set-cookie']", "req.headers.authorization"],
-      customLogLevel: (_req, res, err) => (err || res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info"),
+      customLogLevel: (_req, res, err) =>
+        err || res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info",
       autoLogging: { ignore: (req) => req.url === "/api/health" },
     }),
   );
@@ -101,15 +111,28 @@ export function createApp({ db, env, logger, realtime, imageStore, paymentProvid
   registerOrderRoutes(on, db, env, realtime);
   registerReviewRoutes(on, db, realtime);
   registerReportRoutes(on, db);
-  registerBillingRoutes(on, db, realtime, provider, mailer === undefined ? createSmtpMailer(env.SMTP_URL, env.EMAIL_FROM) : mailer);
+  registerBillingRoutes(
+    on,
+    db,
+    realtime,
+    provider,
+    mailer === undefined ? createSmtpMailer(env.SMTP_URL, env.EMAIL_FROM) : mailer,
+  );
   const store =
-    imageStore ?? (env.IMAGE_STORE === "database" ? createDatabaseImageStore(db) : createLocalImageStore(env.UPLOAD_DIR));
+    imageStore ??
+    (env.IMAGE_STORE === "database" ? createDatabaseImageStore(db) : createLocalImageStore(env.UPLOAD_DIR));
   registerUploadRoutes(on, db, store, env.MAX_UPLOAD_MB);
 
   // Uploaded photos: random file names, never overwritten → cache forever.
   app.use(
     "/uploads",
-    express.static(env.UPLOAD_DIR, { index: false, dotfiles: "deny", immutable: true, maxAge: "365d", fallthrough: true }),
+    express.static(env.UPLOAD_DIR, {
+      index: false,
+      dotfiles: "deny",
+      immutable: true,
+      maxAge: "365d",
+      fallthrough: true,
+    }),
   );
   if (store.load) {
     const load = store.load.bind(store);

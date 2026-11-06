@@ -50,9 +50,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div
-          className="mt-auto flex flex-col items-center px-6 pb-[max(env(safe-area-inset-bottom),2.5rem)] text-center"
-        >
+        <div className="mt-auto flex flex-col items-center px-6 pb-[max(env(safe-area-inset-bottom),2.5rem)] text-center">
           <div className="rise-in" style={order(0)}>
             <Wordmark size={76} layout="stack" onImage />
           </div>
@@ -99,7 +97,13 @@ export default function HomePage() {
         </div>
 
         <section className="mt-12 scroll-mt-6" id="picks" aria-labelledby="picks-title">
-          <SectionTitle id="picks-title" eyebrow title={t("home.chefsPicks")} subtitle={t("home.chefsPicksSub")} className="px-5" />
+          <SectionTitle
+            id="picks-title"
+            eyebrow
+            title={t("home.chefsPicks")}
+            subtitle={t("home.chefsPicksSub")}
+            className="px-5"
+          />
           <div className="no-scrollbar mt-5 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 lg:gap-5">
             {menu
               ? featured.map((item, i) => <FeatureCard key={item.id} item={item} priority={i < 2} />)
@@ -130,11 +134,18 @@ export default function HomePage() {
                           src={cover.image}
                           alt=""
                           fill
-                          sizes={i === 0 ? "(min-width: 1024px) 560px, (min-width: 768px) 440px, 100vw" : "(min-width: 1024px) 280px, (min-width: 768px) 220px, 50vw"}
+                          sizes={
+                            i === 0
+                              ? "(min-width: 1024px) 560px, (min-width: 768px) 440px, 100vw"
+                              : "(min-width: 1024px) 280px, (min-width: 768px) 220px, 50vw"
+                          }
                           className="-z-10 object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
                         />
                       )}
-                      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/30 to-black/5" />
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/30 to-black/5"
+                      />
                       <div className="mt-auto min-w-0">
                         <p className="font-display text-xl font-semibold leading-tight">{cat.name}</p>
                         <p className="mt-1 text-xs font-label uppercase tracking-[0.08em] text-white/75">
@@ -145,7 +156,10 @@ export default function HomePage() {
                   );
                 })
               : Array.from({ length: 5 }, (_, i) => (
-                  <Skeleton key={i} className={cn("rounded-card", i === 0 ? "col-span-2 aspect-[2/1]" : "aspect-square")} />
+                  <Skeleton
+                    key={i}
+                    className={cn("rounded-card", i === 0 ? "col-span-2 aspect-[2/1]" : "aspect-square")}
+                  />
                 ))}
           </div>
         </section>
@@ -172,15 +186,20 @@ function OpenStatus() {
   const today = WEEKDAYS[localParts(new Date(now), brand.timezone).dayIdx];
   let label = t("home.closed");
   if (state.isOpen && state.until) label = t("home.openUntil", { time: formatClock(state.until) });
-  else if (state.until && state.nextDay === today) label = t("home.closedOpensToday", { time: formatClock(state.until) });
+  else if (state.until && state.nextDay === today)
+    label = t("home.closedOpensToday", { time: formatClock(state.until) });
   else if (state.until && state.nextDay) {
     label = t("home.closedOpensOn", { day: weekdayName(state.nextDay), time: formatClock(state.until) });
   }
   return (
     <span className="inline-flex min-h-8 items-center gap-2 rounded-card glass-dark px-3.5 py-1 text-[13px] font-semibold">
       <span className="relative flex size-2">
-        {state.isOpen && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
-        <span className={cn("relative inline-flex size-2 rounded-full", state.isOpen ? "bg-emerald-400" : "bg-rose-400")} />
+        {state.isOpen && (
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+        )}
+        <span
+          className={cn("relative inline-flex size-2 rounded-full", state.isOpen ? "bg-emerald-400" : "bg-rose-400")}
+        />
       </span>
       {label}
     </span>

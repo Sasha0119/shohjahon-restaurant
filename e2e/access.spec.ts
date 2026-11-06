@@ -50,7 +50,10 @@ test("the manager lands on the dashboard and can export orders", async ({ browse
   await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   await expect(page.getByText("Sales per day")).toBeVisible();
   await page.goto("/admin/orders");
-  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Export CSV" }).click()]);
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("link", { name: "Export CSV" }).click(),
+  ]);
   expect(download.suggestedFilename()).toMatch(/^orders_\d{4}-\d{2}-\d{2}_to_\d{4}-\d{2}-\d{2}\.csv$/);
   await page.goto("/admin/audit");
   await expect(page.getByText(/Staff · login/).first()).toBeVisible();

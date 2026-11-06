@@ -91,7 +91,14 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
       const otherDay = WEEKDAYS[(today + 3) % 7]!;
       const body = { slug: "drinks", name: "Drinks", station: "bar", sortOrder: drinks.sortOrder };
 
-      expect((await asManager.put(`/api/admin/categories/${drinks.id}`, { ...body, availability: [{ days: [otherDay], from: "00:00", to: "23:59" }] })).status).toBe(200);
+      expect(
+        (
+          await asManager.put(`/api/admin/categories/${drinks.id}`, {
+            ...body,
+            availability: [{ days: [otherDay], from: "00:00", to: "23:59" }],
+          })
+        ).status,
+      ).toBe(200);
       let menu = await publicMenu();
       expect(menu.categories.some((c) => c.slug === "drinks")).toBe(false);
       expect(menu.items.some((i) => i.categoryId === drinks.id)).toBe(false);
@@ -110,15 +117,28 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
     });
 
     it("creates, hides and deletes categories", async () => {
-      const res = await asManager.post("/api/admin/categories", { slug: "specials", name: "Specials", station: "kitchen", sortOrder: 9 });
+      const res = await asManager.post("/api/admin/categories", {
+        slug: "specials",
+        name: "Specials",
+        station: "kitchen",
+        sortOrder: 9,
+      });
       expect(res.status).toBe(201);
       expect(lastEvent()).toMatchObject({ rooms: ["everyone"], event: "menu:updated" });
       expect((await publicMenu()).categories.at(-1)!.slug).toBe("specials");
 
-      await asManager.put(`/api/admin/categories/${res.body.id}`, { slug: "specials", name: "Specials", station: "kitchen", active: false });
+      await asManager.put(`/api/admin/categories/${res.body.id}`, {
+        slug: "specials",
+        name: "Specials",
+        station: "kitchen",
+        active: false,
+      });
       expect((await publicMenu()).categories.some((c) => c.slug === "specials")).toBe(false);
 
-      expect((await asManager.post("/api/admin/categories", { slug: "specials", name: "Again", station: "bar" })).body.error.code).toBe("SLUG_TAKEN");
+      expect(
+        (await asManager.post("/api/admin/categories", { slug: "specials", name: "Again", station: "bar" })).body.error
+          .code,
+      ).toBe("SLUG_TAKEN");
       expect((await asManager.del(`/api/admin/categories/${res.body.id}`)).status).toBe(204);
     });
 
@@ -139,9 +159,13 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
       const starters = (await adminMenu()).items.filter((i) => i.categoryId === "cat-starters").map((i) => i.id);
       const swapped = [starters[1]!, starters[0]!, ...starters.slice(2)];
       await asManager.put("/api/admin/menu/order", { items: { categoryId: "cat-starters", itemIds: swapped } });
-      expect((await publicMenu()).items.filter((i) => i.categoryId === "cat-starters").map((i) => i.id)).toEqual(swapped);
+      expect((await publicMenu()).items.filter((i) => i.categoryId === "cat-starters").map((i) => i.id)).toEqual(
+        swapped,
+      );
 
-      const wrong = await asManager.put("/api/admin/menu/order", { items: { categoryId: "cat-mains", itemIds: swapped } });
+      const wrong = await asManager.put("/api/admin/menu/order", {
+        items: { categoryId: "cat-mains", itemIds: swapped },
+      });
       expect(wrong.body.error.code).toBe("UNKNOWN_ITEM");
     });
   });
@@ -161,7 +185,10 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
           name: "Serve with",
           minSelect: 1,
           maxSelect: 1,
-          options: [{ name: "Cream", isDefault: true }, { name: "Ice cream", priceDeltaCents: 200 }],
+          options: [
+            { name: "Cream", isDefault: true },
+            { name: "Ice cream", priceDeltaCents: 200 },
+          ],
         },
       ],
     };
@@ -187,8 +214,22 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
         ...baseItem,
         priceCents: 800,
         modifierGroups: [
-          { id: group.id, name: "Serve with", minSelect: 1, maxSelect: 1, options: [{ ...cream, name: "Fresh cream" }, { name: "Raspberry coulis", priceDeltaCents: 100 }] },
-          { name: "Make it a pair", minSelect: 0, maxSelect: 1, options: [{ name: "Second slice", priceDeltaCents: 600 }] },
+          {
+            id: group.id,
+            name: "Serve with",
+            minSelect: 1,
+            maxSelect: 1,
+            options: [
+              { ...cream, name: "Fresh cream" },
+              { name: "Raspberry coulis", priceDeltaCents: 100 },
+            ],
+          },
+          {
+            name: "Make it a pair",
+            minSelect: 0,
+            maxSelect: 1,
+            options: [{ name: "Second slice", priceDeltaCents: 600 }],
+          },
         ],
       });
       expect(res.status).toBe(200);
@@ -231,7 +272,10 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
         ...baseItem,
         slug: "osh-test",
         name: "Toshkent oshi",
-        translations: { en: { name: "Tashkent plov", description: "Slow-steamed rice." }, ru: { name: "Ташкентский плов", description: "" } },
+        translations: {
+          en: { name: "Tashkent plov", description: "Slow-steamed rice." },
+          ru: { name: "Ташкентский плов", description: "" },
+        },
         modifierGroups: [
           {
             name: "Qoʻshimcha",
@@ -246,31 +290,53 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
       const item = (await publicMenu()).items.find((i) => i.id === res.body.id)!;
       expect(item.name).toBe("Toshkent oshi");
       // Empty strings are dropped, so a blank Russian description falls back to the default language.
-      expect(item.translations).toEqual({ en: { name: "Tashkent plov", description: "Slow-steamed rice." }, ru: { name: "Ташкентский плов" } });
+      expect(item.translations).toEqual({
+        en: { name: "Tashkent plov", description: "Slow-steamed rice." },
+        ru: { name: "Ташкентский плов" },
+      });
       expect(item.modifierGroups[0]!.translations).toEqual({ ru: { name: "Добавить" } });
       expect(item.modifierGroups[0]!.options[0]!.translations).toEqual({ en: { name: "Horse sausage" } });
       expect((await adminMenu()).items.find((i) => i.id === res.body.id)!.translations.en?.name).toBe("Tashkent plov");
 
       const cat = (await adminMenu()).categories.find((c) => c.id === "cat-desserts")!;
       await asManager.put(`/api/admin/categories/${cat.id}`, {
-        slug: cat.slug, name: cat.name, station: cat.station, availability: [],
+        slug: cat.slug,
+        name: cat.name,
+        station: cat.station,
+        availability: [],
         translations: { ru: { name: "Сладкое" } },
       });
-      expect((await publicMenu()).categories.find((c) => c.id === cat.id)!.translations).toEqual({ ru: { name: "Сладкое" } });
+      expect((await publicMenu()).categories.find((c) => c.id === cat.id)!.translations).toEqual({
+        ru: { name: "Сладкое" },
+      });
 
       // Only 2-letter language codes and known fields are accepted.
-      const bad = await asManager.post("/api/admin/items", { ...baseItem, slug: "osh-bad", translations: { english: { name: "x" } } });
+      const bad = await asManager.post("/api/admin/items", {
+        ...baseItem,
+        slug: "osh-bad",
+        translations: { english: { name: "x" } },
+      });
       expect(bad.status).toBe(400);
-      const extra = await asManager.post("/api/admin/items", { ...baseItem, slug: "osh-bad2", translations: { en: { price: "1" } } });
+      const extra = await asManager.post("/api/admin/items", {
+        ...baseItem,
+        slug: "osh-bad2",
+        translations: { en: { price: "1" } },
+      });
       expect(extra.status).toBe(400);
     });
 
     it("validates input", async () => {
-      expect((await asManager.post("/api/admin/items", { ...baseItem, slug: "lemon-tart" })).body.error.code).toBe("SLUG_TAKEN");
-      expect((await asManager.post("/api/admin/items", { ...baseItem, slug: "x1", categoryId: "nope" })).body.error.code).toBe(
-        "UNKNOWN_CATEGORY",
+      expect((await asManager.post("/api/admin/items", { ...baseItem, slug: "lemon-tart" })).body.error.code).toBe(
+        "SLUG_TAKEN",
       );
-      const bad = await asManager.post("/api/admin/items", { ...baseItem, slug: "x2", imageUrl: "https://tracker.example/x.jpg" });
+      expect(
+        (await asManager.post("/api/admin/items", { ...baseItem, slug: "x1", categoryId: "nope" })).body.error.code,
+      ).toBe("UNKNOWN_CATEGORY");
+      const bad = await asManager.post("/api/admin/items", {
+        ...baseItem,
+        slug: "x2",
+        imageUrl: "https://tracker.example/x.jpg",
+      });
       expect(bad.status).toBe(400);
       expect(bad.body.error.details[0].path).toBe("imageUrl");
     });
@@ -278,12 +344,24 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
 
   describe("upsells & combos", () => {
     it("adds and removes suggestions", async () => {
-      const res = await asManager.post("/api/admin/upsells", { itemId: "item-flat-white", suggestItemId: "item-fudge-brownie" });
+      const res = await asManager.post("/api/admin/upsells", {
+        itemId: "item-flat-white",
+        suggestItemId: "item-fudge-brownie",
+      });
       expect(res.status).toBe(201);
-      expect((await publicMenu()).suggestions).toContainEqual({ itemId: "item-flat-white", suggestItemId: "item-fudge-brownie" });
-      const dup = await asManager.post("/api/admin/upsells", { itemId: "item-flat-white", suggestItemId: "item-fudge-brownie" });
+      expect((await publicMenu()).suggestions).toContainEqual({
+        itemId: "item-flat-white",
+        suggestItemId: "item-fudge-brownie",
+      });
+      const dup = await asManager.post("/api/admin/upsells", {
+        itemId: "item-flat-white",
+        suggestItemId: "item-fudge-brownie",
+      });
       expect(dup.body.error.code).toBe("SUGGESTION_EXISTS");
-      expect((await asManager.post("/api/admin/upsells", { itemId: "item-flat-white", suggestItemId: "item-flat-white" })).status).toBe(400);
+      expect(
+        (await asManager.post("/api/admin/upsells", { itemId: "item-flat-white", suggestItemId: "item-flat-white" }))
+          .status,
+      ).toBe(400);
       expect((await asManager.del(`/api/admin/upsells/${res.body.id}`)).status).toBe(204);
     });
 
@@ -294,7 +372,10 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
         itemIds: ["item-margherita-pizza", "item-mint-lime-cooler"],
       });
       expect(res.status).toBe(201);
-      expect((await publicMenu()).combos.find((c) => c.id === res.body.id)).toMatchObject({ name: "Pizza night", discountCents: 250 });
+      expect((await publicMenu()).combos.find((c) => c.id === res.body.id)).toMatchObject({
+        name: "Pizza night",
+        discountCents: 250,
+      });
 
       await asManager.put(`/api/admin/combos/${res.body.id}`, {
         name: "Pizza night",
@@ -304,7 +385,11 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
       });
       expect((await publicMenu()).combos.some((c) => c.id === res.body.id)).toBe(false);
 
-      const bad = await asManager.post("/api/admin/combos", { name: "Bad", discountCents: 100, itemIds: ["item-flat-white", "nope"] });
+      const bad = await asManager.post("/api/admin/combos", {
+        name: "Bad",
+        discountCents: 100,
+        itemIds: ["item-flat-white", "nope"],
+      });
       expect(bad.body.error.code).toBe("UNKNOWN_ITEM");
       expect((await asManager.del(`/api/admin/combos/${res.body.id}`)).status).toBe(204);
     });
@@ -312,7 +397,11 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
 
   describe("photo uploads", () => {
     const upload = (buf: Buffer, name = "photo.png", cookie = manager) =>
-      request(app).post("/api/admin/uploads/images").set("Origin", ORIGIN).set("Cookie", cookie).attach("image", buf, name);
+      request(app)
+        .post("/api/admin/uploads/images")
+        .set("Origin", ORIGIN)
+        .set("Cookie", cookie)
+        .attach("image", buf, name);
 
     it("re-encodes to WebP, strips metadata, resizes and serves the file", async () => {
       const big = await sharp({ create: { width: 3000, height: 2000, channels: 3, background: "#c0573a" } })
@@ -324,11 +413,14 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
       expect(res.body.url).toMatch(/^\/uploads\/[0-9a-f]{32}\.webp$/);
       expect([res.body.width, res.body.height]).toEqual([1600, 1067]);
 
-      const served = await request(app).get(res.body.url).buffer(true).parse((r, cb) => {
-        const chunks: Buffer[] = [];
-        r.on("data", (c: Buffer) => chunks.push(c));
-        r.on("end", () => cb(null, Buffer.concat(chunks)));
-      });
+      const served = await request(app)
+        .get(res.body.url)
+        .buffer(true)
+        .parse((r, cb) => {
+          const chunks: Buffer[] = [];
+          r.on("data", (c: Buffer) => chunks.push(c));
+          r.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
       expect(served.status).toBe(200);
       expect(served.headers["content-type"]).toBe("image/webp");
       expect(served.headers["cache-control"]).toContain("immutable");
@@ -350,7 +442,11 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
     it("rejects files that aren't images, tiny images and oversize files", async () => {
       const fake = await upload(Buffer.from("<script>alert(1)</script>"), "evil.png");
       expect(fake.status).toBe(415);
-      const tiny = await upload(await sharp({ create: { width: 50, height: 50, channels: 3, background: "#fff" } }).png().toBuffer());
+      const tiny = await upload(
+        await sharp({ create: { width: 50, height: 50, channels: 3, background: "#fff" } })
+          .png()
+          .toBuffer(),
+      );
       expect(tiny.body.error.code).toBe("IMAGE_TOO_SMALL");
       const huge = await upload(Buffer.alloc(1_200_000, 1), "huge.png");
       expect(huge.status).toBe(413);
@@ -359,14 +455,27 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
     });
 
     it("is manager-only and blocks cross-site uploads", async () => {
-      const png = await sharp({ create: { width: 300, height: 300, channels: 3, background: "#fff" } }).png().toBuffer();
-      const waiterRes = await request(app).post("/api/auth/pin").set("Origin", ORIGIN).send({ staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin });
+      const png = await sharp({ create: { width: 300, height: 300, channels: 3, background: "#fff" } })
+        .png()
+        .toBuffer();
+      const waiterRes = await request(app)
+        .post("/api/auth/pin")
+        .set("Origin", ORIGIN)
+        .send({ staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin });
       const waiter = (waiterRes.headers["set-cookie"] as unknown as string[])[0]!.split(";")[0]!;
       expect((await upload(png, "x.png", waiter)).status).toBe(403);
-      const evil = await request(app).post("/api/admin/uploads/images").set("Origin", "https://evil.example").set("Cookie", manager).attach("image", png, "x.png");
+      const evil = await request(app)
+        .post("/api/admin/uploads/images")
+        .set("Origin", "https://evil.example")
+        .set("Cookie", manager)
+        .attach("image", png, "x.png");
       expect(evil.status).toBe(403);
       // Multipart is accepted on the upload endpoint only.
-      const elsewhere = await request(app).post("/api/admin/categories").set("Origin", ORIGIN).set("Cookie", manager).attach("image", png, "x.png");
+      const elsewhere = await request(app)
+        .post("/api/admin/categories")
+        .set("Origin", ORIGIN)
+        .set("Cookie", manager)
+        .attach("image", png, "x.png");
       expect(elsewhere.body.error.code).toBe("FORBIDDEN_ORIGIN");
     });
 
@@ -382,18 +491,27 @@ describe.skipIf(!TEST_DATABASE_URL)("menu & menu management (integration)", () =
       });
       const dbApp = createApp({ db, env, logger: pino({ level: "silent" }), realtime, disableRateLimits: true }).app;
       const before = (await readdir(uploadDir)).length;
-      const png = await sharp({ create: { width: 400, height: 300, channels: 3, background: "#1a6" } }).png().toBuffer();
-      const res = await request(dbApp).post("/api/admin/uploads/images").set("Origin", ORIGIN).set("Cookie", manager).attach("image", png, "db.png");
+      const png = await sharp({ create: { width: 400, height: 300, channels: 3, background: "#1a6" } })
+        .png()
+        .toBuffer();
+      const res = await request(dbApp)
+        .post("/api/admin/uploads/images")
+        .set("Origin", ORIGIN)
+        .set("Cookie", manager)
+        .attach("image", png, "db.png");
       expect(res.status).toBe(201);
       expect(res.body.url).toMatch(/^\/uploads\/[0-9a-f]{32}\.webp$/);
       expect((await readdir(uploadDir)).length).toBe(before);
       expect(await db.storedImage.count()).toBe(1);
 
-      const served = await request(dbApp).get(res.body.url).buffer(true).parse((r, cb) => {
-        const chunks: Buffer[] = [];
-        r.on("data", (c: Buffer) => chunks.push(c));
-        r.on("end", () => cb(null, Buffer.concat(chunks)));
-      });
+      const served = await request(dbApp)
+        .get(res.body.url)
+        .buffer(true)
+        .parse((r, cb) => {
+          const chunks: Buffer[] = [];
+          r.on("data", (c: Buffer) => chunks.push(c));
+          r.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
       expect(served.status).toBe(200);
       expect(served.headers["content-type"]).toBe("image/webp");
       expect(served.headers["cache-control"]).toContain("immutable");

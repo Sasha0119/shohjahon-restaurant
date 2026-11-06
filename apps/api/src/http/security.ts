@@ -53,7 +53,8 @@ export function isUnsafeRequestAllowed(
   const type = req.headers["content-type"];
   const hasBody = req.headers["content-length"] !== undefined && req.headers["content-length"] !== "0";
   const t = typeof type === "string" ? type.toLowerCase() : "";
-  const allowedType = t.startsWith("application/json") || (MULTIPART_PATHS.has(req.path) && t.startsWith("multipart/form-data"));
+  const allowedType =
+    t.startsWith("application/json") || (MULTIPART_PATHS.has(req.path) && t.startsWith("multipart/form-data"));
   if (hasBody && !allowedType) {
     return { ok: false, reason: "Content-Type must be application/json" };
   }

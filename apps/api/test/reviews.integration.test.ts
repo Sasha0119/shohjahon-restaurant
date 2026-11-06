@@ -22,8 +22,21 @@ describe.skipIf(!TEST_DATABASE_URL)("reviews & feedback log (integration)", () =
   beforeAll(async () => {
     t = await createTestDb();
     db = t.db;
-    const env = parseEnv({ DATABASE_URL: t.url, CORS_ORIGINS: ORIGIN, PUBLIC_WEB_URL: ORIGIN, QR_TOKEN_SECRET: QR, COOKIE_SECRET: "c".repeat(40) });
-    app = createApp({ db, env, logger: pino({ level: "silent" }), realtime: rt, mailer: null, disableRateLimits: true }).app;
+    const env = parseEnv({
+      DATABASE_URL: t.url,
+      CORS_ORIGINS: ORIGIN,
+      PUBLIC_WEB_URL: ORIGIN,
+      QR_TOKEN_SECRET: QR,
+      COOKIE_SECRET: "c".repeat(40),
+    });
+    app = createApp({
+      db,
+      env,
+      logger: pino({ level: "silent" }),
+      realtime: rt,
+      mailer: null,
+      disableRateLimits: true,
+    }).app;
   }, 180_000);
   afterAll(async () => {
     await t?.cleanup();
@@ -32,7 +45,12 @@ describe.skipIf(!TEST_DATABASE_URL)("reviews & feedback log (integration)", () =
   const cookie = (res: request.Response) => (res.headers["set-cookie"] as unknown as string[])[0]!.split(";")[0]!;
   const seat = async (n: number, confirmJoin = false) => {
     const tb = await db.diningTable.findUniqueOrThrow({ where: { number: n } });
-    return cookie(await request(app).post(`/api/tables/${createQrToken(QR, tb.id, tb.qrVersion)}/join`).set("Origin", ORIGIN).send({ confirmJoin }));
+    return cookie(
+      await request(app)
+        .post(`/api/tables/${createQrToken(QR, tb.id, tb.qrVersion)}/join`)
+        .set("Origin", ORIGIN)
+        .send({ confirmJoin }),
+    );
   };
   const post = (c: string, p: string, body: object = {}, key?: string) => {
     const r = request(app).post(p).set("Origin", ORIGIN).set("Cookie", c);
@@ -49,7 +67,12 @@ describe.skipIf(!TEST_DATABASE_URL)("reviews & feedback log (integration)", () =
     await post(g, "/api/session/orders", { cartVersion: v }, randomUUID());
     if (payInFull) {
       const total = (await get(g, "/api/session/bill")).body.bill.totalCents;
-      const paid = await post(g, "/api/session/payments", { splitMode: "full", method: "card", amountCents: total }, randomUUID());
+      const paid = await post(
+        g,
+        "/api/session/payments",
+        { splitMode: "full", method: "card", amountCents: total },
+        randomUUID(),
+      );
       expect(paid.body.payment.status).toBe("succeeded");
     }
     return g;
@@ -94,14 +117,21 @@ describe.skipIf(!TEST_DATABASE_URL)("reviews & feedback log (integration)", () =
     expect(res.body).toEqual({ kind: "private", reviewLinks: [] });
     const evt = rt.events.find((e) => e.event === "feedback:created")!;
     expect(evt.rooms).toEqual(["managers"]);
-    expect(evt.payload).toMatchObject({ feedback: { rating: 2, comment: "Burger was cold.", status: "new", tableNumber: 5 } });
+    expect(evt.payload).toMatchObject({
+      feedback: { rating: 2, comment: "Burger was cold.", status: "new", tableNumber: 5 },
+    });
     feedbackId = (evt.payload as { feedback: { id: string } }).feedback.id;
   });
 
   it("lets a guest who paid their share rate while the table is still open", async () => {
     const a = await visit(6, false);
     const total = (await get(a, "/api/session/bill")).body.bill.totalCents;
-    await post(a, "/api/session/payments", { splitMode: "custom", method: "card", amountCents: Math.floor(total / 2) }, randomUUID());
+    await post(
+      a,
+      "/api/session/payments",
+      { splitMode: "custom", method: "card", amountCents: Math.floor(total / 2) },
+      randomUUID(),
+    );
     expect((await review(a, 3, "Slow service")).status).toBe(201);
     const friend = await seat(6, true);
     expect((await review(friend, 5)).body.error.code).toBe("PAYMENT_REQUIRED");
@@ -109,7 +139,10 @@ describe.skipIf(!TEST_DATABASE_URL)("reviews & feedback log (integration)", () =
 
   it("refuses ratings for a visit that ended more than 24 hours ago", async () => {
     const g = await visit(7, true);
-    await db.tableSession.updateMany({ where: { table: { number: 7 } }, data: { closedAt: new Date(Date.now() - 25 * 3_600_000) } });
+    await db.tableSession.updateMany({
+      where: { table: { number: 7 } },
+      data: { closedAt: new Date(Date.now() - 25 * 3_600_000) },
+    });
     expect((await review(g, 5)).status).toBe(410);
   });
 
@@ -129,7 +162,11 @@ describe.skipIf(!TEST_DATABASE_URL)("reviews & feedback log (integration)", () =
 
     it("marks feedback handled and back to new, recording who", async () => {
       const patch = (status: string) =>
-        request(app).patch(`/api/admin/feedback/${feedbackId}`).set("Origin", ORIGIN).set("Cookie", manager).send({ status });
+        request(app)
+          .patch(`/api/admin/feedback/${feedbackId}`)
+          .set("Origin", ORIGIN)
+          .set("Cookie", manager)
+          .send({ status });
       const res = await patch("handled");
       expect(res.body.feedback).toMatchObject({ status: "handled", handledBy: "Manager" });
       expect((await get(manager, "/api/admin/feedback?status=new")).body.feedback).toHaveLength(1);
@@ -141,10 +178,17 @@ describe.skipIf(!TEST_DATABASE_URL)("reviews & feedback log (integration)", () =
 
     it("hides public reviews from the log and is manager-only", async () => {
       const happy = await db.review.findFirstOrThrow({ where: { rating: 5 } });
-      const res = await request(app).patch(`/api/admin/feedback/${happy.id}`).set("Origin", ORIGIN).set("Cookie", manager).send({ status: "new" });
+      const res = await request(app)
+        .patch(`/api/admin/feedback/${happy.id}`)
+        .set("Origin", ORIGIN)
+        .set("Cookie", manager)
+        .send({ status: "new" });
       expect(res.status).toBe(404);
       const waiter = cookie(
-        await request(app).post("/api/auth/pin").set("Origin", ORIGIN).send({ staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin }),
+        await request(app)
+          .post("/api/auth/pin")
+          .set("Origin", ORIGIN)
+          .send({ staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin }),
       );
       expect((await get(waiter, "/api/admin/feedback")).status).toBe(403);
     });

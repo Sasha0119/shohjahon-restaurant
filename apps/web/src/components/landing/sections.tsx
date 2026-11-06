@@ -130,7 +130,12 @@ function Chapter({
       </div>
       <div className="sj-chapter-flow">
         <Unveil slug={photos[0]} className="sj-chapter-photo" speed={-6} sizes="(min-width: 48rem) 45vw, 100vw" />
-        <Unveil slug={photos[1]} className="sj-chapter-photo sj-chapter-photo--small" speed={12} sizes="(min-width: 48rem) 26vw, 60vw" />
+        <Unveil
+          slug={photos[1]}
+          className="sj-chapter-photo sj-chapter-photo--small"
+          speed={12}
+          sizes="(min-width: 48rem) 26vw, 60vw"
+        />
         <div className="sj-chapter-text">
           <p className="sj-lead">{body}</p>
           <div className="sj-chapter-actions">{children}</div>

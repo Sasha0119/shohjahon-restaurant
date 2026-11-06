@@ -29,7 +29,7 @@ const lines: string[] = [
   "> Generated from `packages/shared/src/api/routes.ts` by `npm run docs:api`. Do not edit by hand.",
   "",
   "- Base path `/api`, JSON bodies, money in integer **cents**.",
-  "- Errors: `{ \"error\": { \"code\": \"CART_CHANGED\", \"message\": \"…\", \"details\"?: … } }`.",
+  '- Errors: `{ "error": { "code": "CART_CHANGED", "message": "…", "details"?: … } }`.',
   "- **guest** = has a guest cookie from scanning the table QR. Roles = staff cookie with that role.",
   "- **Idem.** = requires an `Idempotency-Key` header (16–128 chars). Retrying returns the first response.",
   "- Inputs are validated with the named Zod schema from `packages/shared/src/api/schemas.ts`.",
@@ -39,7 +39,12 @@ const lines: string[] = [
 ];
 
 for (const [group, rs] of groups) {
-  lines.push(`## ${group}`, "", "| Method | Path | Access | Input | Idem. | Emits | Phase | Description |", "|---|---|---|---|---|---|---|---|");
+  lines.push(
+    `## ${group}`,
+    "",
+    "| Method | Path | Access | Input | Idem. | Emits | Phase | Description |",
+    "|---|---|---|---|---|---|---|---|",
+  );
   for (const r of rs) {
     lines.push(
       `| ${r.method} | \`${r.path}\` | ${access(r)} | ${r.input ? `\`${r.input}\`` : ""} | ${r.idempotent ? "✓" : ""} | ${(r.emits ?? []).map((e) => `\`${e}\``).join(" ")} | ${r.phase} | ${r.summary}${r.rateLimit && r.rateLimit !== "default" ? ` _(rate limit: ${r.rateLimit})_` : ""} |`,
@@ -63,7 +68,7 @@ lines.push(
   "| Event | Direction | Room | Payload |",
   "|---|---|---|---|",
   "| `session:sync` | client → server (ack) | — | `{ version }` → `{ upToDate }` or `{ snapshot }` |",
-  "| `kds:subscribe` | client → server (ack) | — | `{ stations: (\"kitchen\"\\|\"bar\")[] }` |",
+  '| `kds:subscribe` | client → server (ack) | — | `{ stations: ("kitchen"\\|"bar")[] }` |',
   "| `session:guests` | server → client | session | `{ version, guests }` |",
   "| `cart:updated` | server → client | session | `{ version, cart }` |",
   "| `order:created` | server → client | session | `{ version, tickets }` |",

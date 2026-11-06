@@ -103,7 +103,8 @@ describe("enum mapping", () => {
   });
 
   it("round-trips camelCase wire values", () => {
-    for (const v of Object.values(PaymentMethod)) expect(enums.paymentMethod.toDb(enums.paymentMethod.fromDb(v))).toBe(v);
+    for (const v of Object.values(PaymentMethod))
+      expect(enums.paymentMethod.toDb(enums.paymentMethod.fromDb(v))).toBe(v);
     for (const v of Object.values(CallType)) expect(enums.callType.toDb(enums.callType.fromDb(v))).toBe(v);
     expect(enums.paymentMethod.fromDb("APPLE_PAY")).toBe("applePay");
     expect(enums.callType.toDb("cashPayment")).toBe("CASH_PAYMENT");

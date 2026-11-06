@@ -77,7 +77,9 @@ export function LanguageSwitcher({
             aria-label={t("language.label")}
             className={`enter ${cn(
               "glass-panel absolute z-50 w-48 overflow-hidden rounded-2xl p-1.5 text-fg",
-              placement === "below" ? "right-0 top-[calc(100%+0.5rem)] origin-top-right" : "bottom-[calc(100%+0.5rem)] left-0 origin-bottom-left",
+              placement === "below"
+                ? "right-0 top-[calc(100%+0.5rem)] origin-top-right"
+                : "bottom-[calc(100%+0.5rem)] left-0 origin-bottom-left",
             )}`}
           >
             {brand.languages.map((code) => {
@@ -94,7 +96,9 @@ export function LanguageSwitcher({
                       active ? "bg-primary/10 font-semibold text-primary" : "hover:bg-muted",
                     )}
                   >
-                    <span className="w-6 text-[11px] font-semibold tracking-[0.12em] text-fg-muted">{localeShort[code]}</span>
+                    <span className="w-6 text-[11px] font-semibold tracking-[0.12em] text-fg-muted">
+                      {localeShort[code]}
+                    </span>
                     <span className="flex-1">{localeNames[code]}</span>
                     {active && <Check className="size-4" aria-hidden />}
                   </button>

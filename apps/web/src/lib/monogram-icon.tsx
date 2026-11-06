@@ -24,49 +24,47 @@ export async function renderMonogramIcon(px: number, opts: { maskable?: boolean 
   const stroke = Math.max(2, Math.round(px / 110));
 
   return new ImageResponse(
-    (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: bg,
+      }}
+    >
       <div
         style={{
-          width: "100%",
-          height: "100%",
+          width: mark,
+          height: mark,
+          borderRadius: "50%",
+          border: `${stroke}px solid ${primary}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: bg,
         }}
       >
         <div
           style={{
-            width: mark,
-            height: mark,
+            width: mark - stroke * 2 - mark * 0.1,
+            height: mark - stroke * 2 - mark * 0.1,
             borderRadius: "50%",
-            border: `${stroke}px solid ${primary}`,
+            border: `${Math.max(1, stroke / 2)}px solid ${primary}66`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            color: primary,
+            fontFamily: "Playfair Display",
+            fontSize: mark * (letter.length > 1 ? 0.38 : 0.56),
+            lineHeight: 1,
+            paddingBottom: mark * 0.04,
           }}
         >
-          <div
-            style={{
-              width: mark - stroke * 2 - mark * 0.1,
-              height: mark - stroke * 2 - mark * 0.1,
-              borderRadius: "50%",
-              border: `${Math.max(1, stroke / 2)}px solid ${primary}66`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: primary,
-              fontFamily: "Playfair Display",
-              fontSize: mark * (letter.length > 1 ? 0.38 : 0.56),
-              lineHeight: 1,
-              paddingBottom: mark * 0.04,
-            }}
-          >
-            {letter}
-          </div>
+          {letter}
         </div>
       </div>
-    ),
+    </div>,
     {
       width: px,
       height: px,

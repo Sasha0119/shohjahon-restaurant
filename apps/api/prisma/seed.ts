@@ -28,8 +28,9 @@ async function main() {
 
   try {
     // Menu text is in Uzbek and Russian (oʻ, ʼ, Cyrillic): the database must be UTF-8.
-    const [{ server_encoding: encoding } = { server_encoding: "?" }] =
-      await db.$queryRaw<{ server_encoding: string }[]>`SHOW server_encoding`;
+    const [{ server_encoding: encoding } = { server_encoding: "?" }] = await db.$queryRaw<
+      { server_encoding: string }[]
+    >`SHOW server_encoding`;
     if (encoding.toUpperCase() !== "UTF8") {
       throw new Error(
         `Database encoding is ${encoding}; it must be UTF8. Create it with: CREATE DATABASE … ENCODING 'UTF8' TEMPLATE template0;`,

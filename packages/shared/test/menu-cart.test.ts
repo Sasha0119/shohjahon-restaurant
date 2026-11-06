@@ -63,7 +63,12 @@ describe("seed menu", () => {
   });
 
   it("is written in Uzbek with English and Russian for every text", () => {
-    const check = (base: string, t: Record<string, Record<string, string | undefined> | undefined> | undefined, field: string, where: string) => {
+    const check = (
+      base: string,
+      t: Record<string, Record<string, string | undefined> | undefined> | undefined,
+      field: string,
+      where: string,
+    ) => {
       expect(base.trim(), where).not.toBe("");
       expect(base, where).not.toMatch(/[Ѐ-ӿ]/); // the base text is Uzbek (Latin)
       expect(t?.en?.[field]?.trim(), `${where} (en)`).toBeTruthy();
@@ -81,7 +86,8 @@ describe("seed menu", () => {
         for (const o of g.options) check(o.name, o.translations, "name", `${item.id}/${g.id}/${o.id}`);
       }
     }
-    for (const rule of seedMenu.upsells) if (rule.kind === "combo") check(rule.name, rule.translations, "name", rule.id);
+    for (const rule of seedMenu.upsells)
+      if (rule.kind === "combo") check(rule.name, rule.translations, "name", rule.id);
   });
 
   it("prices whole so'm and has a photo for every dish", () => {
@@ -165,11 +171,9 @@ describe("upsells", () => {
   });
 
   it("does not suggest what is already in the cart", () => {
-    const out = suggestionsForCart(
-      ["item-double-smash-burger", "item-parmesan-fries"],
-      classicMenu.upsells,
-      byId,
-    ).map((i) => i.slug);
+    const out = suggestionsForCart(["item-double-smash-burger", "item-parmesan-fries"], classicMenu.upsells, byId).map(
+      (i) => i.slug,
+    );
     expect(out).toContain("house-iced-tea");
     expect(out).not.toContain("parmesan-fries");
   });

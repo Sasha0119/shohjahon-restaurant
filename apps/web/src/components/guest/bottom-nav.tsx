@@ -48,9 +48,7 @@ export function BottomNav() {
             <>
               <span className="relative grid h-8 w-14 place-items-center">
                 {active && (
-                  <span
-                    className="absolute inset-0 rounded-card bg-primary/12 ring-1 ring-inset ring-gold-line"
-                  />
+                  <span className="absolute inset-0 rounded-card bg-primary/12 ring-1 ring-inset ring-gold-line" />
                 )}
                 <Icon className="relative size-[22px]" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
                 {key === "cart" && (
@@ -67,7 +65,9 @@ export function BottomNav() {
                   </>
                 )}
               </span>
-              <span className="max-w-full truncate px-0.5 text-[11px] font-semibold tracking-wide md:line-clamp-2 md:whitespace-normal md:text-center md:leading-tight">{label}</span>
+              <span className="max-w-full truncate px-0.5 text-[11px] font-semibold tracking-wide md:line-clamp-2 md:whitespace-normal md:text-center md:leading-tight">
+                {label}
+              </span>
             </>
           );
           const cls = cn(

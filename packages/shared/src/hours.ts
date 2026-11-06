@@ -62,9 +62,7 @@ export function openState(hours: OpeningHours, date: Date, timeZone?: string): O
   // Closed: find the next opening within the next 7 days.
   for (let offset = 0; offset < 8; offset++) {
     const day = WEEKDAYS[(dayIdx + offset) % 7]!;
-    const slots: OpeningSlot[] = [...(hours[day] ?? [])].sort(
-      (a, b) => toMinutes(a.open) - toMinutes(b.open),
-    );
+    const slots: OpeningSlot[] = [...(hours[day] ?? [])].sort((a, b) => toMinutes(a.open) - toMinutes(b.open));
     const next = slots.find((s) => offset > 0 || toMinutes(s.open) > minute);
     if (next) return { isOpen: false, until: next.open, nextDay: day };
   }

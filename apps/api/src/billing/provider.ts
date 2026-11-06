@@ -9,7 +9,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  *  • parseWebhook()  → verify the Stripe-Signature header, map the event
  *  • name            → stored on each payment ("stripe")
  */
-export interface ChargeRequest {
+interface ChargeRequest {
   /** Our payment id — also the provider idempotency key, so a retry never charges twice. */
   paymentId: string;
   /** Amount + tip, in minor units. */
@@ -23,7 +23,7 @@ export type ChargeOutcome =
   | { status: "succeeded"; providerRef: string | null }
   | { status: "failed"; providerRef: string | null; reason: string };
 
-export interface WebhookEvent {
+interface WebhookEvent {
   paymentId: string;
   outcome: ChargeOutcome;
 }
@@ -60,11 +60,16 @@ export function createMockProvider(webhookSecret: string): PaymentProvider {
     parseWebhook(rawBody, headers) {
       const sig = headers["x-mock-signature"];
       const expected = createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
-      if (typeof sig !== "string" || sig.length !== expected.length || !timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+      if (
+        typeof sig !== "string" ||
+        sig.length !== expected.length ||
+        !timingSafeEqual(Buffer.from(sig), Buffer.from(expected))
+      ) {
         throw new Error("Invalid webhook signature");
       }
       const body = JSON.parse(rawBody.toString("utf8")) as { paymentId?: string; status?: string; reason?: string };
-      if (!body.paymentId || (body.status !== "succeeded" && body.status !== "failed")) throw new Error("Malformed webhook");
+      if (!body.paymentId || (body.status !== "succeeded" && body.status !== "failed"))
+        throw new Error("Malformed webhook");
       return {
         paymentId: body.paymentId,
         outcome:

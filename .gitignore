@@ -23,3 +23,18 @@ e2e/.uploads/
 
 # Local tool caches
 .brud/
+
+# AI agent files
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+GEMINI.md
+.claude/
+.cursor/
+.cursorrules
+.windsurf/
+.windsurfrules
+.clinerules
+.aider*
+.mcp.json
+.github/copilot-instructions.md

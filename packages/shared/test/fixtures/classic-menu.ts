@@ -1,11 +1,4 @@
-import type {
-  Category,
-  Menu,
-  MenuItem,
-  ModifierGroup,
-  ModifierOption,
-  UpsellRule,
-} from "../../src/types";
+import type { Category, Menu, MenuItem, ModifierGroup, ModifierOption, UpsellRule } from "../../src/types";
 
 /**
  * Test fixture: the original demo menu (prices in cents), kept so logic tests
@@ -52,8 +45,7 @@ function item(input: ItemInput): MenuItem {
 }
 
 // Shared modifier groups
-const pizzaSize = () =>
-  pickOne("size", "Size", [opt("10in", '10" classic', 0, true), opt("14in", '14" large', 5)]);
+const pizzaSize = () => pickOne("size", "Size", [opt("10in", '10" classic', 0, true), opt("14in", '14" large', 5)]);
 const coffeeMilk = () =>
   pickOne("milk", "Milk", [
     opt("whole", "Whole milk", 0, true),
@@ -69,7 +61,7 @@ const coffeeExtras = () =>
   ]);
 
 // ── categories ───────────────────────────────────────────────────────────────
-export const categories: Category[] = [
+const categories: Category[] = [
   {
     id: "cat-starters",
     slug: "starters",
@@ -115,7 +107,7 @@ export const categories: Category[] = [
 ];
 
 // ── items ────────────────────────────────────────────────────────────────────
-export const items: MenuItem[] = [
+const items: MenuItem[] = [
   // Starters
   item({
     slug: "tomato-bruschetta",
@@ -127,7 +119,9 @@ export const items: MenuItem[] = [
     tags: ["vegan"],
     allergens: ["gluten"],
     calories: 320,
-    modifierGroups: [maybeOne("extras", "Make it richer", [opt("stracciatella", "Add stracciatella (contains milk)", 3.5)])],
+    modifierGroups: [
+      maybeOne("extras", "Make it richer", [opt("stracciatella", "Add stracciatella (contains milk)", 3.5)]),
+    ],
   }),
   item({
     slug: "crispy-chicken-tenders",
@@ -187,8 +181,7 @@ export const items: MenuItem[] = [
     slug: "double-smash-burger",
     categoryId: "cat-mains",
     name: "Double Smash Burger",
-    description:
-      "Two crisp-edged beef patties, aged cheddar, pickles and house sauce on a toasted brioche bun.",
+    description: "Two crisp-edged beef patties, aged cheddar, pickles and house sauce on a toasted brioche bun.",
     price: $(18.5),
     tags: ["halal"],
     allergens: ["gluten", "milk", "eggs", "mustard", "sesame"],
@@ -248,8 +241,7 @@ export const items: MenuItem[] = [
     slug: "mixed-grill-skewers",
     categoryId: "cat-mains",
     name: "Charcoal Mixed Grill",
-    description:
-      "Marinated chicken and lamb skewers, blistered peppers, roast potatoes and two house dips.",
+    description: "Marinated chicken and lamb skewers, blistered peppers, roast potatoes and two house dips.",
     price: $(26),
     tags: ["halal", "gluten-free", "spicy"],
     allergens: ["milk"],
@@ -266,8 +258,7 @@ export const items: MenuItem[] = [
     slug: "rainbow-buddha-bowl",
     categoryId: "cat-mains",
     name: "Rainbow Buddha Bowl",
-    description:
-      "Roast sweet potato, chickpeas, avocado, pickled red cabbage, greens and tahini-lemon dressing.",
+    description: "Roast sweet potato, chickpeas, avocado, pickled red cabbage, greens and tahini-lemon dressing.",
     price: $(16.5),
     tags: ["vegan", "gluten-free"],
     allergens: ["sesame"],
@@ -475,7 +466,7 @@ const suggest = (from: string, to: string): UpsellRule => ({
   suggestItemId: `item-${to}`,
 });
 
-export const upsells: UpsellRule[] = [
+const upsells: UpsellRule[] = [
   suggest("double-smash-burger", "parmesan-fries"),
   suggest("double-smash-burger", "house-iced-tea"),
   suggest("steak-frites", "tomato-bruschetta"),

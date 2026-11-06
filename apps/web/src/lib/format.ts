@@ -2,7 +2,7 @@ import { brand, localize, type LocaleCode } from "@app/config";
 import { currencyDigits, formatMoney, parseMoney, zonedDate, type Money } from "@app/shared";
 
 /** UI language → the locale used for dates, times and numbers. */
-export const LOCALE_TAGS: Record<LocaleCode, string> = {
+const LOCALE_TAGS: Record<LocaleCode, string> = {
   uz: "uz-Latn-UZ",
   en: "en-GB",
   ru: "ru-RU",
@@ -17,7 +17,6 @@ let current: LocaleCode = brand.defaultLanguage;
 export function setFormatLanguage(lang: LocaleCode) {
   current = lang;
 }
-export const formatLanguage = (): LocaleCode => current;
 /** BCP 47 tag for Intl APIs, e.g. "uz-Latn-UZ". */
 export const formatLocale = (): string => LOCALE_TAGS[current];
 
@@ -69,7 +68,9 @@ export const formatPercent = (value: number) =>
 export function formatNumber(value: number): string {
   // Whole counts in Uzbek are grouped by hand (see groupDigits); Chrome has no uz data.
   if (current === "uz" && Number.isInteger(value)) {
-    const grouped = Math.abs(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    const grouped = Math.abs(value)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     return `${value < 0 ? "−" : ""}${grouped}`;
   }
   return new Intl.NumberFormat(formatLocale()).format(value);
@@ -78,9 +79,7 @@ export function formatNumber(value: number): string {
 /** "23:00" → "23:00" (uz/ru/en-GB 24-hour clock). */
 export function formatClock(hhmm: string, locale = formatLocale()): string {
   const [h = 0, m = 0] = hhmm.split(":").map(Number);
-  return new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(
-    new Date(2000, 0, 1, h, m),
-  );
+  return new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(new Date(2000, 0, 1, h, m));
 }
 
 export function formatTime(timestamp: number, locale = formatLocale()): string {
@@ -96,7 +95,12 @@ export function weekdayName(day: string, style: "long" | "short" = "long", local
 
 /** A reservation's clock time in the restaurant's time zone, wherever the viewer is: "13:00". */
 export function reservationTimeOf(iso: string): string {
-  return new Intl.DateTimeFormat("en-GB", { timeZone: brand.timezone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(iso));
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: brand.timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(iso));
 }
 
 /** A reservation's date in the restaurant's time zone: "7 November". */
@@ -115,7 +119,20 @@ export function reservationLabel(iso: string): string {
  * "2026 M11 4" for uz-Latn-UZ, so Uzbek dates are put together by hand there:
  * "4-noyabr, 2026", "4-noyabr, 2026, 14:05", "Se".
  */
-const UZ_MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
+const UZ_MONTHS = [
+  "yanvar",
+  "fevral",
+  "mart",
+  "aprel",
+  "may",
+  "iyun",
+  "iyul",
+  "avgust",
+  "sentabr",
+  "oktabr",
+  "noyabr",
+  "dekabr",
+];
 const UZ_DAYS = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
 const UZ_DAYS_SHORT = ["Ya", "Du", "Se", "Ch", "Pa", "Ju", "Sh"];
 const EN_DAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -124,7 +141,9 @@ let uzDateData: boolean | undefined;
 function browserHasUzbekDates(): boolean {
   if (uzDateData === undefined) {
     try {
-      const month = new Intl.DateTimeFormat("uz-Latn-UZ", { month: "long", timeZone: "UTC" }).format(Date.UTC(2024, 0, 15));
+      const month = new Intl.DateTimeFormat("uz-Latn-UZ", { month: "long", timeZone: "UTC" }).format(
+        Date.UTC(2024, 0, 15),
+      );
       uzDateData = month.toLowerCase() === "yanvar";
     } catch {
       uzDateData = false;
@@ -169,7 +188,11 @@ export function uzbekDate(date: Date | number, opts: Intl.DateTimeFormatOptions)
 
   if (want.weekday) out.push(want.weekday === "long" ? (UZ_DAYS[dayIndex] ?? "") : (UZ_DAYS_SHORT[dayIndex] ?? ""));
   if (want.month === "numeric" || want.month === "2-digit") {
-    out.push([want.day && parts.day?.padStart(2, "0"), parts.month?.padStart(2, "0"), want.year && parts.year].filter(Boolean).join("."));
+    out.push(
+      [want.day && parts.day?.padStart(2, "0"), parts.month?.padStart(2, "0"), want.year && parts.year]
+        .filter(Boolean)
+        .join("."),
+    );
   } else if (want.month) {
     const name = UZ_MONTHS[Number(parts.month) - 1] ?? "";
     const dayMonth = want.day ? `${Number(parts.day)}-${name}` : name;
@@ -193,7 +216,10 @@ export function formatRelative(timestamp: number, now = Date.now(), locale = for
     ["day", 30],
     ["month", 12],
   ];
-  const say = locale.startsWith("uz") && !browserHasUzbekRelative() ? uzbekRelative : (v: number, u: Intl.RelativeTimeFormatUnit) => rtf.format(v, u);
+  const say =
+    locale.startsWith("uz") && !browserHasUzbekRelative()
+      ? uzbekRelative
+      : (v: number, u: Intl.RelativeTimeFormatUnit) => rtf.format(v, u);
   let value = diff;
   for (const [unit, size] of steps) {
     if (Math.abs(value) < size) return say(Math.round(value), unit);

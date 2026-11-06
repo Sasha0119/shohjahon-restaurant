@@ -25,7 +25,7 @@ export interface SessionConfig {
 
 const ACTIVE_ORDER = { status: { not: "CANCELLED" as const } };
 
-export async function hasActiveOrders(db: Db | Tx, sessionId: string): Promise<boolean> {
+async function hasActiveOrders(db: Db | Tx, sessionId: string): Promise<boolean> {
   return (await db.order.count({ where: { sessionId, ...ACTIVE_ORDER } })) > 0;
 }
 
@@ -39,7 +39,7 @@ export async function bumpVersion(db: Db | Tx, sessionId: string): Promise<numbe
   return s.version;
 }
 
-export async function touch(db: Db, session: { id: string; lastActivityAt: Date }, now = new Date()) {
+async function touch(db: Db, session: { id: string; lastActivityAt: Date }, now = new Date()) {
   if (shouldTouch(session.lastActivityAt, now)) {
     await db.tableSession.update({ where: { id: session.id }, data: { lastActivityAt: now } });
   }
@@ -102,7 +102,10 @@ export async function closeSession(
       },
     });
     if (updated.count === 0) return null;
-    const s = await tx.tableSession.findUniqueOrThrow({ where: { id: sessionId }, select: { version: true, tableId: true } });
+    const s = await tx.tableSession.findUniqueOrThrow({
+      where: { id: sessionId },
+      select: { version: true, tableId: true },
+    });
     await audit(tx, {
       actor: opts.staffId ? { type: "staff", staffId: opts.staffId } : { type: "system" },
       action: "session.closed",
@@ -239,7 +242,12 @@ export async function joinTable(db: Db, realtime: Realtime, cfg: SessionConfig, 
       include: { session: { include: { table: { select: { number: true } } } } },
     });
     if (current && current.session.status === "OPEN") {
-      const expired = isIdleExpired(current.session, await hasActiveOrders(db, current.session.id), now, cfg.idleMinutes);
+      const expired = isIdleExpired(
+        current.session,
+        await hasActiveOrders(db, current.session.id),
+        now,
+        cfg.idleMinutes,
+      );
       if (expired) {
         await closeSession(db, realtime, current.session.id, "EXPIRED");
       } else if (current.session.tableId === table.id) {
@@ -323,11 +331,17 @@ export async function joinTable(db: Db, realtime: Realtime, cfg: SessionConfig, 
   });
   if (openedSession) await emitTableStatus(db, realtime, table.id);
 
-  return { guestId: created.guestId, sessionId: created.sessionId, newGuestToken: token, rejoined: false, openedSession };
+  return {
+    guestId: created.guestId,
+    sessionId: created.sessionId,
+    newGuestToken: token,
+    rejoined: false,
+    openedSession,
+  };
 }
 
 /** How long after a visit ends a guest can still rate it. */
-export const REVIEW_WINDOW_MS = 24 * 3_600_000;
+const REVIEW_WINDOW_MS = 24 * 3_600_000;
 
 /**
  * Like resolveGuest, but also accepts a visit that ended recently (paying the

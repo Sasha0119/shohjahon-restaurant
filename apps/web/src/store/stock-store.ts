@@ -10,12 +10,12 @@ import { createStore, type StoreApi } from "zustand/vanilla";
  *    wins, whether it comes from our own reply, a socket event or a menu reload.
  *  • On failure the item falls back to the last server state and `onError` runs.
  */
-export interface StockEntry {
+interface StockEntry {
   inStock: boolean;
   version: number;
 }
 
-export interface StockSnapshot {
+interface StockSnapshot {
   id: string;
   inStock: boolean;
   stockVersion: number;

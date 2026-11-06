@@ -38,7 +38,12 @@ export function registerStaffAdminRoutes(on: On, db: Db) {
     const input = parse(staffInput, req.body);
     const data =
       input.role === "manager"
-        ? { name: input.name, role: "MANAGER" as const, email: input.email, passwordHash: await hashSecret(input.password) }
+        ? {
+            name: input.name,
+            role: "MANAGER" as const,
+            email: input.email,
+            passwordHash: await hashSecret(input.password),
+          }
         : { name: input.name, role: enums.role.toDb(input.role), pinHash: await hashSecret(input.pin) };
     try {
       const created = await db.$transaction(async (tx) => {
@@ -79,7 +84,10 @@ export function registerStaffAdminRoutes(on: On, db: Db) {
     const updated = await db.$transaction(async (tx) => {
       const s = await tx.staff.update({ where: { id: staff.id }, data: input });
       if (input.active === false) {
-        await tx.staffSession.updateMany({ where: { staffId: s.id, revokedAt: null }, data: { revokedAt: new Date() } });
+        await tx.staffSession.updateMany({
+          where: { staffId: s.id, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
       }
       await audit(tx, {
         actor: { type: "staff", staffId: req.staff!.id },
@@ -129,7 +137,8 @@ export function registerStaffAdminRoutes(on: On, db: Db) {
 
   on("POST", "/api/admin/staff/:staffId/reset-password", async (req, res) => {
     const staff = await load(req.params.staffId);
-    if (staff.role !== "MANAGER") throw new ApiError(400, "WRONG_CREDENTIAL_TYPE", "Waiters and kitchen staff use a PIN.");
+    if (staff.role !== "MANAGER")
+      throw new ApiError(400, "WRONG_CREDENTIAL_TYPE", "Waiters and kitchen staff use a PIN.");
     const { password } = parse(resetPasswordBody, req.body);
     const updated = await resetSecret(req, staff, { passwordHash: await hashSecret(password) }, "staff.password_reset");
     res.json({ staff: toDTO(updated) });

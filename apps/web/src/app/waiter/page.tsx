@@ -1,7 +1,18 @@
 "use client";
 
 import type { CallDTO, ReservationSummaryDTO, TableStatusDTO } from "@app/shared/api";
-import { Banknote, BellRing, Check, Droplets, HandHelping, Loader2, ReceiptText, Users, XCircle, type LucideIcon } from "lucide-react";
+import {
+  Banknote,
+  BellRing,
+  Check,
+  Droplets,
+  HandHelping,
+  Loader2,
+  ReceiptText,
+  Users,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ReservationsPanel } from "@/components/staff/reservations-panel";
 import { StaffGate } from "@/components/staff/staff-session";
@@ -94,7 +105,15 @@ function Floor() {
         if ((callsRef.current ?? []).some((c) => c.id === call.id)) return;
         sound.play(call.type === "bill" || call.type === "cashPayment");
         setFresh((s) => new Set(s).add(call.id));
-        setTimeout(() => setFresh((s) => { const n = new Set(s); n.delete(call.id); return n; }), 10_000);
+        setTimeout(
+          () =>
+            setFresh((s) => {
+              const n = new Set(s);
+              n.delete(call.id);
+              return n;
+            }),
+          10_000,
+        );
         setCalls((list) => [...(list ?? []).filter((c) => c.id !== call.id), call]);
         refreshTables();
       },
@@ -152,10 +171,15 @@ function Floor() {
             "lg:sticky lg:top-24 lg:block lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto lg:overscroll-contain no-scrollbar",
           )}
         >
-          <h2 id="calls-title" className="sr-only lg:not-sr-only lg:mb-3 lg:flex lg:items-center lg:gap-3 lg:px-1 lg:font-sans lg:text-[13px] lg:font-semibold lg:uppercase lg:tracking-[0.2em] lg:text-primary">
+          <h2
+            id="calls-title"
+            className="sr-only lg:not-sr-only lg:mb-3 lg:flex lg:items-center lg:gap-3 lg:px-1 lg:font-sans lg:text-[13px] lg:font-semibold lg:uppercase lg:tracking-[0.2em] lg:text-primary"
+          >
             {t("waiter.tabs.calls")}
             {!!calls?.length && (
-              <span className="grid h-6 min-w-6 place-items-center rounded-full px-2 text-xs tabular text-fg ring-1 ring-gold-line">{calls.length}</span>
+              <span className="grid h-6 min-w-6 place-items-center rounded-full px-2 text-xs tabular text-fg ring-1 ring-gold-line">
+                {calls.length}
+              </span>
             )}
           </h2>
           {!calls ? (
@@ -177,7 +201,10 @@ function Floor() {
         </section>
 
         <section aria-labelledby="tables-title" className={cn(tab === "tables" ? "block" : "hidden", "lg:block")}>
-          <h2 id="tables-title" className="sr-only lg:not-sr-only lg:mb-3 lg:flex lg:items-center lg:gap-3 lg:px-1 lg:font-sans lg:text-[13px] lg:font-semibold lg:uppercase lg:tracking-[0.2em] lg:text-primary">
+          <h2
+            id="tables-title"
+            className="sr-only lg:not-sr-only lg:mb-3 lg:flex lg:items-center lg:gap-3 lg:px-1 lg:font-sans lg:text-[13px] lg:font-semibold lg:uppercase lg:tracking-[0.2em] lg:text-primary"
+          >
             {t("waiter.tabs.tables")}
           </h2>
           <ReservationsPanel refreshOn={tables} className="mb-5 mt-5 glass-card rounded-card p-4 lg:mt-0" />
@@ -197,7 +224,13 @@ function Floor() {
                     className={`pressable ${cn(
                       "glass-card pressable flex h-full min-h-36 w-full flex-col rounded-card p-4 text-left -outline-offset-2",
                       tb.session && "lift",
-                      tb.status === "billRequested" ? "outline-2 outline-danger/60" : tb.status === "ordered" ? "outline-2 outline-warning/50" : tb.status === "seated" ? "outline-1 outline-gold-line" : "outline-0",
+                      tb.status === "billRequested"
+                        ? "outline-2 outline-danger/60"
+                        : tb.status === "ordered"
+                          ? "outline-2 outline-warning/50"
+                          : tb.status === "seated"
+                            ? "outline-1 outline-gold-line"
+                            : "outline-0",
                       !tb.session && "cursor-default opacity-75",
                     )}`}
                   >
@@ -218,7 +251,9 @@ function Floor() {
                           {t("admin.tables.guests", { count: tb.session.guestCount })}
                         </span>
                         {tb.session.openCalls > 0 && (
-                          <span className="mt-0.5 block font-semibold text-danger">{t("waiter.openCalls", { count: tb.session.openCalls })}</span>
+                          <span className="mt-0.5 block font-semibold text-danger">
+                            {t("waiter.openCalls", { count: tb.session.openCalls })}
+                          </span>
                         )}
                       </span>
                     )}
@@ -257,7 +292,9 @@ function CallCard({ call, fresh, onHandle }: { call: CallDTO; fresh: boolean; on
         <Icon className="size-7" strokeWidth={1.6} aria-hidden />
       </span>
       <div className="min-w-[9rem] flex-1">
-        <p className="font-display text-[1.75rem] font-semibold leading-tight">{t("kitchen.table", { number: call.tableNumber })}</p>
+        <p className="font-display text-[1.75rem] font-semibold leading-tight">
+          {t("kitchen.table", { number: call.tableNumber })}
+        </p>
         <p className={cn("font-semibold", urgent && "text-danger")}>{t(`waiter.callTypes.${call.type}`)}</p>
         <p className="text-sm text-fg-muted tabular">
           {formatRelative(Date.parse(call.createdAt), now)}
@@ -277,7 +314,15 @@ function CallCard({ call, fresh, onHandle }: { call: CallDTO; fresh: boolean; on
   );
 }
 
-function CloseTableSheet({ table, onClose, onClosed }: { table: FloorTable | null; onClose: () => void; onClosed: () => void }) {
+function CloseTableSheet({
+  table,
+  onClose,
+  onClosed,
+}: {
+  table: FloorTable | null;
+  onClose: () => void;
+  onClosed: () => void;
+}) {
   const t = useT();
   const [busy, setBusy] = useState(false);
   const shown = useRef<FloorTable | null>(null);
@@ -301,7 +346,12 @@ function CloseTableSheet({ table, onClose, onClosed }: { table: FloorTable | nul
   };
 
   return (
-    <Sheet open={!!table} onClose={onClose} title={t("kitchen.table", { number: tb.number })} description={t(`admin.tables.status.${tb.status}`)}>
+    <Sheet
+      open={!!table}
+      onClose={onClose}
+      title={t("kitchen.table", { number: tb.number })}
+      description={t(`admin.tables.status.${tb.status}`)}
+    >
       <p className="mt-4 text-[15px] text-fg-muted">{t("waiter.closeConfirm")}</p>
       <Button variant="danger" size="lg" className="mt-5 w-full" onClick={() => void close()} disabled={busy}>
         {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <XCircle className="size-5" aria-hidden />}

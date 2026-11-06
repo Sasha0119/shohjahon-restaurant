@@ -1,12 +1,7 @@
 import type { OrderStatus } from "./types";
 
 /** The kitchen flow, in order. "cancelled" is a terminal side-state. */
-export const ORDER_FLOW: Exclude<OrderStatus, "cancelled">[] = [
-  "received",
-  "preparing",
-  "ready",
-  "served",
-];
+export const ORDER_FLOW: Exclude<OrderStatus, "cancelled">[] = ["received", "preparing", "ready", "served"];
 
 export function statusIndex(status: OrderStatus): number {
   return status === "cancelled" ? -1 : ORDER_FLOW.indexOf(status);

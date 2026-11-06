@@ -38,7 +38,7 @@ export function compactMoney(minor: number): string {
 export const formatCount = (n: number) => formatNumber(n);
 
 /** Clean axis ticks: 0 and 3–5 round steps covering `max`. */
-export function niceTicks(max: number, target = 4): number[] {
+function niceTicks(max: number, target = 4): number[] {
   if (max <= 0) return [0];
   const raw = max / target;
   const pow = 10 ** Math.floor(Math.log10(raw));
@@ -155,7 +155,15 @@ export interface ColumnPoint {
   detail?: string;
 }
 
-export function ColumnChart({ points, label, formatTick }: { points: ColumnPoint[]; label: string; formatTick: (v: number) => string }) {
+export function ColumnChart({
+  points,
+  label,
+  formatTick,
+}: {
+  points: ColumnPoint[];
+  label: string;
+  formatTick: (v: number) => string;
+}) {
   const [active, setActive] = useState<number | null>(null);
   const plot = useRef<HTMLDivElement>(null);
   const max = Math.max(0, ...points.map((p) => p.value));
@@ -189,7 +197,11 @@ export function ColumnChart({ points, label, formatTick }: { points: ColumnPoint
       {/* y axis */}
       <div className="relative h-56 w-12 shrink-0 text-right text-xs text-fg-muted tabular" aria-hidden>
         {ticks.map((v) => (
-          <span key={v} className="absolute right-0" style={{ bottom: `${(v / top) * 100}%`, transform: "translateY(50%)" }}>
+          <span
+            key={v}
+            className="absolute right-0"
+            style={{ bottom: `${(v / top) * 100}%`, transform: "translateY(50%)" }}
+          >
             {formatTick(v)}
           </span>
         ))}
@@ -208,7 +220,12 @@ export function ColumnChart({ points, label, formatTick }: { points: ColumnPoint
           className="relative h-56 touch-pan-y rounded-sm outline-offset-4"
         >
           {ticks.map((v) => (
-            <div key={v} aria-hidden className="absolute inset-x-0 border-t border-line" style={{ bottom: `${(v / top) * 100}%` }} />
+            <div
+              key={v}
+              aria-hidden
+              className="absolute inset-x-0 border-t border-line"
+              style={{ bottom: `${(v / top) * 100}%` }}
+            />
           ))}
           <div className="absolute inset-0 flex items-end" aria-hidden>
             {points.map((p, i) => (
@@ -246,7 +263,8 @@ export function ColumnChart({ points, label, formatTick }: { points: ColumnPoint
                 className="absolute whitespace-nowrap"
                 style={{
                   left: `${((i + 0.5) / n) * 100}%`,
-                  transform: i === n - 1 && n > 1 ? "translateX(-100%)" : i === 0 && n > 1 ? "none" : "translateX(-50%)",
+                  transform:
+                    i === n - 1 && n > 1 ? "translateX(-100%)" : i === 0 && n > 1 ? "none" : "translateX(-50%)",
                 }}
               >
                 {p.axisLabel}
@@ -298,7 +316,9 @@ export function BarList({ rows, label }: { rows: BarRow[]; label: string }) {
 /** Ordinal steps of the one chart hue, mixed toward the surface (light → dark). */
 const HEAT_STEPS = [28, 52, 76, 100];
 const heatFill = (level: number) =>
-  level === 0 ? "var(--surface-muted-color)" : `color-mix(in oklab, var(--chart-color) ${HEAT_STEPS[level - 1]}%, var(--surface-color))`;
+  level === 0
+    ? "var(--surface-muted-color)"
+    : `color-mix(in oklab, var(--chart-color) ${HEAT_STEPS[level - 1]}%, var(--surface-color))`;
 
 export function Heatmap({
   grid,
@@ -357,7 +377,10 @@ export function Heatmap({
                     key={i}
                     aria-hidden
                     onPointerEnter={() => setActive(i)}
-                    className={cn("h-6 rounded-[3px] transition-[filter,box-shadow] duration-100", active === i && "ring-2 ring-fg/70 brightness-110")}
+                    className={cn(
+                      "h-6 rounded-[3px] transition-[filter,box-shadow] duration-100",
+                      active === i && "ring-2 ring-fg/70 brightness-110",
+                    )}
                     style={{ background: heatFill(level(v)) }}
                   />
                 );
@@ -404,7 +427,7 @@ export interface Delta {
 }
 
 /** Signed change vs the previous period. Up is good for every KPI shown here. */
-export function DeltaLine({ delta }: { delta: Delta }) {
+function DeltaLine({ delta }: { delta: Delta }) {
   const Icon = delta.direction === "up" ? TrendingUp : delta.direction === "down" ? TrendingDown : Minus;
   return (
     <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm">
@@ -444,9 +467,19 @@ export function StatTile({
   return (
     <div className={cn("card relative overflow-hidden p-5", hero && "ring-gold-line", className)}>
       {/* A short gold hairline over every tile ties the row together. */}
-      <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-primary/70 via-primary/30 to-transparent" />
+      <span
+        aria-hidden
+        className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-primary/70 via-primary/30 to-transparent"
+      />
       <p className="eyebrow">{label}</p>
-      <p className={cn("mt-2 font-display font-semibold tabular tracking-tight", hero ? "text-5xl" : "text-[2rem] leading-tight")}>{value}</p>
+      <p
+        className={cn(
+          "mt-2 font-display font-semibold tabular tracking-tight",
+          hero ? "text-5xl" : "text-[2rem] leading-tight",
+        )}
+      >
+        {value}
+      </p>
       {sub && <p className="mt-1 text-sm text-fg-muted">{sub}</p>}
       {delta && <DeltaLine delta={delta} />}
     </div>

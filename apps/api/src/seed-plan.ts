@@ -41,18 +41,31 @@ export interface SeedPlan {
       minSelect: number;
       maxSelect: number;
       sortOrder: number;
-      options: { id: string; name: string; translations: TextTranslations; priceDeltaCents: number; isDefault: boolean; sortOrder: number }[];
+      options: {
+        id: string;
+        name: string;
+        translations: TextTranslations;
+        priceDeltaCents: number;
+        isDefault: boolean;
+        sortOrder: number;
+      }[];
     }[];
   }[];
   suggestions: { itemId: string; suggestItemId: string; sortOrder: number }[];
-  combos: { id: string; name: string; translations: TextTranslations; discountCents: number; itemIds: string[]; sortOrder: number }[];
+  combos: {
+    id: string;
+    name: string;
+    translations: TextTranslations;
+    discountCents: number;
+    itemIds: string[];
+    sortOrder: number;
+  }[];
   tables: { number: number; seats: number }[];
 }
 
 /** Modifier ids in the seed are only unique per item ("side"), so they get prefixed. */
-export const groupDbId = (itemId: string, groupId: string) => `${itemId}--${groupId}`;
-export const optionDbId = (itemId: string, groupId: string, optionId: string) =>
-  `${itemId}--${groupId}--${optionId}`;
+const groupDbId = (itemId: string, groupId: string) => `${itemId}--${groupId}`;
+const optionDbId = (itemId: string, groupId: string, optionId: string) => `${itemId}--${groupId}--${optionId}`;
 
 export function buildSeedPlan(menu: Menu, tableCount = 12): SeedPlan {
   const categories = menu.categories.map((c) => ({

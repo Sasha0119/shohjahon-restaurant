@@ -30,7 +30,10 @@ export function StatusSteps({ status }: { status: OrderStatus }) {
       </p>
       <div className="relative">
         {/* Rail */}
-        <div aria-hidden className="absolute left-[12.5%] right-[12.5%] top-[19px] h-[3px] overflow-hidden rounded-full bg-line">
+        <div
+          aria-hidden
+          className="absolute left-[12.5%] right-[12.5%] top-[19px] h-[3px] overflow-hidden rounded-full bg-line"
+        >
           <div
             className="relative h-full origin-left overflow-hidden rounded-full bg-primary transition-transform duration-700"
             style={{ transform: `scaleX(${progress})` }}
@@ -46,7 +49,12 @@ export function StatusSteps({ status }: { status: OrderStatus }) {
             const done = i < current;
             const active = i === current;
             return (
-              <li key={step} className="flex flex-col items-center text-center" aria-current={active ? "step" : undefined} title={t(`status.${step}`)}>
+              <li
+                key={step}
+                className="flex flex-col items-center text-center"
+                aria-current={active ? "step" : undefined}
+                title={t(`status.${step}`)}
+              >
                 <span
                   className={cn(
                     "grid size-10 place-items-center rounded-full ring-4 ring-surface transition-colors duration-500",

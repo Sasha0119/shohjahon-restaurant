@@ -21,7 +21,10 @@ interface Options {
  * Live connection for staff screens (cookie-authenticated; the server puts the
  * socket in the right rooms for the role).
  */
-export function useStaffSocket(handlers: Handlers, opts: Options | (() => void) = {}): { connected: boolean; socket: AppSocket | null } {
+export function useStaffSocket(
+  handlers: Handlers,
+  opts: Options | (() => void) = {},
+): { connected: boolean; socket: AppSocket | null } {
   const options: Options = typeof opts === "function" ? { onReconnect: opts } : opts;
   const [connected, setConnected] = useState(false);
   const [socket, setSocket] = useState<AppSocket | null>(null);

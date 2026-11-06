@@ -18,8 +18,21 @@ const env = parseEnv({
   COOKIE_SECRET: "c".repeat(40),
 });
 // A DB that must never be touched by these tests.
-const noDb = new Proxy({}, { get: () => { throw new Error("DB should not be used"); } }) as unknown as Db;
-const { app, mounted } = createApp({ db: noDb, env, logger: pino({ level: "silent" }), realtime: createRecordingRealtime(), disableRateLimits: true });
+const noDb = new Proxy(
+  {},
+  {
+    get: () => {
+      throw new Error("DB should not be used");
+    },
+  },
+) as unknown as Db;
+const { app, mounted } = createApp({
+  db: noDb,
+  env,
+  logger: pino({ level: "silent" }),
+  realtime: createRecordingRealtime(),
+  disableRateLimits: true,
+});
 const ORIGIN = "http://localhost:3000";
 
 describe("lockout policy", () => {
@@ -89,7 +102,10 @@ describe("CSRF origin guard", () => {
 
 describe("route table enforcement", () => {
   it("mounts exactly the routes of the phases built so far", () => {
-    const expected = routes.filter((r) => r.phase <= 9).map((r) => `${r.method} ${r.path}`).sort();
+    const expected = routes
+      .filter((r) => r.phase <= 9)
+      .map((r) => `${r.method} ${r.path}`)
+      .sort();
     expect(mounted.map((r) => `${r.method} ${r.path}`).sort()).toEqual(expected);
   });
 
@@ -150,7 +166,10 @@ describe("HTTP behaviour", () => {
   });
 
   it("allows CORS only for configured origins", async () => {
-    const ok = await request(app).options("/api/auth/me").set("Origin", ORIGIN).set("Access-Control-Request-Method", "GET");
+    const ok = await request(app)
+      .options("/api/auth/me")
+      .set("Origin", ORIGIN)
+      .set("Access-Control-Request-Method", "GET");
     expect(ok.headers["access-control-allow-origin"]).toBe(ORIGIN);
     expect(ok.headers["access-control-allow-credentials"]).toBe("true");
     const bad = await request(app)
@@ -161,7 +180,12 @@ describe("HTTP behaviour", () => {
   });
 
   it("rate-limits logins when enabled", async () => {
-    const limited = createApp({ db: noDb, env, logger: pino({ level: "silent" }), realtime: createRecordingRealtime() }).app;
+    const limited = createApp({
+      db: noDb,
+      env,
+      logger: pino({ level: "silent" }),
+      realtime: createRecordingRealtime(),
+    }).app;
     let last = 0;
     for (let i = 0; i < 11; i++) {
       last = (await request(limited).post("/api/auth/login").set("Origin", ORIGIN).send({})).status;

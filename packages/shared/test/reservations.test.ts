@@ -1,6 +1,12 @@
 import type { OpeningHours } from "@app/config";
 import { describe, expect, it } from "vitest";
-import { bookableTimes, isValidPhone, normalizePhone, reservationDateRange, reservationInstant } from "../src/reservations";
+import {
+  bookableTimes,
+  isValidPhone,
+  normalizePhone,
+  reservationDateRange,
+  reservationInstant,
+} from "../src/reservations";
 
 // 2026-11-09 is a Monday, 2026-11-13 a Friday, 2026-11-15 a Sunday.
 const hours = {

@@ -93,8 +93,17 @@ export async function buildAnalytics(db: Db, r: ResolvedRange, timeZone: string)
     range: { from: r.from, to: r.to, days: r.days, timezone: timeZone },
     kpis: current,
     previous,
-    salesByDay: eachDay(r.from, r.to).map((date) => ({ date, revenueCents: sales.get(date) ?? 0, orders: rounds.get(date) ?? 0 })),
-    topItems: topRows.map((x) => ({ itemId: x.item_id, name: x.name, quantity: n(x.quantity), revenueCents: n(x.revenue) })),
+    salesByDay: eachDay(r.from, r.to).map((date) => ({
+      date,
+      revenueCents: sales.get(date) ?? 0,
+      orders: rounds.get(date) ?? 0,
+    })),
+    topItems: topRows.map((x) => ({
+      itemId: x.item_id,
+      name: x.name,
+      quantity: n(x.quantity),
+      revenueCents: n(x.revenue),
+    })),
     busiestHours: busiest,
     ratings: { average: current.avgRating, count: current.ratingCount, distribution },
   };

@@ -34,9 +34,7 @@ describe("applyCombos", () => {
       ]),
       seedMenu.upsells,
     );
-    expect(res.combos).toEqual([
-      { comboId: "combo-burger-night", name: "Burger night", times: 1, discount: 300 },
-    ]);
+    expect(res.combos).toEqual([{ comboId: "combo-burger-night", name: "Burger night", times: 1, discount: 300 }]);
     expect(res.discount).toBe(300);
   });
 

@@ -1,12 +1,4 @@
-import type {
-  Category,
-  Menu,
-  MenuItem,
-  ModifierGroup,
-  ModifierOption,
-  TextTranslations,
-  UpsellRule,
-} from "../types";
+import type { Category, Menu, MenuItem, ModifierGroup, ModifierOption, TextTranslations, UpsellRule } from "../types";
 
 /**
  * Demo menu for "Shohjahon": premium modern Uzbek cuisine with European
@@ -32,7 +24,13 @@ function translations<F extends string>(fields: Partial<Record<F, T3>>): TextTra
 }
 
 function opt(id: string, name: T3, extra = 0, isDefault = false): ModifierOption {
-  return { id, name: name[0], translations: translations({ name }), priceDelta: extra, ...(isDefault ? { isDefault } : {}) };
+  return {
+    id,
+    name: name[0],
+    translations: translations({ name }),
+    priceDelta: extra,
+    ...(isDefault ? { isDefault } : {}),
+  };
 }
 
 function group(id: string, name: T3, minSelect: number, maxSelect: number, options: ModifierOption[]): ModifierGroup {
@@ -70,17 +68,23 @@ function item(input: ItemInput): MenuItem {
   };
 }
 
-function category(c: Omit<Category, "name" | "description" | "translations"> & { name: T3; description: T3 }): Category {
+function category(
+  c: Omit<Category, "name" | "description" | "translations"> & { name: T3; description: T3 },
+): Category {
   const { name, description, ...rest } = c;
   return { ...rest, name: name[0], description: description[0], translations: translations({ name, description }) };
 }
 
 // Shared modifier groups
 const drinkSize = (jugExtra: number) =>
-  pickOne("size", ["Hajmi", "Size", "Объём"], [
-    opt("glass", ["Stakan", "Glass", "Стакан"], 0, true),
-    opt("jug", ["Grafin (1 litr)", "Jug (1 litre)", "Кувшин (1 л)"], jugExtra),
-  ]);
+  pickOne(
+    "size",
+    ["Hajmi", "Size", "Объём"],
+    [
+      opt("glass", ["Stakan", "Glass", "Стакан"], 0, true),
+      opt("jug", ["Grafin (1 litr)", "Jug (1 litre)", "Кувшин (1 л)"], jugExtra),
+    ],
+  );
 
 // ── categories ───────────────────────────────────────────────────────────────
 export const categories: Category[] = [
@@ -132,7 +136,11 @@ export const categories: Category[] = [
     id: "cat-drinks",
     slug: "drinks",
     name: ["Ichimliklar", "Drinks", "Напитки"],
-    description: ["Choy, qahva va uy limonadlari.", "Tea, coffee and house lemonades.", "Чай, кофе и домашние лимонады."],
+    description: [
+      "Choy, qahva va uy limonadlari.",
+      "Tea, coffee and house lemonades.",
+      "Чай, кофе и домашние лимонады.",
+    ],
     station: "bar",
     sortOrder: 5,
     // Example of a time-based menu (uncomment to try):
@@ -200,11 +208,15 @@ export const items: MenuItem[] = [
     allergens: ["gluten", "eggs", "sesame"],
     calories: 360,
     modifierGroups: [
-      pickOne("filling", ["Ichi", "Filling", "Начинка"], [
-        opt("lamb", ["Qoʻy goʻshti", "Lamb", "Баранина"], 0, true),
-        opt("beef", ["Mol goʻshti", "Beef", "Говядина"]),
-        opt("pumpkin", ["Qovoq (goʻshtsiz)", "Pumpkin (meat-free)", "Тыква (без мяса)"]),
-      ]),
+      pickOne(
+        "filling",
+        ["Ichi", "Filling", "Начинка"],
+        [
+          opt("lamb", ["Qoʻy goʻshti", "Lamb", "Баранина"], 0, true),
+          opt("beef", ["Mol goʻshti", "Beef", "Говядина"]),
+          opt("pumpkin", ["Qovoq (goʻshtsiz)", "Pumpkin (meat-free)", "Тыква (без мяса)"]),
+        ],
+      ),
     ],
   }),
   item({
@@ -238,10 +250,15 @@ export const items: MenuItem[] = [
     calories: 880,
     featured: true,
     modifierGroups: [
-      upTo(2, "extras", ["Qoʻshimcha", "Extras", "Добавить"], [
-        opt("qazi", ["Qazi", "Qazi (horse sausage)", "Казы"], 35_000),
-        opt("quail-eggs", ["Yana bedana tuxumi", "More quail eggs", "Ещё перепелиные яйца"], 8_000),
-      ]),
+      upTo(
+        2,
+        "extras",
+        ["Qoʻshimcha", "Extras", "Добавить"],
+        [
+          opt("qazi", ["Qazi", "Qazi (horse sausage)", "Казы"], 35_000),
+          opt("quail-eggs", ["Yana bedana tuxumi", "More quail eggs", "Ещё перепелиные яйца"], 8_000),
+        ],
+      ),
     ],
   }),
   item({
@@ -258,10 +275,14 @@ export const items: MenuItem[] = [
     allergens: ["gluten", "celery"],
     calories: 760,
     modifierGroups: [
-      pickOne("style", ["Tayyorlanishi", "Style", "Подача"], [
-        opt("fried", ["Qovurma", "Stir-fried", "Жареный"], 0, true),
-        opt("broth", ["Shoʻrvali", "In broth", "С бульоном"]),
-      ]),
+      pickOne(
+        "style",
+        ["Tayyorlanishi", "Style", "Подача"],
+        [
+          opt("fried", ["Qovurma", "Stir-fried", "Жареный"], 0, true),
+          opt("broth", ["Shoʻrvali", "In broth", "С бульоном"]),
+        ],
+      ),
     ],
   }),
   item({
@@ -278,10 +299,14 @@ export const items: MenuItem[] = [
     allergens: ["gluten", "milk"],
     calories: 690,
     modifierGroups: [
-      pickOne("filling", ["Ichi", "Filling", "Начинка"], [
-        opt("lamb", ["Qoʻy goʻshti va piyoz", "Lamb and onion", "Баранина с луком"], 0, true),
-        opt("pumpkin", ["Qovoq", "Pumpkin", "Тыква"]),
-      ]),
+      pickOne(
+        "filling",
+        ["Ichi", "Filling", "Начинка"],
+        [
+          opt("lamb", ["Qoʻy goʻshti va piyoz", "Lamb and onion", "Баранина с луком"], 0, true),
+          opt("pumpkin", ["Qovoq", "Pumpkin", "Тыква"]),
+        ],
+      ),
     ],
   }),
   item({
@@ -329,13 +354,16 @@ export const items: MenuItem[] = [
     calories: 640,
     featured: true,
     modifierGroups: [
-      pickOne("portion", ["Porsiya", "Portion", "Порция"], [
-        opt("2", ["2 six", "2 skewers", "2 шампура"], 0, true),
-        opt("4", ["4 six", "4 skewers", "4 шампура"], 76_000),
-      ]),
-      maybeOne("bread", ["Yoniga", "On the side", "К блюду"], [
-        opt("tandir-non", ["Issiq tandir noni", "Warm tandoor bread", "Тёплая тандырная лепёшка"], 8_000),
-      ]),
+      pickOne(
+        "portion",
+        ["Porsiya", "Portion", "Порция"],
+        [opt("2", ["2 six", "2 skewers", "2 шампура"], 0, true), opt("4", ["4 six", "4 skewers", "4 шампура"], 76_000)],
+      ),
+      maybeOne(
+        "bread",
+        ["Yoniga", "On the side", "К блюду"],
+        [opt("tandir-non", ["Issiq tandir noni", "Warm tandoor bread", "Тёплая тандырная лепёшка"], 8_000)],
+      ),
     ],
   }),
   item({
@@ -381,13 +409,17 @@ export const items: MenuItem[] = [
     calories: 980,
     featured: true,
     modifierGroups: [
-      pickOne("doneness", ["Pishirish darajasi", "How would you like it cooked?", "Степень прожарки"], [
-        opt("rare", ["Kam pishgan", "Rare", "С кровью"]),
-        opt("medium-rare", ["Oʻrtachadan kam", "Medium rare", "Слабая прожарка"]),
-        opt("medium", ["Oʻrtacha", "Medium", "Средняя прожарка"]),
-        opt("medium-well", ["Oʻrtachadan koʻp", "Medium well", "Почти полная прожарка"]),
-        opt("well-done", ["Toʻliq pishgan", "Well done", "Полная прожарка"]),
-      ]),
+      pickOne(
+        "doneness",
+        ["Pishirish darajasi", "How would you like it cooked?", "Степень прожарки"],
+        [
+          opt("rare", ["Kam pishgan", "Rare", "С кровью"]),
+          opt("medium-rare", ["Oʻrtachadan kam", "Medium rare", "Слабая прожарка"]),
+          opt("medium", ["Oʻrtacha", "Medium", "Средняя прожарка"]),
+          opt("medium-well", ["Oʻrtachadan koʻp", "Medium well", "Почти полная прожарка"]),
+          opt("well-done", ["Toʻliq pishgan", "Well done", "Полная прожарка"]),
+        ],
+      ),
     ],
   }),
   item({
@@ -492,10 +524,14 @@ export const items: MenuItem[] = [
     allergens: [],
     calories: 5,
     modifierGroups: [
-      pickOne("pot", ["Choynak", "Teapot", "Чайник"], [
-        opt("small", ["Kichik (2 kishi)", "Small (for 2)", "Маленький (на двоих)"], 0, true),
-        opt("large", ["Katta (4 kishi)", "Large (for 4)", "Большой (на четверых)"], 16_000),
-      ]),
+      pickOne(
+        "pot",
+        ["Choynak", "Teapot", "Чайник"],
+        [
+          opt("small", ["Kichik (2 kishi)", "Small (for 2)", "Маленький (на двоих)"], 0, true),
+          opt("large", ["Katta (4 kishi)", "Large (for 4)", "Большой (на четверых)"], 16_000),
+        ],
+      ),
     ],
   }),
   item({
@@ -526,11 +562,15 @@ export const items: MenuItem[] = [
     allergens: ["milk"],
     calories: 120,
     modifierGroups: [
-      pickOne("milk", ["Sut", "Milk", "Молоко"], [
-        opt("whole", ["Oddiy sut", "Whole milk", "Обычное молоко"], 0, true),
-        opt("oat", ["Suli suti", "Oat milk", "Овсяное молоко"], 8_000),
-        opt("almond", ["Bodom suti", "Almond milk", "Миндальное молоко"], 8_000),
-      ]),
+      pickOne(
+        "milk",
+        ["Sut", "Milk", "Молоко"],
+        [
+          opt("whole", ["Oddiy sut", "Whole milk", "Обычное молоко"], 0, true),
+          opt("oat", ["Suli suti", "Oat milk", "Овсяное молоко"], 8_000),
+          opt("almond", ["Bodom suti", "Almond milk", "Миндальное молоко"], 8_000),
+        ],
+      ),
     ],
   }),
   item({

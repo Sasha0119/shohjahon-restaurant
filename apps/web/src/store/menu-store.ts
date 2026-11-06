@@ -95,7 +95,9 @@ export function localizeMenu(menu: Menu, lang: string): Menu {
         options: g.options.map((o) => ({ ...o, name: pick(o.name, o.translations, "name", lang) })),
       })),
     })),
-    upsells: menu.upsells.map((u) => (u.kind === "combo" ? { ...u, name: pick(u.name, u.translations, "name", lang) } : u)),
+    upsells: menu.upsells.map((u) =>
+      u.kind === "combo" ? { ...u, name: pick(u.name, u.translations, "name", lang) } : u,
+    ),
   };
 }
 

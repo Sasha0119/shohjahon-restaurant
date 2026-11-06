@@ -49,13 +49,20 @@ export default function CartPage() {
   const tableLabel = t("common.table", { number: table.number });
 
   const suggestions = useMemo(
-    () => suggestionsForCart(cart.map((l) => l.itemId), menuState.menu?.upsells ?? [], menuState.itemsById),
+    () =>
+      suggestionsForCart(
+        cart.map((l) => l.itemId),
+        menuState.menu?.upsells ?? [],
+        menuState.itemsById,
+      ),
     [cart, menuState],
   );
   const rounds = useMemo(() => groupRounds(orders), [orders]);
 
   const scrollToOrders = () =>
-    requestAnimationFrame(() => document.getElementById("orders")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    requestAnimationFrame(() =>
+      document.getElementById("orders")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
 
   if (!menuState.menu) {
     return (
@@ -155,7 +162,9 @@ function RoundCard({ round }: { round: Round }) {
           <h3 className="font-display text-xl font-semibold">{t("orders.round", { number: round.round })}</h3>
           <p className="text-sm text-fg-muted">{t("orders.sentAt", { time: formatTime(round.sentAt) })}</p>
         </div>
-        <Badge tone={cancelled ? "danger" : round.status === "served" ? "success" : "primary"}>{t(`status.${round.status}`)}</Badge>
+        <Badge tone={cancelled ? "danger" : round.status === "served" ? "success" : "primary"}>
+          {t(`status.${round.status}`)}
+        </Badge>
       </header>
 
       {!cancelled && (
@@ -169,22 +178,20 @@ function RoundCard({ round }: { round: Round }) {
           ticket.lines.map((l) => {
             const text = lineText(l);
             return (
-            <li key={l.id} className="flex justify-between gap-3">
-              <span className={ticket.status === "cancelled" ? "text-fg-muted line-through" : ""}>
-                <span className="font-semibold tabular text-primary">{l.quantity}×</span> {text.name}
-                {text.modifiers.length > 0 && <span className="text-fg-muted"> · {text.modifiers.join(", ")}</span>}
-                {round.tickets.length > 1 && statusIndex(ticket.status) > statusIndex(round.status) && (
-                  <span className="ml-1.5 text-xs font-semibold text-success">{t(`status.${ticket.status}`)}</span>
-                )}
-              </span>
-              <span className="shrink-0 text-fg-muted tabular">{formatPrice(l.unitPriceCents * l.quantity)}</span>
-            </li>
+              <li key={l.id} className="flex justify-between gap-3">
+                <span className={ticket.status === "cancelled" ? "text-fg-muted line-through" : ""}>
+                  <span className="font-semibold tabular text-primary">{l.quantity}×</span> {text.name}
+                  {text.modifiers.length > 0 && <span className="text-fg-muted"> · {text.modifiers.join(", ")}</span>}
+                  {round.tickets.length > 1 && statusIndex(ticket.status) > statusIndex(round.status) && (
+                    <span className="ml-1.5 text-xs font-semibold text-success">{t(`status.${ticket.status}`)}</span>
+                  )}
+                </span>
+                <span className="shrink-0 text-fg-muted tabular">{formatPrice(l.unitPriceCents * l.quantity)}</span>
+              </li>
             );
           }),
         )}
-        {lines.length > 0 && (
-          <li className="flex justify-end pt-1 font-semibold tabular">{formatPrice(total)}</li>
-        )}
+        {lines.length > 0 && <li className="flex justify-end pt-1 font-semibold tabular">{formatPrice(total)}</li>}
       </ul>
 
       {cancellable && (

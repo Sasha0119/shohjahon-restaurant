@@ -3,21 +3,43 @@ import { brand } from "@app/config";
 import { isAvailableAt, type AvailabilityWindow, type TextTranslations } from "@app/shared";
 import type { AdminMenuDTO, MenuDTO } from "@app/shared/api";
 import type { Db } from "../db.ts";
+import type { Prisma } from "../generated/prisma/client.ts";
 import type { Weekday } from "../generated/prisma/enums.ts";
 import { enums } from "../lib/enums.ts";
 
 type Day = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 const pad = (n: number) => String(n).padStart(2, "0");
 /** 690 → "11:30". Windows are [from, to) and capped at 23:59. */
-export const minutesToHhmm = (m: number) => {
+const minutesToHhmm = (m: number) => {
   const v = Math.min(Math.max(m, 0), 1439);
   return `${pad(Math.floor(v / 60))}:${pad(v % 60)}`;
 };
 const toWire = (d: Weekday) => d.toLowerCase() as Day;
 
 /** A JSON column → translations (anything malformed reads as "none"). */
-export function tr<F extends string>(value: unknown): TextTranslations<F> {
+function tr<F extends string>(value: unknown): TextTranslations<F> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as TextTranslations<F>) : {};
+}
+
+/** The item fields shared by the guest menu and the admin menu. */
+function itemFields(i: Prisma.MenuItemGetPayload<object>) {
+  return {
+    id: i.id,
+    slug: i.slug,
+    categoryId: i.categoryId,
+    name: i.name,
+    description: i.description,
+    translations: tr(i.translations),
+    priceCents: i.priceCents,
+    imageUrl: i.imageUrl,
+    imageAlt: i.imageAlt,
+    tags: i.tags.map(enums.tag.fromDb),
+    allergens: i.allergens.map(enums.allergen.fromDb),
+    calories: i.calories,
+    inStock: i.inStock,
+    stockVersion: i.stockVersion,
+    featured: i.featured,
+  };
 }
 
 export function windowsOf(rows: { days: Weekday[]; fromMinute: number; toMinute: number }[]): AvailabilityWindow[] {
@@ -42,7 +64,7 @@ const menuInclude = {
 };
 
 /** Stable content hash used as the menu ETag / version. */
-export function menuVersion(content: unknown): string {
+function menuVersion(content: unknown): string {
   return createHash("sha1").update(JSON.stringify(content)).digest("base64url").slice(0, 16);
 }
 
@@ -63,21 +85,7 @@ export async function buildPublicMenu(db: Db, now = new Date(), timeZone = brand
     c.items
       .filter((i) => !i.archived)
       .map((i) => ({
-        id: i.id,
-        slug: i.slug,
-        categoryId: i.categoryId,
-        name: i.name,
-        description: i.description,
-        translations: tr(i.translations),
-        priceCents: i.priceCents,
-        imageUrl: i.imageUrl,
-        imageAlt: i.imageAlt,
-        tags: i.tags.map(enums.tag.fromDb),
-        allergens: i.allergens.map(enums.allergen.fromDb),
-        calories: i.calories,
-        inStock: i.inStock,
-        stockVersion: i.stockVersion,
-        featured: i.featured,
+        ...itemFields(i),
         modifierGroups: i.modifierGroups
           .map((g) => ({
             id: g.id,
@@ -87,7 +95,13 @@ export async function buildPublicMenu(db: Db, now = new Date(), timeZone = brand
             maxSelect: g.maxSelect,
             options: g.options
               .filter((o) => o.active)
-              .map((o) => ({ id: o.id, name: o.name, translations: tr(o.translations), priceDeltaCents: o.priceDeltaCents, isDefault: o.isDefault })),
+              .map((o) => ({
+                id: o.id,
+                name: o.name,
+                translations: tr(o.translations),
+                priceDeltaCents: o.priceDeltaCents,
+                isDefault: o.isDefault,
+              })),
           }))
           .filter((g) => g.options.length > 0),
       })),
@@ -110,7 +124,13 @@ export async function buildPublicMenu(db: Db, now = new Date(), timeZone = brand
       .map((s) => ({ itemId: s.itemId, suggestItemId: s.suggestItemId })),
     combos: combos
       .filter((c) => c.items.length > 1 && c.items.every((i) => visible.has(i.itemId)))
-      .map((c) => ({ id: c.id, name: c.name, translations: tr(c.translations), discountCents: c.discountCents, itemIds: c.items.map((i) => i.itemId) })),
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        translations: tr(c.translations),
+        discountCents: c.discountCents,
+        itemIds: c.items.map((i) => i.itemId),
+      })),
   };
   return { version: menuVersion(content), ...content };
 }
@@ -141,21 +161,7 @@ export async function buildAdminMenu(db: Db): Promise<AdminMenuDTO> {
     })),
     items: categories.flatMap((c) =>
       c.items.map((i) => ({
-        id: i.id,
-        slug: i.slug,
-        categoryId: i.categoryId,
-        name: i.name,
-        description: i.description,
-        translations: tr(i.translations),
-        priceCents: i.priceCents,
-        imageUrl: i.imageUrl,
-        imageAlt: i.imageAlt,
-        tags: i.tags.map(enums.tag.fromDb),
-        allergens: i.allergens.map(enums.allergen.fromDb),
-        calories: i.calories,
-        inStock: i.inStock,
-        stockVersion: i.stockVersion,
-        featured: i.featured,
+        ...itemFields(i),
         archived: i.archived,
         sortOrder: i.sortOrder,
         modifierGroups: i.modifierGroups.map((g) => ({

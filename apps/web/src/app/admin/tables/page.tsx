@@ -30,7 +30,10 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatRelative, reservationLabel } from "@/lib/format";
 
-const STATUS_STYLE: Record<TableStatusDTO, { dot: string; ring: string; tone: "muted" | "primary" | "warning" | "danger" }> = {
+const STATUS_STYLE: Record<
+  TableStatusDTO,
+  { dot: string; ring: string; tone: "muted" | "primary" | "warning" | "danger" }
+> = {
   free: { dot: "bg-fg/25", ring: "outline-transparent", tone: "muted" },
   seated: { dot: "bg-primary", ring: "outline-primary/40", tone: "primary" },
   ordered: { dot: "bg-warning", ring: "outline-warning/50", tone: "warning" },
@@ -39,7 +42,6 @@ const STATUS_STYLE: Record<TableStatusDTO, { dot: string; ring: string; tone: "m
 
 const field =
   "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 ring-1 ring-inset ring-line text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
-
 
 export default function TablesAdminPage() {
   const t = useT();
@@ -109,7 +111,11 @@ export default function TablesAdminPage() {
 
       <div className="mt-8">
         {failed && !tables ? (
-          <EmptyState icon={CloudOff} title={t("admin.tables.loadError")} action={<Button onClick={load}>{t("common.retry")}</Button>} />
+          <EmptyState
+            icon={CloudOff}
+            title={t("admin.tables.loadError")}
+            action={<Button onClick={load}>{t("common.retry")}</Button>}
+          />
         ) : !tables ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" aria-busy="true">
             {Array.from({ length: 8 }, (_, i) => (
@@ -229,7 +235,10 @@ function TableSheet({
         toast.success(t("admin.tables.closed"));
         onChanged({ ...shown, status: "free", session: null });
       } else if (confirm === "rotate") {
-        const { table: updated } = await api<{ table: AdminTableDTO }>("POST", `/api/admin/tables/${shown.id}/rotate-qr`);
+        const { table: updated } = await api<{ table: AdminTableDTO }>(
+          "POST",
+          `/api/admin/tables/${shown.id}/rotate-qr`,
+        );
         onChanged(updated);
         setShown(updated);
         setQrKey((k) => k + 1);
@@ -266,7 +275,13 @@ function TableSheet({
         {/* QR codes need dark-on-light to scan, so the tile is always white. */}
         <div className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
           {/* eslint-disable-next-line @next/next/no-img-element -- authenticated, uncached API image */}
-          <img src={qrSrc} alt={t("admin.tables.qr", { number: shown.number })} width={220} height={220} className="size-[220px]" />
+          <img
+            src={qrSrc}
+            alt={t("admin.tables.qr", { number: shown.number })}
+            width={220}
+            height={220}
+            className="size-[220px]"
+          />
         </div>
       </div>
       <p className="mt-3 break-all text-center font-mono text-xs text-fg-muted">{shown.url}</p>
@@ -280,7 +295,11 @@ function TableSheet({
           <ExternalLink className="size-4" aria-hidden />
           {t("admin.tables.openGuest")}
         </a>
-        <a className={action} href={`/api/admin/tables/${shown.id}/qr?format=png&size=1024`} download={`table-${shown.number}-qr.png`}>
+        <a
+          className={action}
+          href={`/api/admin/tables/${shown.id}/qr?format=png&size=1024`}
+          download={`table-${shown.number}-qr.png`}
+        >
           <Download className="size-4" aria-hidden />
           {t("admin.tables.downloadPng")}
         </a>
@@ -380,7 +399,9 @@ function TableForm({
           ? await api<{ table: AdminTableDTO }>("POST", "/api/admin/tables", body)
           : await api<{ table: AdminTableDTO }>("PUT", `/api/admin/tables/${state.table.id}`, body);
       onSaved(table);
-      toast.success(state.mode === "create" ? t("admin.tables.created", { number: table.number }) : t("admin.tables.saved"));
+      toast.success(
+        state.mode === "create" ? t("admin.tables.created", { number: table.number }) : t("admin.tables.saved"),
+      );
       onClose();
     } catch (err) {
       setError(translateError(err, t));
@@ -401,22 +422,47 @@ function TableForm({
             <label className="block text-sm font-semibold" htmlFor="tb-number">
               {t("admin.tables.number")}
             </label>
-            <input id="tb-number" inputMode="numeric" className={field} value={number} onChange={(e) => setNumber(e.target.value.replace(/\D/g, "").slice(0, 4))} required />
+            <input
+              id="tb-number"
+              inputMode="numeric"
+              className={field}
+              value={number}
+              onChange={(e) => setNumber(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              required
+            />
           </div>
           <div>
             <label className="block text-sm font-semibold" htmlFor="tb-seats">
               {t("admin.tables.seats")}
             </label>
-            <input id="tb-seats" inputMode="numeric" className={field} value={seats} onChange={(e) => setSeats(e.target.value.replace(/\D/g, "").slice(0, 2))} required />
+            <input
+              id="tb-seats"
+              inputMode="numeric"
+              className={field}
+              value={seats}
+              onChange={(e) => setSeats(e.target.value.replace(/\D/g, "").slice(0, 2))}
+              required
+            />
           </div>
         </div>
         <label className="mt-4 block text-sm font-semibold" htmlFor="tb-label">
           {t("admin.tables.label")}
         </label>
-        <input id="tb-label" className={field} value={label} placeholder={t("admin.tables.labelPlaceholder")} onChange={(e) => setLabel(e.target.value.slice(0, 40))} />
+        <input
+          id="tb-label"
+          className={field}
+          value={label}
+          placeholder={t("admin.tables.labelPlaceholder")}
+          onChange={(e) => setLabel(e.target.value.slice(0, 40))}
+        />
         <label className="mt-5 flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-2xl bg-muted/60 px-4">
           <span className="font-semibold">{t("admin.tables.takingOrders")}</span>
-          <input type="checkbox" className="peer sr-only" checked={active} onChange={(e) => setActive(e.target.checked)} />
+          <input
+            type="checkbox"
+            className="peer sr-only"
+            checked={active}
+            onChange={(e) => setActive(e.target.checked)}
+          />
           <span
             aria-hidden
             className="relative h-7 w-12 rounded-full bg-fg/20 transition-colors peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 after:absolute after:left-1 after:top-1 after:size-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5"

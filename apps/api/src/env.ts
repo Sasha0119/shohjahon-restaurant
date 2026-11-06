@@ -6,9 +6,7 @@ import { z } from "zod";
  * names every problem at once. See apps/api/.env.example.
  */
 
-const bool = z
-  .enum(["true", "false", "1", "0"])
-  .transform((v) => v === "true" || v === "1");
+const bool = z.enum(["true", "false", "1", "0"]).transform((v) => v === "true" || v === "1");
 
 const csv = z
   .string()
@@ -47,9 +45,19 @@ const schema = z
     COOKIE_SECURE: bool.default(false),
 
     /** A table session with no activity for this long expires. */
-    SESSION_IDLE_MINUTES: z.coerce.number().int().min(5).max(24 * 60).default(120),
+    SESSION_IDLE_MINUTES: z.coerce
+      .number()
+      .int()
+      .min(5)
+      .max(24 * 60)
+      .default(120),
     /** Staff stay logged in for this long. */
-    STAFF_SESSION_HOURS: z.coerce.number().int().min(1).max(24 * 30).default(12),
+    STAFF_SESSION_HOURS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(24 * 30)
+      .default(12),
     /** Minimum seconds between two identical "Call server" requests from one table. */
     CALL_COOLDOWN_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
 
@@ -64,7 +72,10 @@ const schema = z
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
     /** Optional: enables "email my receipt". e.g. smtp://user:pass@smtp.example.com:587 */
-    SMTP_URL: z.string().regex(/^smtps?:\/\//).optional(),
+    SMTP_URL: z
+      .string()
+      .regex(/^smtps?:\/\//)
+      .optional(),
     EMAIL_FROM: z.string().optional(),
   })
   .superRefine((env, ctx) => {

@@ -85,7 +85,12 @@ export function ItemSheet({ itemId, onClose }: ItemSheetProps) {
     }
     setAdding(true);
     haptic();
-    const ok = await addToCart({ itemId: shown.id, quantity: form.quantity, selection: form.selection, note: form.note });
+    const ok = await addToCart({
+      itemId: shown.id,
+      quantity: form.quantity,
+      selection: form.selection,
+      note: form.note,
+    });
     setAdding(false);
     if (!ok) return; // the action already explained what went wrong
     toast.success(t("item.added"), t("item.addedBody", { quantity: form.quantity, name: shown.name }));
@@ -149,10 +154,7 @@ function ItemMedia({ item }: { item: MenuItem }) {
   return (
     // Phones/tablets: a 4:3 / 16:10 photo above the details. Desktop (split sheet): fills the left half.
     <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted sm:aspect-[16/10] lg:aspect-auto lg:h-full">
-      <div
-        key={item.id}
-        className="enter absolute inset-0"
-      >
+      <div key={item.id} className="enter absolute inset-0">
         <Image
           src={item.image}
           alt={item.imageAlt}
@@ -163,7 +165,10 @@ function ItemMedia({ item }: { item: MenuItem }) {
         />
       </div>
       <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-transparent" />
-      <div aria-hidden className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface to-transparent lg:hidden" />
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface to-transparent lg:hidden"
+      />
     </div>
   );
 }
@@ -310,7 +315,9 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
                       className={cn(
                         "grid size-[22px] shrink-0 place-items-center border-2 transition-all peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface",
                         multi ? "rounded-md" : "rounded-full",
-                        selected ? "border-primary bg-primary text-on-primary shadow-[0_0_0_4px_color-mix(in_oklab,var(--primary-color)_18%,transparent)]" : "border-fg/25",
+                        selected
+                          ? "border-primary bg-primary text-on-primary shadow-[0_0_0_4px_color-mix(in_oklab,var(--primary-color)_18%,transparent)]"
+                          : "border-fg/25",
                       )}
                     >
                       {selected &&
@@ -335,8 +342,7 @@ function ItemBody({ item, form, update }: ItemBodyProps) {
       {item.inStock && (
         <div className="mt-7">
           <label htmlFor={`note-${item.id}`} className="block font-display text-[1.15rem] font-semibold">
-            {t("item.instructions")}{" "}
-            <span className="text-sm font-normal text-fg-muted">· {t("item.optional")}</span>
+            {t("item.instructions")} <span className="text-sm font-normal text-fg-muted">· {t("item.optional")}</span>
           </label>
           <textarea
             id={`note-${item.id}`}

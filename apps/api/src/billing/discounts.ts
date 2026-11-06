@@ -42,20 +42,28 @@ export async function applyDiscount(db: Db, realtime: Realtime, guest: AuthedGue
   const code = rawCode.trim().toUpperCase();
   const version = await db.$transaction(async (tx) => {
     await lockSessionMoney(tx, guest.sessionId);
-    const started = await tx.payment.count({ where: { sessionId: guest.sessionId, status: { in: ["PENDING", "SUCCEEDED"] } } });
-    if (started > 0) throw new ApiError(409, "PAYMENTS_STARTED", "A discount code can't be added after payment has started.");
+    const started = await tx.payment.count({
+      where: { sessionId: guest.sessionId, status: { in: ["PENDING", "SUCCEEDED"] } },
+    });
+    if (started > 0)
+      throw new ApiError(409, "PAYMENTS_STARTED", "A discount code can't be added after payment has started.");
 
     const d = await tx.discountCode.findUnique({ where: { code } });
     const now = new Date();
     if (!d || !d.active || (d.startsAt && d.startsAt > now) || (d.endsAt && d.endsAt <= now)) throw invalid();
 
-    const session = await tx.tableSession.findUniqueOrThrow({ where: { id: guest.sessionId }, select: { discountCodeId: true } });
+    const session = await tx.tableSession.findUniqueOrThrow({
+      where: { id: guest.sessionId },
+      select: { discountCodeId: true },
+    });
     if (session.discountCodeId === d.id) return null; // already applied — nothing changes
 
     if (d.minSubtotalCents != null) {
       const { subtotal } = await computeSessionBill(tx, guest.sessionId);
       if (subtotal < d.minSubtotalCents) {
-        throw new ApiError(422, "CODE_MIN_SUBTOTAL", "Your order isn't big enough for this code yet.", { minSubtotalCents: d.minSubtotalCents });
+        throw new ApiError(422, "CODE_MIN_SUBTOTAL", "Your order isn't big enough for this code yet.", {
+          minSubtotalCents: d.minSubtotalCents,
+        });
       }
     }
     // Atomic usage check: only succeeds while there are uses left.
@@ -65,10 +73,19 @@ export async function applyDiscount(db: Db, realtime: Realtime, guest: AuthedGue
     });
     if (claimed.count === 0) throw new ApiError(409, "CODE_USED_UP", "This code has been fully used.");
     if (session.discountCodeId) {
-      await tx.discountCode.update({ where: { id: session.discountCodeId }, data: { redemptionCount: { decrement: 1 } } });
+      await tx.discountCode.update({
+        where: { id: session.discountCodeId },
+        data: { redemptionCount: { decrement: 1 } },
+      });
     }
     await tx.tableSession.update({ where: { id: guest.sessionId }, data: { discountCodeId: d.id } });
-    await audit(tx, { actor: { type: "guest", guestId: guest.id }, action: "discount.applied", entityType: "table_session", entityId: guest.sessionId, data: { code } });
+    await audit(tx, {
+      actor: { type: "guest", guestId: guest.id },
+      action: "discount.applied",
+      entityType: "table_session",
+      entityId: guest.sessionId,
+      data: { code },
+    });
     return bumpVersion(tx, guest.sessionId);
   });
   if (version === null) return { version: null, bill: (await computeSessionBill(db, guest.sessionId)).dto };
@@ -78,13 +95,27 @@ export async function applyDiscount(db: Db, realtime: Realtime, guest: AuthedGue
 export async function removeDiscount(db: Db, realtime: Realtime, guest: AuthedGuest) {
   const version = await db.$transaction(async (tx) => {
     await lockSessionMoney(tx, guest.sessionId);
-    const started = await tx.payment.count({ where: { sessionId: guest.sessionId, status: { in: ["PENDING", "SUCCEEDED"] } } });
-    if (started > 0) throw new ApiError(409, "PAYMENTS_STARTED", "The discount can't be removed after payment has started.");
-    const session = await tx.tableSession.findUniqueOrThrow({ where: { id: guest.sessionId }, select: { discountCodeId: true } });
+    const started = await tx.payment.count({
+      where: { sessionId: guest.sessionId, status: { in: ["PENDING", "SUCCEEDED"] } },
+    });
+    if (started > 0)
+      throw new ApiError(409, "PAYMENTS_STARTED", "The discount can't be removed after payment has started.");
+    const session = await tx.tableSession.findUniqueOrThrow({
+      where: { id: guest.sessionId },
+      select: { discountCodeId: true },
+    });
     if (!session.discountCodeId) return null;
-    await tx.discountCode.update({ where: { id: session.discountCodeId }, data: { redemptionCount: { decrement: 1 } } });
+    await tx.discountCode.update({
+      where: { id: session.discountCodeId },
+      data: { redemptionCount: { decrement: 1 } },
+    });
     await tx.tableSession.update({ where: { id: guest.sessionId }, data: { discountCodeId: null } });
-    await audit(tx, { actor: { type: "guest", guestId: guest.id }, action: "discount.removed", entityType: "table_session", entityId: guest.sessionId });
+    await audit(tx, {
+      actor: { type: "guest", guestId: guest.id },
+      action: "discount.removed",
+      entityType: "table_session",
+      entityId: guest.sessionId,
+    });
     return bumpVersion(tx, guest.sessionId);
   });
   if (version === null) return { version: null, bill: (await computeSessionBill(db, guest.sessionId)).dto };

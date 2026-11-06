@@ -80,7 +80,10 @@ export function registerMenuRoutes(on: On, db: Db, realtime: Realtime) {
     const id = parse(zId, req.params.categoryId);
     await requireRow(db.category.findUnique({ where: { id } }), "Category");
     if ((await db.menuItem.count({ where: { categoryId: id } })) > 0) {
-      throw errors.conflict("CATEGORY_NOT_EMPTY", "This category still has items. Hide it instead, or move its items first.");
+      throw errors.conflict(
+        "CATEGORY_NOT_EMPTY",
+        "This category still has items. Hide it instead, or move its items first.",
+      );
     }
     await db.category.delete({ where: { id } });
     await record(req, "category.deleted", "category", id);
@@ -130,7 +133,8 @@ export function registerMenuRoutes(on: On, db: Db, realtime: Realtime) {
     await db.$transaction(async (tx) => {
       if (input.categoryIds) {
         const found = await tx.category.count({ where: { id: { in: input.categoryIds } } });
-        if (found !== input.categoryIds.length) throw errors.badRequest("UNKNOWN_CATEGORY", "Unknown category in the list.");
+        if (found !== input.categoryIds.length)
+          throw errors.badRequest("UNKNOWN_CATEGORY", "Unknown category in the list.");
         for (const [i, id] of input.categoryIds.entries()) {
           await tx.category.update({ where: { id }, data: { sortOrder: i } });
         }
@@ -138,7 +142,8 @@ export function registerMenuRoutes(on: On, db: Db, realtime: Realtime) {
       if (input.items) {
         const { categoryId, itemIds } = input.items;
         const found = await tx.menuItem.count({ where: { id: { in: itemIds }, categoryId } });
-        if (found !== itemIds.length) throw errors.badRequest("UNKNOWN_ITEM", "Every item must belong to that category.");
+        if (found !== itemIds.length)
+          throw errors.badRequest("UNKNOWN_ITEM", "Every item must belong to that category.");
         for (const [i, id] of itemIds.entries()) {
           await tx.menuItem.update({ where: { id }, data: { sortOrder: i } });
         }

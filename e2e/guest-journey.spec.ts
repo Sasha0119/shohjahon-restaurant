@@ -54,9 +54,11 @@ test("a guest orders, the kitchen and waiter react live, the guest pays and rate
   await waiter.getByRole("button", { name: /Done: Table 4/ }).click();
   await expect(waiter.getByText("No one is waiting")).toBeVisible();
 
-  for (const dish of ["Tashkent plov", "Cappuccino"]) await card(dish).getByRole("button", { name: "Ready", exact: true }).click();
+  for (const dish of ["Tashkent plov", "Cappuccino"])
+    await card(dish).getByRole("button", { name: "Ready", exact: true }).click();
   await expect(round.getByText("Ready", { exact: true })).toBeVisible();
-  for (const dish of ["Tashkent plov", "Cappuccino"]) await card(dish).getByRole("button", { name: "Served", exact: true }).click();
+  for (const dish of ["Tashkent plov", "Cappuccino"])
+    await card(dish).getByRole("button", { name: "Served", exact: true }).click();
   await expect(round.getByText("Served", { exact: true })).toBeVisible();
   await expect(kds.getByText("All clear")).toBeVisible();
 

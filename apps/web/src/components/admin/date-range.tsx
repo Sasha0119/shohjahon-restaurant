@@ -19,7 +19,7 @@ export interface DateRange {
 }
 
 /** "Today" in the restaurant's time zone, not the browser's. */
-export const restaurantToday = () => zonedDate(new Date(), brand.timezone);
+const restaurantToday = () => zonedDate(new Date(), brand.timezone);
 
 export function presetRange(preset: Exclude<RangePreset, "custom">, today = restaurantToday()): DateRange {
   const days = preset === "today" ? 1 : Number(preset);
@@ -34,12 +34,23 @@ export function formatLocalDate(d: string, opts: Intl.DateTimeFormatOptions = { 
 }
 
 /** A timestamp shown in the restaurant's time zone. */
-export function formatStamp(iso: string, opts: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short" }): string {
+export function formatStamp(
+  iso: string,
+  opts: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short" },
+): string {
   return formatDate(new Date(iso), { ...opts, timeZone: brand.timezone });
 }
 
 /** Presets first, custom range behind one more tap. Applies to everything below it. */
-export function DateRangeFilter({ value, onChange, className }: { value: DateRange; onChange: (r: DateRange) => void; className?: string }) {
+export function DateRangeFilter({
+  value,
+  onChange,
+  className,
+}: {
+  value: DateRange;
+  onChange: (r: DateRange) => void;
+  className?: string;
+}) {
   const t = useT();
   const [draft, setDraft] = useState({ from: value.from, to: value.to });
   const [custom, setCustom] = useState(value.preset === "custom");

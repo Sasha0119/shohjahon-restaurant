@@ -15,7 +15,11 @@ export const metadata: Metadata = {
   title: { default: brand.name, template: `%s · ${brand.name}` },
   description: localize(brand.welcomeLine, brand.defaultLanguage),
   applicationName: brand.name,
-  appleWebApp: { capable: true, title: brand.name, statusBarStyle: theme.mode === "light" ? "default" : "black-translucent" },
+  appleWebApp: {
+    capable: true,
+    title: brand.name,
+    statusBarStyle: theme.mode === "light" ? "default" : "black-translucent",
+  },
   formatDetection: { telephone: false },
   // Guest pages are private to a table — keep them out of search engines.
   robots: { index: false, follow: false },

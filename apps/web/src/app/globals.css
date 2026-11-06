@@ -52,21 +52,36 @@
   --animate-pulse-ring: pulse-ring 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 
   @keyframes shimmer {
-    0% { background-position: 150% 0; }
-    100% { background-position: -50% 0; }
+    0% {
+      background-position: 150% 0;
+    }
+    100% {
+      background-position: -50% 0;
+    }
   }
   --animate-turn: turn 2.4s linear infinite;
   @keyframes turn {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
   --animate-sheen: sheen 2.2s ease-in-out infinite;
   @keyframes sheen {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(250%); }
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(250%);
+    }
   }
   @keyframes pulse-ring {
-    0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary-color) 45%, transparent); }
-    80%, 100% { box-shadow: 0 0 0 12px transparent; }
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary-color) 45%, transparent);
+    }
+    80%,
+    100% {
+      box-shadow: 0 0 0 12px transparent;
+    }
   }
 }
 
@@ -89,15 +104,15 @@
 :root {
   --glass-blur: 24px;
   --glass-saturate: 170%;
-  --glass-brightness: 1.04;       /* light: lift what shows through */
-  --glass-tint: 72%;              /* bars: header, nav */
-  --glass-tint-sheet: 88%;        /* sheets/modals (they sit on a dark scrim) */
-  --glass-tint-accent: 92%;       /* the gold cart pill */
-  --glass-tint-card: 78%;         /* cards (no blur, on the page glow) */
-  --glass-tint-chip: 62%;         /* chips, segmented controls, secondary buttons */
-  --glass-edge: rgb(255 255 255 / 0.7);       /* soft white inner border */
+  --glass-brightness: 1.04; /* light: lift what shows through */
+  --glass-tint: 72%; /* bars: header, nav */
+  --glass-tint-sheet: 88%; /* sheets/modals (they sit on a dark scrim) */
+  --glass-tint-accent: 92%; /* the gold cart pill */
+  --glass-tint-card: 78%; /* cards (no blur, on the page glow) */
+  --glass-tint-chip: 62%; /* chips, segmented controls, secondary buttons */
+  --glass-edge: rgb(255 255 255 / 0.7); /* soft white inner border */
   --glass-highlight: rgb(255 255 255 / 0.95); /* bright line along the top edge */
-  --glass-outline: rgb(60 40 10 / 0.07);      /* hairline so light glass doesn't melt into the page */
+  --glass-outline: rgb(60 40 10 / 0.07); /* hairline so light glass doesn't melt into the page */
   --glass-shadow: 0 1px 2px rgb(60 40 10 / 0.06), 0 12px 32px -14px rgb(60 40 10 / 0.28);
   --glass-shadow-lift: 0 2px 6px rgb(60 40 10 / 0.08), 0 24px 48px -18px rgb(60 40 10 / 0.36);
   /* Soft colour glows behind the glass (so there is something to see through it). */
@@ -105,7 +120,7 @@
   --glow-secondary: 70%;
 }
 :root[data-theme="dark"] {
-  --glass-brightness: 0.72;       /* dark: dim what shows through, keeps ivory text crisp */
+  --glass-brightness: 0.72; /* dark: dim what shows through, keeps ivory text crisp */
   --glass-tint: 72%;
   --glass-tint-sheet: 84%;
   --glass-tint-accent: 86%;
@@ -177,7 +192,10 @@
   :root[data-theme="light"] body {
     background-image: url("/images/grain-light.png");
   }
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     @apply font-display;
     letter-spacing: -0.015em;
     text-wrap: balance;
@@ -194,22 +212,32 @@
     outline-offset: 3px;
     border-radius: 0.5rem;
   }
-  button, [role="button"], a {
+  button,
+  [role="button"],
+  a {
     touch-action: manipulation;
   }
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     font-size: max(16px, 1em); /* stops iOS zooming on focus */
   }
   @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    *, *::before, *::after {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.001ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.001ms !important;
     }
   }
   @media print {
-    body { background-image: none; }
+    body {
+      background-image: none;
+    }
   }
 }
 
@@ -218,25 +246,38 @@
   animation: rise-in 700ms var(--ease-spring) calc(var(--i, 0) * 100ms + 250ms) backwards;
 }
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(18px); }
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
 }
 .hero-settle {
   animation: hero-settle 2400ms var(--ease-spring) both;
 }
 @keyframes hero-settle {
-  from { transform: scale(1.14); }
-  to { transform: scale(1.02); }
+  from {
+    transform: scale(1.14);
+  }
+  to {
+    transform: scale(1.02);
+  }
 }
 .bob {
   display: block;
   animation: bob 2200ms ease-in-out infinite;
 }
 @keyframes bob {
-  50% { transform: translateY(5px); }
+  50% {
+    transform: translateY(5px);
+  }
 }
 
 /* Outside any layer on purpose: headings stay light even where a screen asks for font-semibold. */
-h1, h2, h3, h4, .font-display {
+h1,
+h2,
+h3,
+h4,
+.font-display {
   font-weight: 400;
 }
 
@@ -245,7 +286,10 @@ h1, h2, h3, h4, .font-display {
   animation: enter 320ms var(--ease-spring) backwards;
 }
 @keyframes enter {
-  from { opacity: 0; transform: translateY(8px); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 /* The celebration (components/ui/success-burst.tsx). */
@@ -253,30 +297,50 @@ h1, h2, h3, h4, .font-display {
   animation: burst 1900ms linear both;
 }
 @keyframes burst {
-  0% { opacity: 0; }
-  8%, 82% { opacity: 1; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 0;
+  }
+  8%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 .burst-ring {
   animation: burst-ring 1400ms ease-out calc(var(--i) * 220ms + 150ms) both;
 }
 @keyframes burst-ring {
-  from { opacity: 0.7; transform: scale(0.6); }
-  to { opacity: 0; transform: scale(1.9); }
+  from {
+    opacity: 0.7;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.9);
+  }
 }
 .burst-mark {
   animation: burst-mark 420ms var(--ease-spring) both;
 }
 @keyframes burst-mark {
-  from { opacity: 0; transform: scale(0.4); }
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
 }
 .burst-check {
   stroke-dasharray: 1;
   animation: burst-check 450ms var(--ease-curtain) 200ms both;
 }
 @keyframes burst-check {
-  from { stroke-dashoffset: 1; }
-  to { stroke-dashoffset: 0; }
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 /* The bottom sheet (components/ui/sheet.tsx). */
 .sheet-backdrop {
@@ -286,7 +350,9 @@ h1, h2, h3, h4, .font-display {
   opacity: 0;
 }
 .sheet-panel {
-  transition: transform 340ms var(--ease-spring), opacity 200ms linear;
+  transition:
+    transform 340ms var(--ease-spring),
+    opacity 200ms linear;
 }
 .sheet-panel[data-state="closed"] {
   transform: translateY(100%);
@@ -305,10 +371,18 @@ h1, h2, h3, h4, .font-display {
   animation: shake 400ms linear;
 }
 @keyframes shake {
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(4px); }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
 }
 .wiggle {
   display: block;
@@ -316,23 +390,37 @@ h1, h2, h3, h4, .font-display {
   animation: wiggle 800ms ease-in-out;
 }
 @keyframes wiggle {
-  20% { transform: rotate(-14deg); }
-  40% { transform: rotate(12deg); }
-  60% { transform: rotate(-8deg); }
-  80% { transform: rotate(6deg); }
+  20% {
+    transform: rotate(-14deg);
+  }
+  40% {
+    transform: rotate(12deg);
+  }
+  60% {
+    transform: rotate(-8deg);
+  }
+  80% {
+    transform: rotate(6deg);
+  }
 }
 /* The cart bar gives a small nudge when something is added. */
 .bump {
   animation: bump 420ms var(--ease-spring);
 }
 @keyframes bump {
-  35% { transform: scale(1.04); }
-  70% { transform: scale(0.985); }
+  35% {
+    transform: scale(1.04);
+  }
+  70% {
+    transform: scale(0.985);
+  }
 }
 
 @utility no-scrollbar {
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Blurred glass for bars: sticky headers, navigation, save bars. */
@@ -347,7 +435,9 @@ h1, h2, h3, h4, .font-display {
   background: color-mix(in oklab, var(--surface-color) var(--glass-tint-sheet), transparent);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
-  box-shadow: inset 0 0 0 1px var(--border-color), var(--glass-shadow-lift);
+  box-shadow:
+    inset 0 0 0 1px var(--border-color),
+    var(--glass-shadow-lift);
 }
 
 /* Gold glass for the floating cart pill (the one blurred element in brand colour). */
@@ -416,13 +506,20 @@ h1, h2, h3, h4, .font-display {
 
 /* Tactile "haptic-style" press feedback for anything tappable. */
 @utility pressable {
-  transition: transform 160ms var(--ease-spring), filter 160ms ease, background-color 200ms ease, color 200ms ease, box-shadow 200ms ease;
+  transition:
+    transform 160ms var(--ease-spring),
+    filter 160ms ease,
+    background-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease;
   &:active:not(:disabled) {
     transform: scale(0.965);
     filter: brightness(0.96);
   }
   @media (prefers-reduced-motion: reduce) {
-    &:active:not(:disabled) { transform: none; }
+    &:active:not(:disabled) {
+      transform: none;
+    }
   }
 }
 
@@ -433,7 +530,9 @@ h1, h2, h3, h4, .font-display {
     transform: scale(0.985);
   }
   @media (prefers-reduced-motion: reduce) {
-    &:active:not(:disabled) { transform: none; }
+    &:active:not(:disabled) {
+      transform: none;
+    }
   }
 }
 

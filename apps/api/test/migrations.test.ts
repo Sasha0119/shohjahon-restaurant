@@ -22,7 +22,7 @@ describe("migrations", () => {
 
   it("include the hand-written integrity rules", () => {
     const all = migrations.map((m) => m.sql).join("\n");
-    expect(all).toContain('WHERE "status" = \'OPEN\'');
+    expect(all).toContain("WHERE \"status\" = 'OPEN'");
     expect(all).toContain("staff_credentials_by_role");
     expect(all).toContain("reviews_rating_range");
     expect(all).toContain("payments_amounts_nonneg");

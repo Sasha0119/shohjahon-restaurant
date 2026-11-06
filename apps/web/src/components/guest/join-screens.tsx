@@ -1,7 +1,16 @@
 "use client";
 
 import { brand } from "@app/config";
-import { ArrowLeftRight, CalendarClock, CloudOff, Heart, QrCode, ReceiptText, Users, type LucideIcon } from "lucide-react";
+import {
+  ArrowLeftRight,
+  CalendarClock,
+  CloudOff,
+  Heart,
+  QrCode,
+  ReceiptText,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -16,7 +25,13 @@ import { useTableStore } from "@/store/table-store";
 import { RatingPanel } from "./rating-panel";
 
 /** Full-screen state shown instead of the guest app while joining or when something needs attention. */
-function Screen({ icon: Icon, title, body, children, tone = "primary" }: {
+function Screen({
+  icon: Icon,
+  title,
+  body,
+  children,
+  tone = "primary",
+}: {
   icon: LucideIcon;
   title: string;
   body?: string;
@@ -29,9 +44,7 @@ function Screen({ icon: Icon, title, body, children, tone = "primary" }: {
         <Logo size={36} />
         <span className="font-display text-lg font-semibold">{brand.name}</span>
       </div>
-      <div
-        className="enter my-auto flex w-full max-w-sm flex-col items-center"
-      >
+      <div className="enter my-auto flex w-full max-w-sm flex-col items-center">
         <div className="relative mb-7">
           <div
             className={

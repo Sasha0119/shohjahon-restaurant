@@ -23,41 +23,124 @@ const at = (iso: string) => new Date(iso);
 async function seedHistory(db: Db) {
   const table = (n: number) => db.diningTable.findUniqueOrThrow({ where: { number: n } });
   const visit = async (n: number, openedAt: Date, guests: string[]) => {
-    const s = await db.tableSession.create({ data: { tableId: (await table(n)).id, status: "CLOSED", closeReason: "PAID", openedAt, closedAt: openedAt } });
+    const s = await db.tableSession.create({
+      data: { tableId: (await table(n)).id, status: "CLOSED", closeReason: "PAID", openedAt, closedAt: openedAt },
+    });
     const gs = [];
     for (const [i, name] of guests.entries()) {
-      gs.push(await db.sessionGuest.create({ data: { sessionId: s.id, tokenHash: `t${n}-${i}-${openedAt.getTime()}`, nickname: name, createdAt: openedAt } }));
+      gs.push(
+        await db.sessionGuest.create({
+          data: { sessionId: s.id, tokenHash: `t${n}-${i}-${openedAt.getTime()}`, nickname: name, createdAt: openedAt },
+        }),
+      );
     }
     return { s, gs };
   };
-  const ticket = (sessionId: string, round: number, station: "KITCHEN" | "BAR", createdAt: Date, items: { itemId: string; name: string; qty: number; price: number; note?: string }[], status: "SERVED" | "CANCELLED" = "SERVED") =>
+  const ticket = (
+    sessionId: string,
+    round: number,
+    station: "KITCHEN" | "BAR",
+    createdAt: Date,
+    items: { itemId: string; name: string; qty: number; price: number; note?: string }[],
+    status: "SERVED" | "CANCELLED" = "SERVED",
+  ) =>
     db.order.create({
       data: {
-        sessionId, round, station, status, createdAt, statusChangedAt: createdAt,
-        items: { create: items.map((i) => ({ itemId: i.itemId, name: i.name, unitPriceCents: i.price, quantity: i.qty, note: i.note ?? null, addedByName: "Sam", createdAt })) },
+        sessionId,
+        round,
+        station,
+        status,
+        createdAt,
+        statusChangedAt: createdAt,
+        items: {
+          create: items.map((i) => ({
+            itemId: i.itemId,
+            name: i.name,
+            unitPriceCents: i.price,
+            quantity: i.qty,
+            note: i.note ?? null,
+            addedByName: "Sam",
+            createdAt,
+          })),
+        },
       },
     });
-  const pay = (sessionId: string, guestId: string, amount: number, tip: number, completedAt: Date, status: "SUCCEEDED" | "FAILED" = "SUCCEEDED") =>
+  const pay = (
+    sessionId: string,
+    guestId: string,
+    amount: number,
+    tip: number,
+    completedAt: Date,
+    status: "SUCCEEDED" | "FAILED" = "SUCCEEDED",
+  ) =>
     db.payment.create({
-      data: { sessionId, guestId, amountCents: amount, tipCents: tip, method: "CARD", splitMode: "CUSTOM", status, provider: "mock", idempotencyKey: `k-${sessionId}-${amount}-${completedAt.getTime()}`, completedAt },
+      data: {
+        sessionId,
+        guestId,
+        amountCents: amount,
+        tipCents: tip,
+        method: "CARD",
+        splitMode: "CUSTOM",
+        status,
+        provider: "mock",
+        idempotencyKey: `k-${sessionId}-${amount}-${completedAt.getTime()}`,
+        completedAt,
+      },
     });
 
   const t1 = await visit(1, at("2026-11-02T13:00:00Z"), ["Sam"]);
-  await ticket(t1.s.id, 1, "KITCHEN", at("2026-11-02T13:30:00Z"), [{ itemId: "item-double-smash-burger", name: "Double Smash Burger", qty: 2, price: 1850, note: "=HYPERLINK(\"http://evil\")" }]);
-  await ticket(t1.s.id, 1, "BAR", at("2026-11-02T13:30:00Z"), [{ itemId: "item-flat-white", name: "Flat White", qty: 1, price: 450 }]);
+  await ticket(t1.s.id, 1, "KITCHEN", at("2026-11-02T13:30:00Z"), [
+    {
+      itemId: "item-double-smash-burger",
+      name: "Double Smash Burger",
+      qty: 2,
+      price: 1850,
+      note: '=HYPERLINK("http://evil")',
+    },
+  ]);
+  await ticket(t1.s.id, 1, "BAR", at("2026-11-02T13:30:00Z"), [
+    { itemId: "item-flat-white", name: "Flat White", qty: 1, price: 450 },
+  ]);
   await pay(t1.s.id, t1.gs[0]!.id, 4750, 500, at("2026-11-02T19:30:00Z"));
-  await db.review.create({ data: { sessionId: t1.s.id, guestId: t1.gs[0]!.id, rating: 5, status: "HANDLED", createdAt: at("2026-11-02T20:00:00Z") } });
+  await db.review.create({
+    data: {
+      sessionId: t1.s.id,
+      guestId: t1.gs[0]!.id,
+      rating: 5,
+      status: "HANDLED",
+      createdAt: at("2026-11-02T20:00:00Z"),
+    },
+  });
 
   const t2 = await visit(2, at("2026-11-03T06:45:00Z"), ["Ana", "Ben"]);
-  await ticket(t2.s.id, 1, "KITCHEN", at("2026-11-03T07:00:00Z"), [{ itemId: "item-parmesan-fries", name: "Truffle Parmesan Fries", qty: 3, price: 750 }]);
-  await ticket(t2.s.id, 2, "KITCHEN", at("2026-11-03T07:30:00Z"), [{ itemId: "item-double-smash-burger", name: "Double Smash Burger", qty: 5, price: 1850 }], "CANCELLED");
+  await ticket(t2.s.id, 1, "KITCHEN", at("2026-11-03T07:00:00Z"), [
+    { itemId: "item-parmesan-fries", name: "Truffle Parmesan Fries", qty: 3, price: 750 },
+  ]);
+  await ticket(
+    t2.s.id,
+    2,
+    "KITCHEN",
+    at("2026-11-03T07:30:00Z"),
+    [{ itemId: "item-double-smash-burger", name: "Double Smash Burger", qty: 5, price: 1850 }],
+    "CANCELLED",
+  );
   await pay(t2.s.id, t2.gs[0]!.id, 1000, 0, at("2026-11-03T08:00:00Z"));
   await pay(t2.s.id, t2.gs[1]!.id, 1500, 0, at("2026-11-03T08:05:00Z"));
   await pay(t2.s.id, t2.gs[1]!.id, 9999, 0, at("2026-11-03T08:06:00Z"), "FAILED");
-  await db.review.create({ data: { sessionId: t2.s.id, guestId: t2.gs[0]!.id, rating: 2, comment: "Slow", createdAt: at("2026-11-03T09:00:00Z") } });
+  await db.review.create({
+    data: {
+      sessionId: t2.s.id,
+      guestId: t2.gs[0]!.id,
+      rating: 2,
+      comment: "Slow",
+      createdAt: at("2026-11-03T09:00:00Z"),
+    },
+  });
 
   const t3 = await visit(3, at("2026-11-01T05:30:00Z"), ["Old"]);
-  await ticket(t3.s.id, 1, "KITCHEN", at("2026-11-01T06:00:00Z"), [{ itemId: "item-margherita-pizza", name: "Margherita", qty: 1, price: 2000 }]);
+  await ticket(t3.s.id, 1, "KITCHEN", at("2026-11-01T06:00:00Z"), [
+    { itemId: "item-margherita-pizza", name: "Margherita", qty: 1, price: 2000 },
+  ]);
   await pay(t3.s.id, t3.gs[0]!.id, 2000, 0, at("2026-11-01T06:30:00Z"));
 }
 
@@ -70,8 +153,21 @@ describe.skipIf(!TEST_DATABASE_URL)("dashboard, order history & audit (integrati
   beforeAll(async () => {
     t = await createTestDb();
     db = t.db;
-    const env = parseEnv({ DATABASE_URL: t.url, CORS_ORIGINS: ORIGIN, PUBLIC_WEB_URL: ORIGIN, QR_TOKEN_SECRET: "q".repeat(40), COOKIE_SECRET: "c".repeat(40) });
-    app = createApp({ db, env, logger: pino({ level: "silent" }), realtime: createRecordingRealtime(), mailer: null, disableRateLimits: true }).app;
+    const env = parseEnv({
+      DATABASE_URL: t.url,
+      CORS_ORIGINS: ORIGIN,
+      PUBLIC_WEB_URL: ORIGIN,
+      QR_TOKEN_SECRET: "q".repeat(40),
+      COOKIE_SECRET: "c".repeat(40),
+    });
+    app = createApp({
+      db,
+      env,
+      logger: pino({ level: "silent" }),
+      realtime: createRecordingRealtime(),
+      mailer: null,
+      disableRateLimits: true,
+    }).app;
     await seedHistory(db);
     const res = await request(app).post("/api/auth/login").set("Origin", ORIGIN).send(TEST_MANAGER);
     manager = (res.headers["set-cookie"] as unknown as string[])[0]!.split(";")[0]!;
@@ -139,14 +235,24 @@ describe.skipIf(!TEST_DATABASE_URL)("dashboard, order history & audit (integrati
     it("lists tickets newest first with totals", async () => {
       const res = await get(`/api/admin/orders?${range}`);
       expect(res.body.total).toBe(4);
-      expect(res.body.orders[0]).toMatchObject({ tableNumber: 2, round: 2, status: "cancelled", totalCents: 9250, itemCount: 5 });
+      expect(res.body.orders[0]).toMatchObject({
+        tableNumber: 2,
+        round: 2,
+        status: "cancelled",
+        totalCents: 9250,
+        itemCount: 5,
+      });
       expect(res.body.orders.at(-1).station).toMatch(/kitchen|bar/);
     });
 
     it("filters by status, table, station and pages", async () => {
       expect((await get(`/api/admin/orders?${range}&status=cancelled`)).body.total).toBe(1);
       expect((await get(`/api/admin/orders?${range}&table=1`)).body.total).toBe(2);
-      expect((await get(`/api/admin/orders?${range}&station=bar`)).body.orders.map((o: { tableNumber: number }) => o.tableNumber)).toEqual([1]);
+      expect(
+        (await get(`/api/admin/orders?${range}&station=bar`)).body.orders.map(
+          (o: { tableNumber: number }) => o.tableNumber,
+        ),
+      ).toEqual([1]);
       const page2 = await get(`/api/admin/orders?${range}&pageSize=3&page=2`);
       expect(page2.body.orders).toHaveLength(1);
       expect((await get("/api/admin/orders?from=2026-11-01&to=2026-11-01")).body.total).toBe(1);
@@ -157,7 +263,9 @@ describe.skipIf(!TEST_DATABASE_URL)("dashboard, order history & audit (integrati
       expect(res.headers["content-type"]).toContain("text/csv");
       expect(res.headers["content-disposition"]).toContain("orders_2026-11-02_to_2026-11-03.csv");
       const lines = res.text.replace(/^﻿/, "").trim().split("\r\n");
-      expect(lines[0]).toBe("date,time,table,round,station,status,item,options,note,quantity,unit_price_UZS,line_total_UZS,added_by,order_id");
+      expect(lines[0]).toBe(
+        "date,time,table,round,station,status,item,options,note,quantity,unit_price_UZS,line_total_UZS,added_by,order_id",
+      );
       expect(lines).toHaveLength(1 + 4);
       expect(lines[1]).toMatch(/^2026-11-02,18:30,1,1,(kitchen|bar),served,/);
       expect(res.text).toContain(`"'=HYPERLINK(""http://evil"")"`); // formula neutralised
@@ -177,9 +285,17 @@ describe.skipIf(!TEST_DATABASE_URL)("dashboard, order history & audit (integrati
     });
 
     it("is manager-only", async () => {
-      const res = await request(app).post("/api/auth/pin").set("Origin", ORIGIN).send({ staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin });
+      const res = await request(app)
+        .post("/api/auth/pin")
+        .set("Origin", ORIGIN)
+        .send({ staffId: TEST_PIN_STAFF.waiter.id, pin: TEST_PIN_STAFF.waiter.pin });
       const waiter = (res.headers["set-cookie"] as unknown as string[])[0]!.split(";")[0]!;
-      for (const p of ["/api/admin/analytics", "/api/admin/orders", "/api/admin/orders/export.csv", "/api/admin/audit"]) {
+      for (const p of [
+        "/api/admin/analytics",
+        "/api/admin/orders",
+        "/api/admin/orders/export.csv",
+        "/api/admin/audit",
+      ]) {
         expect((await get(p, waiter)).status, p).toBe(403);
       }
     });

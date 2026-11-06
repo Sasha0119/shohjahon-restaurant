@@ -45,10 +45,26 @@ export function SuccessBurst() {
       <div className="flex flex-col items-center px-8 text-center">
         <div className="relative grid size-32 place-items-center">
           {[0, 1, 2].map((i) => (
-            <span key={i} aria-hidden className="burst-ring absolute inset-0 rounded-full border border-primary" style={{ "--i": i } as React.CSSProperties} />
+            <span
+              key={i}
+              aria-hidden
+              className="burst-ring absolute inset-0 rounded-full border border-primary"
+              style={{ "--i": i } as React.CSSProperties}
+            />
           ))}
-          <span aria-hidden className="burst-mark grid size-24 place-items-center rounded-full bg-primary text-on-primary">
-            <svg viewBox="0 0 48 48" className="size-12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <span
+            aria-hidden
+            className="burst-mark grid size-24 place-items-center rounded-full bg-primary text-on-primary"
+          >
+            <svg
+              viewBox="0 0 48 48"
+              className="size-12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path className="burst-check" pathLength={1} d="M12 25 l8 8 l16 -18" />
             </svg>
           </span>

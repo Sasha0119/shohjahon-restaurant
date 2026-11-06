@@ -1,6 +1,5 @@
 "use client";
 
-import type { MenuItem } from "@app/shared";
 import { createContext, useContext, useMemo } from "react";
 import type { MenuState } from "@/hooks/use-menu";
 import { useSessionStore } from "@/store/session-store";
@@ -35,9 +34,4 @@ export function useCartSummary() {
     }),
     [cart],
   );
-}
-
-export function useItem(itemId: string | null): MenuItem | undefined {
-  const { menuState } = useGuest();
-  return itemId ? menuState.itemsById.get(itemId) : undefined;
 }

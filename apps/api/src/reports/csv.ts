@@ -12,7 +12,7 @@ export function csvCell(value: unknown): string {
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-export function csvRow(values: unknown[]): string {
+function csvRow(values: unknown[]): string {
   return values.map(csvCell).join(",");
 }
 

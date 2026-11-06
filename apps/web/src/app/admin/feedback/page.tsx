@@ -80,7 +80,9 @@ export default function FeedbackPage() {
         return {
           ...d,
           counts: { new: d.counts.new + delta, handled: d.counts.handled - delta },
-          feedback: leaves ? d.feedback.filter((x) => x.id !== f.id) : d.feedback.map((x) => (x.id === f.id ? feedback : x)),
+          feedback: leaves
+            ? d.feedback.filter((x) => x.id !== f.id)
+            : d.feedback.map((x) => (x.id === f.id ? feedback : x)),
           total: leaves ? d.total - 1 : d.total,
         };
       });
@@ -113,7 +115,11 @@ export default function FeedbackPage() {
 
       <div className="mt-6">
         {failed && !data ? (
-          <EmptyState icon={CloudOff} title={t("errors.generic")} action={<Button onClick={() => void load(1)}>{t("common.retry")}</Button>} />
+          <EmptyState
+            icon={CloudOff}
+            title={t("errors.generic")}
+            action={<Button onClick={() => void load(1)}>{t("common.retry")}</Button>}
+          />
         ) : !data ? (
           <div className="space-y-3">
             <Skeleton className="h-32 rounded-card" />
@@ -126,7 +132,13 @@ export default function FeedbackPage() {
             <ul className="space-y-3">
               <>
                 {data.feedback.map((f) => (
-                  <FeedbackCard key={f.id} f={f} fresh={fresh.has(f.id)} busy={busy === f.id} onSet={(s) => void setStatus(f, s)} />
+                  <FeedbackCard
+                    key={f.id}
+                    f={f}
+                    fresh={fresh.has(f.id)}
+                    busy={busy === f.id}
+                    onSet={(s) => void setStatus(f, s)}
+                  />
                 ))}
               </>
             </ul>
@@ -142,7 +154,17 @@ export default function FeedbackPage() {
   );
 }
 
-function FeedbackCard({ f, fresh, busy, onSet }: { f: FeedbackDTO; fresh: boolean; busy: boolean; onSet: (s: "new" | "handled") => void }) {
+function FeedbackCard({
+  f,
+  fresh,
+  busy,
+  onSet,
+}: {
+  f: FeedbackDTO;
+  fresh: boolean;
+  busy: boolean;
+  onSet: (s: "new" | "handled") => void;
+}) {
   const t = useT();
   const now = useNow(60_000) ?? Date.now();
   const handled = f.status === "handled";
@@ -158,24 +180,44 @@ function FeedbackCard({ f, fresh, busy, onSet }: { f: FeedbackDTO; fresh: boolea
         <div>
           <div className="flex items-center gap-0.5" aria-label={t("rate.stars", { count: f.rating })}>
             {[1, 2, 3, 4, 5].map((n) => (
-              <Star key={n} className={cn("size-5", n <= f.rating ? "fill-secondary text-secondary" : "text-fg/20")} aria-hidden />
+              <Star
+                key={n}
+                className={cn("size-5", n <= f.rating ? "fill-secondary text-secondary" : "text-fg/20")}
+                aria-hidden
+              />
             ))}
           </div>
           <p className="mt-1 text-sm text-fg-muted">
-            {t("admin.feedback.table", { number: f.tableNumber })} · {f.guestName || t("admin.feedback.guest")} · {formatRelative(Date.parse(f.createdAt), now)}
+            {t("admin.feedback.table", { number: f.tableNumber })} · {f.guestName || t("admin.feedback.guest")} ·{" "}
+            {formatRelative(Date.parse(f.createdAt), now)}
           </p>
         </div>
-        <Badge tone={handled ? "success" : "danger"}>{handled ? t("admin.feedback.tabs.handled") : t("admin.feedback.tabs.new")}</Badge>
+        <Badge tone={handled ? "success" : "danger"}>
+          {handled ? t("admin.feedback.tabs.handled") : t("admin.feedback.tabs.new")}
+        </Badge>
       </div>
       <p className={cn("mt-3 whitespace-pre-wrap text-[15px] leading-relaxed", !f.comment && "italic text-fg-muted")}>
         {f.comment || t("admin.feedback.noComment")}
       </p>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
         <p className="text-xs text-fg-muted">
-          {handled && f.handledBy && f.handledAt ? t("admin.feedback.handledBy", { name: f.handledBy, time: formatRelative(Date.parse(f.handledAt), now) }) : ""}
+          {handled && f.handledBy && f.handledAt
+            ? t("admin.feedback.handledBy", { name: f.handledBy, time: formatRelative(Date.parse(f.handledAt), now) })
+            : ""}
         </p>
-        <Button size="sm" variant={handled ? "ghost" : "primary"} onClick={() => onSet(handled ? "new" : "handled")} disabled={busy}>
-          {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : handled ? <RotateCcw className="size-4" aria-hidden /> : <Check className="size-4" aria-hidden />}
+        <Button
+          size="sm"
+          variant={handled ? "ghost" : "primary"}
+          onClick={() => onSet(handled ? "new" : "handled")}
+          disabled={busy}
+        >
+          {busy ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : handled ? (
+            <RotateCcw className="size-4" aria-hidden />
+          ) : (
+            <Check className="size-4" aria-hidden />
+          )}
           {handled ? t("admin.feedback.reopen") : t("admin.feedback.markHandled")}
         </Button>
       </div>

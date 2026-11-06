@@ -42,7 +42,10 @@ export function ReservationsPanel({ refreshOn, className }: { refreshOn: unknown
 
   return (
     <section aria-labelledby="reservations-title" className={className}>
-      <h2 id="reservations-title" className="flex items-center gap-2 text-[13px] font-label uppercase tracking-[0.08em] text-primary">
+      <h2
+        id="reservations-title"
+        className="flex items-center gap-2 text-[13px] font-label uppercase tracking-[0.08em] text-primary"
+      >
         <CalendarClock className="size-4" aria-hidden />
         {t("reservations.title")}
       </h2>
@@ -61,7 +64,10 @@ export function ReservationsPanel({ refreshOn, className }: { refreshOn: unknown
                     <Users className="size-3.5" aria-hidden />
                     {r.partySize}
                   </span>
-                  <a href={`tel:${r.guestPhone}`} className="inline-flex items-center gap-1 underline-offset-2 hover:underline">
+                  <a
+                    href={`tel:${r.guestPhone}`}
+                    className="inline-flex items-center gap-1 underline-offset-2 hover:underline"
+                  >
                     <Phone className="size-3.5" aria-hidden />
                     {r.guestPhone}
                   </a>

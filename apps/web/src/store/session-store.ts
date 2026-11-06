@@ -83,7 +83,10 @@ export const useSessionStore = create<SessionState>((set, get) => {
       if (current && current.sessionId === snapshot.sessionId && snapshot.version < current.version) return;
       set({
         snapshot,
-        phase: snapshot.status === "closed" ? { kind: "closed", reason: snapshot.closeReason ?? "staff" } : { kind: "ready" },
+        phase:
+          snapshot.status === "closed"
+            ? { kind: "closed", reason: snapshot.closeReason ?? "staff" }
+            : { kind: "ready" },
       });
     },
 
@@ -93,7 +96,10 @@ export const useSessionStore = create<SessionState>((set, get) => {
     applyCart: (version, cart) => versioned(version, (s) => ({ ...s, cart })),
 
     applyOrdersCreated: (version, tickets) =>
-      versioned(version, (s) => ({ ...s, orders: [...s.orders.filter((o) => !tickets.some((t) => t.id === o.id)), ...tickets] })),
+      versioned(version, (s) => ({
+        ...s,
+        orders: [...s.orders.filter((o) => !tickets.some((t) => t.id === o.id)), ...tickets],
+      })),
 
     applyOrderUpdated: (version, u) =>
       versioned(version, (s) => ({

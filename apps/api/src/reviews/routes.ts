@@ -55,10 +55,21 @@ export function registerReviewRoutes(on: On, db: Db, realtime: Realtime) {
     const handled = status === "handled";
     const review = await db.review.update({
       where: { id },
-      data: { status: handled ? "HANDLED" : "NEW", handledAt: handled ? new Date() : null, handledById: handled ? req.staff!.id : null },
+      data: {
+        status: handled ? "HANDLED" : "NEW",
+        handledAt: handled ? new Date() : null,
+        handledById: handled ? req.staff!.id : null,
+      },
       include: feedbackInclude,
     });
-    await audit(db, { actor: { type: "staff", staffId: req.staff!.id }, action: "feedback.updated", entityType: "review", entityId: id, data: { status }, ip: req.ip });
+    await audit(db, {
+      actor: { type: "staff", staffId: req.staff!.id },
+      action: "feedback.updated",
+      entityType: "review",
+      entityId: id,
+      data: { status },
+      ip: req.ip,
+    });
     res.json({ feedback: toFeedbackDTO(review) });
   });
 }

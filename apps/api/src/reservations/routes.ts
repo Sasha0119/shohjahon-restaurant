@@ -65,7 +65,9 @@ export function registerReservationRoutes(on: On, db: Db, realtime: Realtime) {
 
     const created = await db.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BOOKING_LOCK}::bigint)`;
-      const held = await tx.reservation.count({ where: { guestPhone: phone, status: "ACTIVE", startsAt: { gt: now } } });
+      const held = await tx.reservation.count({
+        where: { guestPhone: phone, status: "ACTIVE", startsAt: { gt: now } },
+      });
       if (held >= RESERVATION_MAX_PER_PHONE) {
         throw new ApiError(429, "TOO_MANY_RESERVATIONS", "This number already has several reservations.");
       }

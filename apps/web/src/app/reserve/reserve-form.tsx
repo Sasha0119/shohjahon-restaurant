@@ -1,14 +1,17 @@
 "use client";
 
 import { brand } from "@app/config";
-import { RESERVATION_MIN_NOTICE_MINUTES, bookableTimes, isValidPhone, reservationDateRange, reservationInstant } from "@app/shared";
+import {
+  RESERVATION_MIN_NOTICE_MINUTES,
+  bookableTimes,
+  isValidPhone,
+  reservationDateRange,
+  reservationInstant,
+} from "@app/shared";
 import { CalendarCheck, Loader2 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
-import { LanguageSwitcher } from "@/components/brand/language-switcher";
-import { Logo } from "@/components/brand/logo";
-import { ThemeToggle } from "@/components/brand/theme-toggle";
+import { PublicHeader } from "@/components/brand/public-header";
 import { Button } from "@/components/ui/button";
-import { CurtainLink } from "@/components/ui/page-curtain";
 import { useMounted } from "@/hooks/use-mounted";
 import { useT } from "@/i18n";
 import { translateError } from "@/i18n/errors";
@@ -34,16 +37,7 @@ export function ReserveForm() {
 
   return (
     <main className="min-h-svh">
-      <header className="sticky top-0 z-30 glass border-b border-gold-line/50">
-        <div className="flex h-16 items-center gap-3 px-4 lg:px-8">
-          <CurtainLink href="/" aria-label={`${brand.name} — ${t("common.home")}`} className="pressable rounded-full">
-            <Logo size={38} />
-          </CurtainLink>
-          <h1 className="min-w-0 flex-1 truncate font-display text-[1.35rem] font-semibold leading-tight">{t("reserve.title")}</h1>
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </div>
-      </header>
+      <PublicHeader title={t("reserve.title")} />
       <div className="mx-auto max-w-md px-4 py-8">
         {booked ? (
           <Done booked={booked} />
@@ -92,7 +86,13 @@ function Form({ onBooked }: { onBooked: (b: Booked) => void }) {
     if (badName || badPhone) return;
     setBusy(true);
     try {
-      const res = await api<{ reservation: Booked }>("POST", "/api/reservations", { date, time: chosen, partySize, name, phone });
+      const res = await api<{ reservation: Booked }>("POST", "/api/reservations", {
+        date,
+        time: chosen,
+        partySize,
+        name,
+        phone,
+      });
       onBooked(res.reservation);
     } catch (err) {
       // The API or database is down: nothing the guest typed is wrong, so give them another way to book.
@@ -108,11 +108,25 @@ function Form({ onBooked }: { onBooked: (b: Booked) => void }) {
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-sm font-semibold">
           {t("reserve.date")}
-          <input type="date" required min={range.min} max={range.max} value={date} onChange={(e) => setDate(e.target.value)} className={field} />
+          <input
+            type="date"
+            required
+            min={range.min}
+            max={range.max}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className={field}
+          />
         </label>
         <label className="block text-sm font-semibold">
           {t("reserve.time")}
-          <select required value={chosen} onChange={(e) => setTime(e.target.value)} disabled={times.length === 0} className={field}>
+          <select
+            required
+            value={chosen}
+            onChange={(e) => setTime(e.target.value)}
+            disabled={times.length === 0}
+            className={field}
+          >
             {times.map((x) => (
               <option key={x} value={x}>
                 {x}
@@ -204,7 +218,9 @@ function Done({ booked }: { booked: Booked }) {
         })}
       </p>
       <p className="mt-1 text-fg-muted">{t("reserve.partyCount", { count: booked.partySize })}</p>
-      {brand.contact?.phone && <p className="mt-5 text-sm text-fg-muted">{t("reserve.change", { phone: brand.contact.phone })}</p>}
+      {brand.contact?.phone && (
+        <p className="mt-5 text-sm text-fg-muted">{t("reserve.change", { phone: brand.contact.phone })}</p>
+      )}
     </div>
   );
 }

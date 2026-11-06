@@ -11,7 +11,8 @@ import { ApiClientError, api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { useTableStore } from "@/store/table-store";
 
-type Phase = { kind: "rate" } | { kind: "thanks"; publicLinks: { label: LocalizedText; url: string }[]; isPublic: boolean };
+type Phase =
+  { kind: "rate" } | { kind: "thanks"; publicLinks: { label: LocalizedText; url: string }[]; isPublic: boolean };
 
 /**
  * "How was your visit?" — shown only after paying.
@@ -33,10 +34,14 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
   const submit = async () => {
     setBusy(true);
     try {
-      const res = await api<{ kind: "public" | "private"; reviewLinks: { label: LocalizedText; url: string }[] }>("POST", "/api/session/review", {
-        rating,
-        comment: comment.trim(),
-      });
+      const res = await api<{ kind: "public" | "private"; reviewLinks: { label: LocalizedText; url: string }[] }>(
+        "POST",
+        "/api/session/review",
+        {
+          rating,
+          comment: comment.trim(),
+        },
+      );
       setPhase({ kind: "thanks", publicLinks: res.reviewLinks, isPublic: res.kind === "public" });
       markReviewed(sessionId);
     } catch (e) {
@@ -51,7 +56,10 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
 
   const shown = hover || rating;
   return (
-    <section className={cn("card w-full p-5 text-center ring-1 ring-gold-line", className)} aria-labelledby="rate-title">
+    <section
+      className={cn("card w-full p-5 text-center ring-1 ring-gold-line", className)}
+      aria-labelledby="rate-title"
+    >
       <>
         {phase.kind === "rate" ? (
           <div className="enter" key="rate">
@@ -59,7 +67,12 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
               {t("rate.title")}
             </h2>
             <p className="mt-1 text-sm text-fg-muted">{t("rate.subtitle")}</p>
-            <div role="radiogroup" aria-labelledby="rate-title" className="mt-4 flex justify-center gap-1" onMouseLeave={() => setHover(0)}>
+            <div
+              role="radiogroup"
+              aria-labelledby="rate-title"
+              className="mt-4 flex justify-center gap-1"
+              onMouseLeave={() => setHover(0)}
+            >
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
                   key={n}
@@ -73,7 +86,10 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
                 >
                   <span className={cn("block transition-transform", n <= shown && "scale-110")}>
                     <Star
-                      className={cn("size-9 transition-colors", n <= shown ? "fill-primary text-primary" : "text-fg/25")}
+                      className={cn(
+                        "size-9 transition-colors",
+                        n <= shown ? "fill-primary text-primary" : "text-fg/25",
+                      )}
                       strokeWidth={1.6}
                       aria-hidden
                     />
@@ -108,13 +124,15 @@ export function RatingPanel({ sessionId, className }: { sessionId: string; class
           </div>
         ) : (
           <div key="thanks" className="enter flex flex-col items-center">
-            <span
-              className="enter grid size-14 place-items-center rounded-full bg-primary/12 text-primary ring-1 ring-gold-line"
-            >
+            <span className="enter grid size-14 place-items-center rounded-full bg-primary/12 text-primary ring-1 ring-gold-line">
               <Heart className="size-7 fill-current" aria-hidden />
             </span>
             <p className="mt-3 font-display text-lg font-semibold" role="status">
-              {phase.isPublic ? (phase.publicLinks.length ? t("rate.thanksPublic") : t("rate.thanksPublicNoLinks")) : t("rate.thanksPrivate")}
+              {phase.isPublic
+                ? phase.publicLinks.length
+                  ? t("rate.thanksPublic")
+                  : t("rate.thanksPublicNoLinks")
+                : t("rate.thanksPrivate")}
             </p>
             {phase.publicLinks.length > 0 && (
               <div className="mt-4 flex w-full flex-col gap-2">

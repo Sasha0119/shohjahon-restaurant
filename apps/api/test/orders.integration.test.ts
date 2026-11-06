@@ -54,9 +54,17 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
     del: (p: string) => request(app).delete(p).set("Origin", ORIGIN).set("Cookie", c),
   });
   const pin = async (who: "waiter" | "kitchen") =>
-    cookie(await request(app).post("/api/auth/pin").set("Origin", ORIGIN).send({ staffId: TEST_PIN_STAFF[who].id, pin: TEST_PIN_STAFF[who].pin }));
+    cookie(
+      await request(app)
+        .post("/api/auth/pin")
+        .set("Origin", ORIGIN)
+        .send({ staffId: TEST_PIN_STAFF[who].id, pin: TEST_PIN_STAFF[who].pin }),
+    );
   const opt = async (itemSlug: string, groupName: string, optionName: string) => {
-    const g = await db.modifierGroup.findFirstOrThrow({ where: { name: groupName, item: { slug: itemSlug } }, include: { options: true } });
+    const g = await db.modifierGroup.findFirstOrThrow({
+      where: { name: groupName, item: { slug: itemSlug } },
+      include: { options: true },
+    });
     return { groupId: g.id, optionId: g.options.find((o) => o.name === optionName)!.id };
   };
   const version = async (c: string) => (await as(c).get("/api/session")).body.snapshot.version as number;
@@ -109,13 +117,19 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
       const steak = await as(a).post("/api/session/cart", { itemId: "item-steak-frites", quantity: 1 });
       expect(steak.status).toBe(400);
       expect(steak.body.error.code).toBe("INVALID_SELECTION");
-      const bogus = await as(a).post("/api/session/cart", { itemId: "item-flat-white", quantity: 1, selection: { "not-a-group": [] } });
+      const bogus = await as(a).post("/api/session/cart", {
+        itemId: "item-flat-white",
+        quantity: 1,
+        selection: { "not-a-group": [] },
+      });
       expect(bogus.body.error.code).toBe("INVALID_SELECTION");
       const prawns = await as(a).post("/api/session/cart", { itemId: "item-garlic-prawn-spaghetti", quantity: 1 });
       expect(prawns.status).toBe(409);
       expect(prawns.body.error.code).toBe("OUT_OF_STOCK");
       await db.menuItem.update({ where: { id: "item-fudge-brownie" }, data: { archived: true } });
-      expect((await as(a).post("/api/session/cart", { itemId: "item-fudge-brownie", quantity: 1 })).body.error.code).toBe("ITEM_UNAVAILABLE");
+      expect(
+        (await as(a).post("/api/session/cart", { itemId: "item-fudge-brownie", quantity: 1 })).body.error.code,
+      ).toBe("ITEM_UNAVAILABLE");
       await db.menuItem.update({ where: { id: "item-fudge-brownie" }, data: { archived: false } });
     });
 
@@ -144,8 +158,14 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
     it("requires an Idempotency-Key and the current cart version", async () => {
       await as(g).post("/api/session/cart", { itemId: "item-double-smash-burger", quantity: 2 });
       const { groupId, optionId } = await opt("flat-white", "Milk", "Oat milk");
-      await as(g).post("/api/session/cart", { itemId: "item-flat-white", quantity: 1, selection: { [groupId]: [optionId] } });
-      expect((await as(g).post("/api/session/orders", { cartVersion: 0 })).body.error.code).toBe("IDEMPOTENCY_KEY_REQUIRED");
+      await as(g).post("/api/session/cart", {
+        itemId: "item-flat-white",
+        quantity: 1,
+        selection: { [groupId]: [optionId] },
+      });
+      expect((await as(g).post("/api/session/orders", { cartVersion: 0 })).body.error.code).toBe(
+        "IDEMPOTENCY_KEY_REQUIRED",
+      );
       expect((await send(g, 0)).body.error.code).toBe("CART_CHANGED");
     });
 
@@ -155,7 +175,11 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
       firstKey = randomUUID();
       first = await send(g, await version(g), firstKey);
       expect(first.status).toBe(201);
-      const tickets = first.body.tickets as { station: string; round: number; lines: { name: string; unitPriceCents: number; quantity: number; modifiers: { option: string }[] }[] }[];
+      const tickets = first.body.tickets as {
+        station: string;
+        round: number;
+        lines: { name: string; unitPriceCents: number; quantity: number; modifiers: { option: string }[] }[];
+      }[];
       expect(tickets.map((x) => x.station)).toEqual(["kitchen", "bar"]);
       expect(tickets.every((x) => x.round === 1)).toBe(true);
       expect(tickets[0]!.lines[0]).toMatchObject({ name: "Double Smash Burger", quantity: 2, unitPriceCents: 1850 });
@@ -170,7 +194,11 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
       // Live: the table, both screens and the waiters.
       expect(events("cart:updated").at(-1)!.payload).toMatchObject({ cart: [] });
       expect(events("order:created")).toHaveLength(1);
-      expect(events("kds:order").map((e) => e.rooms[0]).sort()).toEqual(["kds:bar", "kds:kitchen"]);
+      expect(
+        events("kds:order")
+          .map((e) => e.rooms[0])
+          .sort(),
+      ).toEqual(["kds:bar", "kds:kitchen"]);
       expect(events("table:status").at(-1)!.payload).toMatchObject({ number: 3, status: "ordered" });
     });
 
@@ -234,7 +262,9 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
       const tickets = await order();
       const res = await as(g).post(`/api/session/orders/${tickets[0]!.id}/cancel`);
       expect(res.status).toBe(200);
-      const statuses = (await db.order.findMany({ where: { id: { in: tickets.map((x) => x.id) } } })).map((o) => o.status);
+      const statuses = (await db.order.findMany({ where: { id: { in: tickets.map((x) => x.id) } } })).map(
+        (o) => o.status,
+      );
       expect(statuses).toEqual(["CANCELLED", "CANCELLED"]);
       const evts = events("order:updated").map((e) => (e.payload as { version: number }).version);
       expect(evts[1]).toBe(evts[0]! + 1); // consecutive versions, so phones apply both
@@ -264,13 +294,19 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
     it("moves one step at a time and tells the guests", async () => {
       const tickets = await order();
       const id = tickets[0]!.id;
-      expect((await as(kitchen).patch(`/api/kds/orders/${id}/status`, { status: "ready" })).body.error.code).toBe("INVALID_TRANSITION");
+      expect((await as(kitchen).patch(`/api/kds/orders/${id}/status`, { status: "ready" })).body.error.code).toBe(
+        "INVALID_TRANSITION",
+      );
       rt.clear();
       await as(kitchen).patch(`/api/kds/orders/${id}/status`, { status: "preparing" });
       await as(kitchen).patch(`/api/kds/orders/${id}/status`, { status: "ready" });
       const served = await as(kitchen).patch(`/api/kds/orders/${id}/status`, { status: "served" });
       expect(served.body.ticket.status).toBe("served");
-      expect(events("order:updated").map((e) => (e.payload as { status: string }).status)).toEqual(["preparing", "ready", "served"]);
+      expect(events("order:updated").map((e) => (e.payload as { status: string }).status)).toEqual([
+        "preparing",
+        "ready",
+        "served",
+      ]);
       const row = await db.order.findUniqueOrThrow({ where: { id } });
       expect(row.preparingAt && row.readyAt && row.servedAt).toBeTruthy();
       expect(await db.auditLog.count({ where: { action: "order.status_changed", entityId: id } })).toBe(3);
@@ -294,15 +330,21 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
     it("kitchen marks an item out of stock — live for every guest", async () => {
       const res = await as(kitchen).patch("/api/menu/items/item-classic-tiramisu/stock", { inStock: false });
       expect(res.status).toBe(200);
-      expect(events("menu:stock").at(-1)).toMatchObject({ rooms: ["everyone"], payload: { itemId: "item-classic-tiramisu", inStock: false } });
+      expect(events("menu:stock").at(-1)).toMatchObject({
+        rooms: ["everyone"],
+        payload: { itemId: "item-classic-tiramisu", inStock: false },
+      });
       const menu = (await request(app).get("/api/menu")).body;
       expect(menu.items.find((i: { id: string }) => i.id === "item-classic-tiramisu").inStock).toBe(false);
-      expect((await as(g).post("/api/session/cart", { itemId: "item-classic-tiramisu", quantity: 1 })).body.error.code).toBe("OUT_OF_STOCK");
+      expect(
+        (await as(g).post("/api/session/cart", { itemId: "item-classic-tiramisu", quantity: 1 })).body.error.code,
+      ).toBe("OUT_OF_STOCK");
       await as(kitchen).patch("/api/menu/items/item-classic-tiramisu/stock", { inStock: true });
     });
 
     // ── stock toggle: ordering, races, live updates ─────────────────────────
-    const stockOf = (id: string) => db.menuItem.findUniqueOrThrow({ where: { id }, select: { inStock: true, stockVersion: true } });
+    const stockOf = (id: string) =>
+      db.menuItem.findUniqueOrThrow({ where: { id }, select: { inStock: true, stockVersion: true } });
 
     it("stock toggle returns and broadcasts a version that goes up with every change", async () => {
       const id = "item-classic-tiramisu";
@@ -319,7 +361,10 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
       expect(events("menu:updated")).toHaveLength(0);
       // Guests' menu carries the same version, so a reload and the live feed agree.
       const menu = (await request(app).get("/api/menu")).body;
-      expect(menu.items.find((i: { id: string }) => i.id === id)).toMatchObject({ inStock: true, stockVersion: before.stockVersion + 2 });
+      expect(menu.items.find((i: { id: string }) => i.id === id)).toMatchObject({
+        inStock: true,
+        stockVersion: before.stockVersion + 2,
+      });
     });
 
     it("rapid toggles: the database ends on the last value sent, and the newest event says so", async () => {
@@ -330,7 +375,9 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
       const row = await stockOf(id);
       expect(row.inStock).toBe(false);
       const newest = events("menu:stock").reduce((a, b) =>
-        (b.payload as { stockVersion: number }).stockVersion > (a.payload as { stockVersion: number }).stockVersion ? b : a,
+        (b.payload as { stockVersion: number }).stockVersion > (a.payload as { stockVersion: number }).stockVersion
+          ? b
+          : a,
       );
       expect(newest.payload).toMatchObject({ itemId: id, inStock: row.inStock, stockVersion: row.stockVersion });
       await as(kitchen).patch(`/api/menu/items/${id}/stock`, { inStock: true });
@@ -393,7 +440,9 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
     });
 
     it("is race-free when several phones tap at once", async () => {
-      const results = await Promise.all(Array.from({ length: 5 }, () => as(g).post("/api/session/calls", { type: "assistance" })));
+      const results = await Promise.all(
+        Array.from({ length: 5 }, () => as(g).post("/api/session/calls", { type: "assistance" })),
+      );
       expect(results.map((r) => r.status).sort()).toEqual([201, 429, 429, 429, 429]);
     });
 
@@ -411,7 +460,10 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
     it("a bill request shows on the table status", async () => {
       await as(g).post("/api/session/calls", { type: "bill" });
       const tables = (await as(waiter).get("/api/waiter/tables")).body.tables;
-      expect(tables.find((x: { number: number }) => x.number === 5)).toMatchObject({ status: "billRequested", session: { guestCount: 2 } });
+      expect(tables.find((x: { number: number }) => x.number === 5)).toMatchObject({
+        status: "billRequested",
+        session: { guestCount: 2 },
+      });
     });
   });
 });

@@ -42,10 +42,7 @@ export function NicknameCard() {
     <div className="card p-4">
       <>
         {showForm ? (
-          <form className="enter"
-            key="form"
-            onSubmit={save}
-          >
+          <form className="enter" key="form" onSubmit={save}>
             <div className="flex items-start gap-3">
               <span className="grid size-10 shrink-0 place-items-center rounded-full text-primary ring-1 ring-gold-line">
                 <Users className="size-5" aria-hidden />
@@ -75,11 +72,11 @@ export function NicknameCard() {
             </div>
           </form>
         ) : (
-          <div
-            key="set"
-            className="enter flex items-center gap-3"
-          >
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary font-semibold text-on-primary" aria-hidden>
+          <div key="set" className="enter flex items-center gap-3">
+            <span
+              className="grid size-10 shrink-0 place-items-center rounded-full bg-primary font-semibold text-on-primary"
+              aria-hidden
+            >
               {me.nickname.charAt(0).toUpperCase()}
             </span>
             <p className="min-w-0 flex-1 truncate font-semibold">{t("nickname.orderingAs", { name: me.nickname })}</p>

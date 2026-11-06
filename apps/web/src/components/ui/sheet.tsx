@@ -101,7 +101,12 @@ export function Sheet({
     const speed = distance / Math.max(1, e.timeStamp - startTime);
     if (distance > DISMISS_DISTANCE || speed > DISMISS_SPEED) onClose();
   };
-  const dragHandlers = { onPointerDown: startDrag, onPointerMove: moveDrag, onPointerUp: endDrag, onPointerCancel: endDrag };
+  const dragHandlers = {
+    onPointerDown: startDrag,
+    onPointerMove: moveDrag,
+    onPointerUp: endDrag,
+    onPointerCancel: endDrag,
+  };
   const onCloseRef = useRef(onClose);
   const mounted = useMounted();
   const modal = useMinWidth("md");
@@ -170,73 +175,73 @@ export function Sheet({
   );
 
   return createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
-          <div aria-hidden data-state={state} className="sheet-backdrop absolute inset-0 bg-black/70" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
+      <div aria-hidden data-state={state} className="sheet-backdrop absolute inset-0 bg-black/70" onClick={onClose} />
+      <div
+        ref={panelRef}
+        data-state={state}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descId : undefined}
+        tabIndex={-1}
+        className={cn(
+          "sheet-panel glass-panel relative flex max-h-[min(92svh,900px)] w-full max-w-xl flex-col overflow-hidden rounded-t-sheet outline-none sm:mb-4 sm:rounded-sheet",
+          "md:mb-0 md:max-h-[min(88svh,860px)] md:max-w-2xl",
+          split && "lg:h-[min(86svh,760px)] lg:max-w-5xl lg:flex-row",
+          className,
+        )}
+      >
+        {/* Drag handle zone (phones only) */}
+        {!modal && (
           <div
-            ref={panelRef}
-            data-state={state}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={description ? descId : undefined}
-            tabIndex={-1}
-            className={cn(
-              "sheet-panel glass-panel relative flex max-h-[min(92svh,900px)] w-full max-w-xl flex-col overflow-hidden rounded-t-sheet outline-none sm:mb-4 sm:rounded-sheet",
-              "md:mb-0 md:max-h-[min(88svh,860px)] md:max-w-2xl",
-              split && "lg:h-[min(86svh,760px)] lg:max-w-5xl lg:flex-row",
-              className,
-            )}
+            className="absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab touch-none items-start justify-center pt-2.5 active:cursor-grabbing"
+            {...dragHandlers}
           >
-            {/* Drag handle zone (phones only) */}
-            {!modal && (
-              <div
-                className="absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab touch-none items-start justify-center pt-2.5 active:cursor-grabbing"
-                {...dragHandlers}
-              >
-                <span className={cn("h-1.5 w-11 rounded-full", media ? "bg-white/80 shadow" : "bg-primary/40")} />
-              </div>
-            )}
-
-            <IconButton
-              label={t("common.close")}
-              variant={media && !split ? "glass" : "muted"}
-              onClick={onClose}
-              className="absolute right-3 top-3 z-20 size-10"
-            >
-              <X className="size-5" aria-hidden />
-            </IconButton>
-
-            {split ? (
-              <>
-                <div className="relative w-1/2 shrink-0 overflow-hidden">{media}</div>
-                <div className="flex min-h-0 w-1/2 flex-col">
-                  <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
-                    <div className="px-7 pb-7 pt-8">
-                      {heading}
-                      {children}
-                    </div>
-                  </div>
-                  {footerBar}
-                </div>
-              </>
-            ) : (
-              <>
-                <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
-                  {media && (
-                    <div className={cn(!modal && "touch-none")} {...dragHandlers}>
-                      {media}
-                    </div>
-                  )}
-                  <div className={cn("px-5 pb-6 md:px-7", media ? "pt-5" : "pt-8")}>
-                    {heading}
-                    {children}
-                  </div>
-                </div>
-                {footerBar}
-              </>
-            )}
+            <span className={cn("h-1.5 w-11 rounded-full", media ? "bg-white/80 shadow" : "bg-primary/40")} />
           </div>
-        </div>,
+        )}
+
+        <IconButton
+          label={t("common.close")}
+          variant={media && !split ? "glass" : "muted"}
+          onClick={onClose}
+          className="absolute right-3 top-3 z-20 size-10"
+        >
+          <X className="size-5" aria-hidden />
+        </IconButton>
+
+        {split ? (
+          <>
+            <div className="relative w-1/2 shrink-0 overflow-hidden">{media}</div>
+            <div className="flex min-h-0 w-1/2 flex-col">
+              <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
+                <div className="px-7 pb-7 pt-8">
+                  {heading}
+                  {children}
+                </div>
+              </div>
+              {footerBar}
+            </div>
+          </>
+        ) : (
+          <>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
+              {media && (
+                <div className={cn(!modal && "touch-none")} {...dragHandlers}>
+                  {media}
+                </div>
+              )}
+              <div className={cn("px-5 pb-6 md:px-7", media ? "pt-5" : "pt-8")}>
+                {heading}
+                {children}
+              </div>
+            </div>
+            {footerBar}
+          </>
+        )}
+      </div>
+    </div>,
     document.body,
   );
 }

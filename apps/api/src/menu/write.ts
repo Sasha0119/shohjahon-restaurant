@@ -74,7 +74,13 @@ export async function saveItem(tx: Tx, id: string | null, input: ItemInput): Pro
   const keep = new Set<string>();
 
   for (const [gi, g] of input.modifierGroups.entries()) {
-    const groupData = { name: g.name, translations: g.translations, minSelect: g.minSelect, maxSelect: g.maxSelect, sortOrder: gi };
+    const groupData = {
+      name: g.name,
+      translations: g.translations,
+      minSelect: g.minSelect,
+      maxSelect: g.maxSelect,
+      sortOrder: gi,
+    };
     const existing = g.id ? known.get(g.id) : undefined;
     const group = existing
       ? await tx.modifierGroup.update({ where: { id: existing.id }, data: groupData })
@@ -107,13 +113,25 @@ export async function saveItem(tx: Tx, id: string | null, input: ItemInput): Pro
 export async function saveCombo(
   tx: Tx,
   id: string | null,
-  input: { name: string; translations?: Record<string, { name?: string }>; discountCents: number; itemIds: string[]; active: boolean },
+  input: {
+    name: string;
+    translations?: Record<string, { name?: string }>;
+    discountCents: number;
+    itemIds: string[];
+    active: boolean;
+  },
 ): Promise<string> {
   const itemIds = [...new Set(input.itemIds)];
   if (itemIds.length < 2) throw errors.badRequest("COMBO_TOO_SMALL", "A combo needs at least two different items.");
   const found = await tx.menuItem.count({ where: { id: { in: itemIds }, archived: false } });
-  if (found !== itemIds.length) throw errors.badRequest("UNKNOWN_ITEM", "One of the items doesn't exist or is archived.");
-  const data = { name: input.name, translations: input.translations ?? {}, discountCents: input.discountCents, active: input.active };
+  if (found !== itemIds.length)
+    throw errors.badRequest("UNKNOWN_ITEM", "One of the items doesn't exist or is archived.");
+  const data = {
+    name: input.name,
+    translations: input.translations ?? {},
+    discountCents: input.discountCents,
+    active: input.active,
+  };
   const combo = id ? await tx.comboDeal.update({ where: { id }, data }) : await tx.comboDeal.create({ data });
   await tx.comboDealItem.deleteMany({ where: { comboId: combo.id } });
   await tx.comboDealItem.createMany({ data: itemIds.map((itemId) => ({ comboId: combo.id, itemId })) });

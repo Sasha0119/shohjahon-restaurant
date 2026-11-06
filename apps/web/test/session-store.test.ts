@@ -44,7 +44,12 @@ describe("session store", () => {
 
   it("applies the next guest event, ignores stale ones, asks to resync on a gap", () => {
     s().applySnapshot(snapshot());
-    expect(s().applyGuests(4, [{ id: "g1", nickname: "Sam" }, { id: "g2", nickname: "" }])).toBe("apply");
+    expect(
+      s().applyGuests(4, [
+        { id: "g1", nickname: "Sam" },
+        { id: "g2", nickname: "" },
+      ]),
+    ).toBe("apply");
     expect(s().snapshot?.me.nickname).toBe("Sam");
     expect(s().snapshot?.guests).toHaveLength(2);
     expect(s().applyGuests(4, [])).toBe("ignore");
@@ -75,7 +80,11 @@ describe("phaseForJoinError", () => {
   const err = (code: string, details?: unknown) => new ApiClientError(409, code, "x", details);
 
   it("maps API errors to the right screen", () => {
-    expect(phaseForJoinError(err("TABLE_OCCUPIED", { table: 4, guestCount: 2 }))).toEqual({ kind: "occupied", table: 4, guestCount: 2 });
+    expect(phaseForJoinError(err("TABLE_OCCUPIED", { table: 4, guestCount: 2 }))).toEqual({
+      kind: "occupied",
+      table: 4,
+      guestCount: 2,
+    });
     expect(phaseForJoinError(err("OTHER_TABLE", { currentTable: 3, newTable: 7 }))).toEqual({
       kind: "otherTable",
       currentTable: 3,
@@ -91,10 +100,26 @@ describe("phaseForJoinError", () => {
 
 describe("session store — cart, orders and calls", () => {
   const s = () => useSessionStore.getState();
-  const line = { id: "l1", itemId: "i1", quantity: 1, selection: {}, note: null, guestId: "g1", addedBy: "", unitPriceCents: 500, updatedAt: "" };
+  const line = {
+    id: "l1",
+    itemId: "i1",
+    quantity: 1,
+    selection: {},
+    note: null,
+    guestId: "g1",
+    addedBy: "",
+    unitPriceCents: 500,
+    updatedAt: "",
+  };
   const ticket = {
-    id: "o1", round: 1, station: "kitchen" as const, status: "received" as const, createdAt: "2026-11-03T19:00:00Z",
-    statusChangedAt: "2026-11-03T19:00:00Z", tableNumber: 12, lines: [],
+    id: "o1",
+    round: 1,
+    station: "kitchen" as const,
+    status: "received" as const,
+    createdAt: "2026-11-03T19:00:00Z",
+    statusChangedAt: "2026-11-03T19:00:00Z",
+    tableNumber: 12,
+    lines: [],
   };
   beforeEach(() => useSessionStore.setState({ phase: { kind: "joining" }, snapshot: null, connected: false }));
 
@@ -105,15 +130,26 @@ describe("session store — cart, orders and calls", () => {
     expect(s().snapshot?.cart).toHaveLength(1);
     expect(s().applyCart(5, [])).toBe("apply");
     expect(s().applyOrdersCreated(6, [ticket])).toBe("apply");
-    expect(s().applyOrderUpdated(7, { orderId: "o1", round: 1, station: "kitchen", status: "preparing", at: "x" })).toBe("apply");
+    expect(
+      s().applyOrderUpdated(7, { orderId: "o1", round: 1, station: "kitchen", status: "preparing", at: "x" }),
+    ).toBe("apply");
     expect(s().snapshot?.orders[0]!.status).toBe("preparing");
     // The phone that acted applies the REST response; the matching socket event is then ignored.
-    expect(s().applyOrderUpdated(7, { orderId: "o1", round: 1, station: "kitchen", status: "preparing", at: "x" })).toBe("ignore");
+    expect(
+      s().applyOrderUpdated(7, { orderId: "o1", round: 1, station: "kitchen", status: "preparing", at: "x" }),
+    ).toBe("ignore");
   });
 
   it("keeps only open calls", () => {
     s().applySnapshot(snapshot());
-    const call = { id: "c1", type: "water" as const, status: "open" as const, tableNumber: 12, createdAt: "", amountCents: null };
+    const call = {
+      id: "c1",
+      type: "water" as const,
+      status: "open" as const,
+      tableNumber: 12,
+      createdAt: "",
+      amountCents: null,
+    };
     s().applyCall(call);
     expect(s().snapshot?.calls).toHaveLength(1);
     s().applyCall({ ...call, status: "handled" });

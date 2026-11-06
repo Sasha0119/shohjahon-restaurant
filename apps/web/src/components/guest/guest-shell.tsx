@@ -71,7 +71,15 @@ export function GuestShell({ token, children }: { token: string; children: React
     <div aria-hidden className="absolute inset-x-0 top-0 md:pl-[calc(6rem+env(safe-area-inset-left))]">
       <div className="relative mx-auto h-svh min-h-[600px] max-h-[960px] w-full max-w-3xl overflow-hidden lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[96rem]">
         <div className="hero-settle absolute inset-0">
-          <Image src={brand.heroImage.src} alt="" fill priority decoding="sync" sizes="(max-aspect-ratio: 3/2) 150vh, 100vw" className="object-cover" />
+          <Image
+            src={brand.heroImage.src}
+            alt=""
+            fill
+            priority
+            decoding="sync"
+            sizes="(max-aspect-ratio: 3/2) 150vh, 100vw"
+            className="object-cover"
+          />
         </div>
       </div>
     </div>

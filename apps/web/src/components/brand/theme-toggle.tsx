@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 import { IconButton } from "@/components/ui/button";
 import { useT } from "@/i18n";
 
-export const THEME_STORAGE_KEY = "theme-mode";
+const THEME_STORAGE_KEY = "theme-mode";
 
 function subscribe(callback: () => void) {
   const observer = new MutationObserver(callback);
@@ -37,10 +37,7 @@ export function ThemeToggle({ onImage }: { onImage?: boolean }) {
       onClick={toggle}
     >
       <>
-        <span
-          key={mode ?? "unknown"}
-          className="enter grid place-items-center"
-        >
+        <span key={mode ?? "unknown"} className="enter grid place-items-center">
           {mode === "dark" ? <Sun className="size-5" aria-hidden /> : <Moon className="size-5" aria-hidden />}
         </span>
       </>

@@ -125,7 +125,13 @@ body:has(.sj)::before {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to top, rgb(13 12 10 / 0.92), rgb(13 12 10 / 0.66) 45%, rgb(13 12 10 / 0.42) 75%, rgb(13 12 10 / 0.3)),
+    linear-gradient(
+      to top,
+      rgb(13 12 10 / 0.92),
+      rgb(13 12 10 / 0.66) 45%,
+      rgb(13 12 10 / 0.42) 75%,
+      rgb(13 12 10 / 0.3)
+    ),
     linear-gradient(to bottom, rgb(13 12 10 / 0.55), transparent 22%);
   pointer-events: none;
 }

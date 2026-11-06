@@ -9,7 +9,15 @@ describe("safeNext (post-login redirect)", () => {
   });
 
   it("blocks open redirects", () => {
-    for (const bad of ["https://evil.example", "//evil.example", "/\\evil.example", "javascript:alert(1)", "", null, "/a\nb"]) {
+    for (const bad of [
+      "https://evil.example",
+      "//evil.example",
+      "/\\evil.example",
+      "javascript:alert(1)",
+      "",
+      null,
+      "/a\nb",
+    ]) {
       expect(safeNext(bad, "/fallback")).toBe("/fallback");
     }
   });

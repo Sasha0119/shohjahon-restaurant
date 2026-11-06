@@ -25,7 +25,13 @@ describe("time zones", () => {
 
   it("uses the zone for opening hours too", () => {
     const hours = {
-      mon: [], tue: [{ open: "09:00", close: "17:00" }], wed: [], thu: [], fri: [], sat: [], sun: [],
+      mon: [],
+      tue: [{ open: "09:00", close: "17:00" }],
+      wed: [],
+      thu: [],
+      fri: [],
+      sat: [],
+      sun: [],
     };
     expect(openState(hours, instant, "America/New_York").isOpen).toBe(true);
     expect(openState(hours, instant, "Asia/Tokyo").isOpen).toBe(false);

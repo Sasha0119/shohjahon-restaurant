@@ -12,7 +12,20 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 
 /** Activity groups → audit action prefixes. */
-const CATEGORIES = ["all", "staff", "table", "session", "order", "call", "payment", "discount", "menu", "review", "feedback", "image"] as const;
+const CATEGORIES = [
+  "all",
+  "staff",
+  "table",
+  "session",
+  "order",
+  "call",
+  "payment",
+  "discount",
+  "menu",
+  "review",
+  "feedback",
+  "image",
+] as const;
 type Category = (typeof CATEGORIES)[number];
 
 interface Page {
@@ -68,7 +81,11 @@ export default function AuditPage() {
         <DateRangeFilter value={range} onChange={setRange} />
         <label className="inline-block">
           <span className="mb-1 block text-sm font-semibold">{t("admin.audit.category")}</span>
-          <select className={cn(inputClass, "w-56")} value={category} onChange={(e) => setCategory(e.target.value as Category)}>
+          <select
+            className={cn(inputClass, "w-56")}
+            value={category}
+            onChange={(e) => setCategory(e.target.value as Category)}
+          >
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
                 {t(`admin.audit.categories.${c}`)}
@@ -80,7 +97,11 @@ export default function AuditPage() {
 
       <div className="mt-6">
         {failed && !data ? (
-          <EmptyState icon={CloudOff} title={t("admin.audit.loadError")} action={<Button onClick={() => void load(query, 1)}>{t("common.retry")}</Button>} />
+          <EmptyState
+            icon={CloudOff}
+            title={t("admin.audit.loadError")}
+            action={<Button onClick={() => void load(query, 1)}>{t("common.retry")}</Button>}
+          />
         ) : !data ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }, (_, i) => (
@@ -95,21 +116,30 @@ export default function AuditPage() {
             <ol className="divide-y divide-line overflow-hidden card">
               {data.entries.map((e) => {
                 const Icon = e.actor.type === "staff" ? UserCog : e.actor.type === "guest" ? User : Bot;
-                const details = e.data && typeof e.data === "object" && Object.keys(e.data).length > 0 ? JSON.stringify(e.data, null, 2) : null;
+                const details =
+                  e.data && typeof e.data === "object" && Object.keys(e.data).length > 0
+                    ? JSON.stringify(e.data, null, 2)
+                    : null;
                 return (
                   <li key={e.id} className="flex gap-3 p-4">
-                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-fg-muted" aria-hidden>
+                    <span
+                      className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-fg-muted"
+                      aria-hidden
+                    >
                       <Icon className="size-4" />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold">{actionLabel(e.action)}</p>
                       <p className="text-sm text-fg-muted">
-                        {t(`admin.audit.actor.${e.actor.type}`)}: {e.actor.name ?? t("admin.audit.unknownActor")} · {formatStamp(e.createdAt)}
+                        {t(`admin.audit.actor.${e.actor.type}`)}: {e.actor.name ?? t("admin.audit.unknownActor")} ·{" "}
+                        {formatStamp(e.createdAt)}
                         {e.ip && <span className="tabular"> · {e.ip}</span>}
                       </p>
                       {details && (
                         <details className="mt-1">
-                          <summary className="cursor-pointer text-sm font-semibold text-fg-muted hover:text-fg">{t("admin.audit.details")}</summary>
+                          <summary className="cursor-pointer text-sm font-semibold text-fg-muted hover:text-fg">
+                            {t("admin.audit.details")}
+                          </summary>
                           <pre className="mt-2 max-h-60 overflow-auto rounded-xl bg-muted p-3 text-xs">
                             {`${e.entityType} ${e.entityId}\n${details}`}
                           </pre>

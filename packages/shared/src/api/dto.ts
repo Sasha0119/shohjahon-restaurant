@@ -170,11 +170,23 @@ export interface MenuDTO {
       translations: TextTranslations<"name">;
       minSelect: number;
       maxSelect: number;
-      options: { id: string; name: string; translations: TextTranslations<"name">; priceDeltaCents: Money; isDefault: boolean }[];
+      options: {
+        id: string;
+        name: string;
+        translations: TextTranslations<"name">;
+        priceDeltaCents: Money;
+        isDefault: boolean;
+      }[];
     }[];
   }[];
   suggestions: { itemId: string; suggestItemId: string }[];
-  combos: { id: string; name: string; translations: TextTranslations<"name">; discountCents: Money; itemIds: string[] }[];
+  combos: {
+    id: string;
+    name: string;
+    translations: TextTranslations<"name">;
+    discountCents: Money;
+    itemIds: string[];
+  }[];
 }
 
 /** The full menu as the manager edits it (GET /api/admin/menu) — includes inactive and archived entries. */
@@ -204,7 +216,14 @@ export interface AdminMenuDTO {
     }[];
   })[];
   suggestions: { id: string; itemId: string; suggestItemId: string }[];
-  combos: { id: string; name: string; translations: TextTranslations<"name">; discountCents: Money; itemIds: string[]; active: boolean }[];
+  combos: {
+    id: string;
+    name: string;
+    translations: TextTranslations<"name">;
+    discountCents: Money;
+    itemIds: string[];
+    active: boolean;
+  }[];
 }
 
 export interface AnalyticsKpisDTO {

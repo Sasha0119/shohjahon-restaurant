@@ -16,7 +16,7 @@ const orderableInclude = {
   },
 } satisfies Prisma.MenuItemInclude;
 
-export type OrderableRow = Prisma.MenuItemGetPayload<{ include: typeof orderableInclude }>;
+type OrderableRow = Prisma.MenuItemGetPayload<{ include: typeof orderableInclude }>;
 
 export interface Orderable {
   row: OrderableRow;
@@ -44,14 +44,19 @@ function toShared(row: OrderableRow): MenuItem {
         name: g.name,
         minSelect: g.minSelect,
         maxSelect: g.maxSelect,
-        options: g.options.map((o) => ({ id: o.id, name: o.name, priceDelta: o.priceDeltaCents, isDefault: o.isDefault })),
+        options: g.options.map((o) => ({
+          id: o.id,
+          name: o.name,
+          priceDelta: o.priceDeltaCents,
+          isDefault: o.isDefault,
+        })),
       })),
   };
 }
 
-export const unavailable = (names: string[]) =>
+const unavailable = (names: string[]) =>
   new ApiError(409, "ITEM_UNAVAILABLE", `${names.join(", ")} can't be ordered right now.`, { items: names });
-export const outOfStock = (names: string[]) =>
+const outOfStock = (names: string[]) =>
   new ApiError(409, "OUT_OF_STOCK", `Sorry — ${names.join(", ")} just sold out.`, { items: names });
 
 /**
@@ -87,7 +92,10 @@ export async function loadOrderable(db: Db | Tx, itemIds: string[], now = new Da
  * Keep only this item's groups, de-duplicate options, then validate the
  * choices against the live menu (required groups, max choices, active options).
  */
-export function checkSelection(o: Orderable, raw: ModifierSelection): { selection: ModifierSelection; unitPriceCents: number } {
+export function checkSelection(
+  o: Orderable,
+  raw: ModifierSelection,
+): { selection: ModifierSelection; unitPriceCents: number } {
   const groups = new Map(o.item.modifierGroups.map((g) => [g.id, g]));
   for (const key of Object.keys(raw)) {
     if (!groups.has(key)) throw new ApiError(400, "INVALID_SELECTION", `"${o.item.name}" has no option group ${key}.`);
@@ -95,7 +103,12 @@ export function checkSelection(o: Orderable, raw: ModifierSelection): { selectio
   const selection: ModifierSelection = {};
   for (const g of o.item.modifierGroups) {
     // A group left out entirely gets its defaults; an explicitly empty group stays empty.
-    const chosen = raw[g.id] ?? g.options.filter((x) => x.isDefault).map((x) => x.id).slice(0, g.maxSelect);
+    const chosen =
+      raw[g.id] ??
+      g.options
+        .filter((x) => x.isDefault)
+        .map((x) => x.id)
+        .slice(0, g.maxSelect);
     selection[g.id] = [...new Set(chosen)];
   }
   const problems = validateSelection(o.item, selection);

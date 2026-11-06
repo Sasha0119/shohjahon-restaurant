@@ -53,16 +53,23 @@ function PrintQr() {
                 style={{ "--primary-color": "#8A6424" } as React.CSSProperties}
                 className="relative flex break-inside-avoid flex-col items-center rounded-card bg-[#FBF8F2] p-8 text-center text-[#1d1a15] shadow-soft ring-1 ring-[#C9A45C]/40 print:rounded-none print:shadow-none print:ring-0 print:[break-inside:avoid]"
               >
-                <div aria-hidden className="pointer-events-none absolute inset-3 rounded-[calc(var(--radius-card)-8px)] ring-1 ring-[#C9A45C]/45 print:rounded-none" />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-3 rounded-[calc(var(--radius-card)-8px)] ring-1 ring-[#C9A45C]/45 print:rounded-none"
+                />
                 <Logo size={52} />
                 <p className="mt-2 font-display text-2xl font-semibold tracking-wide">{brand.name}</p>
-                <p className="mt-1 text-[10px] font-label uppercase tracking-[0.08em] text-[#8A6424]">{localize(brand.tagline, locale)}</p>
+                <p className="mt-1 text-[10px] font-label uppercase tracking-[0.08em] text-[#8A6424]">
+                  {localize(brand.tagline, locale)}
+                </p>
                 <div aria-hidden className="mt-4 flex items-center gap-2 text-[#C9A45C]">
                   <span className="h-px w-12 bg-current" />
                   <span className="size-1.5 rotate-45 bg-current" />
                   <span className="h-px w-12 bg-current" />
                 </div>
-                <p className="mt-3 font-display text-4xl font-semibold">{t("admin.tables.table", { number: tb.number })}</p>
+                <p className="mt-3 font-display text-4xl font-semibold">
+                  {t("admin.tables.table", { number: tb.number })}
+                </p>
                 {/* eslint-disable-next-line @next/next/no-img-element -- authenticated API image */}
                 <img
                   src={`/api/admin/tables/${tb.id}/qr?size=640`}

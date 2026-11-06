@@ -33,7 +33,12 @@ export async function addToCart(
 
   const version = await db.$transaction(async (tx) => {
     const lines = await tx.cartItem.findMany({ where: { sessionId: guest.sessionId } });
-    const signature = lineSignature({ itemId: input.itemId, selection, note: note ?? undefined, addedByGuestId: guest.id });
+    const signature = lineSignature({
+      itemId: input.itemId,
+      selection,
+      note: note ?? undefined,
+      addedByGuestId: guest.id,
+    });
     const same = lines.find(
       (l) =>
         lineSignature({
@@ -44,11 +49,22 @@ export async function addToCart(
         }) === signature,
     );
     if (same) {
-      await tx.cartItem.update({ where: { id: same.id }, data: { quantity: Math.min(MAX_QTY, same.quantity + input.quantity) } });
+      await tx.cartItem.update({
+        where: { id: same.id },
+        data: { quantity: Math.min(MAX_QTY, same.quantity + input.quantity) },
+      });
     } else {
-      if (lines.length >= MAX_LINES) throw errors.badRequest("CART_FULL", "The cart is full. Send this round to the kitchen first.");
+      if (lines.length >= MAX_LINES)
+        throw errors.badRequest("CART_FULL", "The cart is full. Send this round to the kitchen first.");
       await tx.cartItem.create({
-        data: { sessionId: guest.sessionId, itemId: input.itemId, guestId: guest.id, quantity: input.quantity, selection, note },
+        data: {
+          sessionId: guest.sessionId,
+          itemId: input.itemId,
+          guestId: guest.id,
+          quantity: input.quantity,
+          selection,
+          note,
+        },
       });
     }
     return bumpVersion(tx, guest.sessionId);

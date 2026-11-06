@@ -53,7 +53,12 @@ describe("route table", () => {
   });
 
   it("never exposes a public write route except join, webhooks, receipt email and booking", () => {
-    const allowed = ["/api/tables/:qrToken/join", "/api/payments/webhook/:provider", "/api/receipts/:publicToken/email", "/api/reservations"];
+    const allowed = [
+      "/api/tables/:qrToken/join",
+      "/api/payments/webhook/:provider",
+      "/api/receipts/:publicToken/email",
+      "/api/reservations",
+    ];
     for (const r of routes.filter((r) => r.access.kind === "public" && r.method !== "GET")) {
       if (r.path.startsWith("/api/auth/")) continue;
       expect(allowed, `${r.method} ${r.path}`).toContain(r.path);
@@ -104,14 +109,19 @@ describe("request schemas", () => {
 
   it("validates modifier groups", () => {
     const opt = { name: "A" };
-    expect(modifierGroupInput.safeParse({ name: "G", minSelect: 2, maxSelect: 1, options: [opt, opt] }).success).toBe(false);
+    expect(modifierGroupInput.safeParse({ name: "G", minSelect: 2, maxSelect: 1, options: [opt, opt] }).success).toBe(
+      false,
+    );
     expect(modifierGroupInput.safeParse({ name: "G", minSelect: 2, maxSelect: 2, options: [opt] }).success).toBe(false);
     expect(
       modifierGroupInput.safeParse({
         name: "G",
         minSelect: 0,
         maxSelect: 1,
-        options: [{ name: "A", isDefault: true }, { name: "B", isDefault: true }],
+        options: [
+          { name: "A", isDefault: true },
+          { name: "B", isDefault: true },
+        ],
       }).success,
     ).toBe(false);
   });
@@ -127,7 +137,9 @@ describe("request schemas", () => {
   it("requires role-specific staff credentials", () => {
     expect(staffInput.safeParse({ role: "waiter", name: "A", pin: "1234" }).success).toBe(true);
     expect(staffInput.safeParse({ role: "waiter", name: "A" }).success).toBe(false);
-    expect(staffInput.safeParse({ role: "manager", name: "A", email: "a@b.co", password: "short" }).success).toBe(false);
+    expect(staffInput.safeParse({ role: "manager", name: "A", email: "a@b.co", password: "short" }).success).toBe(
+      false,
+    );
     const m = staffInput.parse({ role: "manager", name: "A", email: "Boss@Example.COM", password: "long-enough-pw" });
     expect(m.role === "manager" && m.email).toBe("boss@example.com");
   });
@@ -137,8 +149,13 @@ describe("request schemas", () => {
     expect(discountCodeInput.safeParse({ code: "BIG", kind: "percent", value: 150 }).success).toBe(false);
     expect(discountCodeInput.safeParse({ code: "FIX", kind: "fixed", value: 2.5 }).success).toBe(false);
     expect(
-      discountCodeInput.safeParse({ code: "OLD", kind: "fixed", value: 500, startsAt: "2026-02-01", endsAt: "2026-01-01" })
-        .success,
+      discountCodeInput.safeParse({
+        code: "OLD",
+        kind: "fixed",
+        value: 500,
+        startsAt: "2026-02-01",
+        endsAt: "2026-01-01",
+      }).success,
     ).toBe(false);
   });
 });

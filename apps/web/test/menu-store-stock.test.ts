@@ -23,7 +23,9 @@ const item = (id: string, inStock: boolean, stockVersion: number): MenuDTO["item
 
 const menu = (version: string, items: MenuDTO["items"]): MenuDTO => ({
   version,
-  categories: [{ id: "c1", slug: "mains", name: "Mains", description: null, translations: {}, station: "kitchen", sortOrder: 0 }],
+  categories: [
+    { id: "c1", slug: "mains", name: "Mains", description: null, translations: {}, station: "kitchen", sortOrder: 0 },
+  ],
   items,
   suggestions: [],
   combos: [],

@@ -71,7 +71,13 @@ export function registerReportRoutes(on: On, db: Db) {
       }),
       db.order.count({ where }),
     ]);
-    res.json({ orders: orders.map(toAdminOrder), page: q.page, pageSize: q.pageSize, total, range: { from: range.from, to: range.to } });
+    res.json({
+      orders: orders.map(toAdminOrder),
+      page: q.page,
+      pageSize: q.pageSize,
+      total,
+      range: { from: range.from, to: range.to },
+    });
   });
 
   /** One row per ordered line — easiest to pivot in a spreadsheet. */
@@ -85,7 +91,12 @@ export function registerReportRoutes(on: On, db: Db) {
       include: orderInclude,
     });
     const digits = currencyDigits(brand.currency.code);
-    const time = new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+    const time = new Intl.DateTimeFormat("en-GB", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    });
     const rows = orders.flatMap((o) =>
       o.items.map((i) => [
         zonedDate(o.createdAt, tz),
@@ -105,8 +116,20 @@ export function registerReportRoutes(on: On, db: Db) {
       ]),
     );
     const header = [
-      "date", "time", "table", "round", "station", "status", "item", "options", "note",
-      "quantity", `unit_price_${brand.currency.code}`, `line_total_${brand.currency.code}`, "added_by", "order_id",
+      "date",
+      "time",
+      "table",
+      "round",
+      "station",
+      "status",
+      "item",
+      "options",
+      "note",
+      "quantity",
+      `unit_price_${brand.currency.code}`,
+      `line_total_${brand.currency.code}`,
+      "added_by",
+      "order_id",
     ];
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="orders_${range.from}_to_${range.to}.csv"`);
@@ -134,14 +157,23 @@ export function registerReportRoutes(on: On, db: Db) {
     ]);
     const guestIds = [...new Set(entries.map((e) => e.actorGuestId).filter((x): x is string => !!x))];
     const guests = guestIds.length
-      ? new Map((await db.sessionGuest.findMany({ where: { id: { in: guestIds } }, select: { id: true, nickname: true } })).map((g) => [g.id, g.nickname]))
+      ? new Map(
+          (
+            await db.sessionGuest.findMany({ where: { id: { in: guestIds } }, select: { id: true, nickname: true } })
+          ).map((g) => [g.id, g.nickname]),
+        )
       : new Map<string, string>();
     const out: AuditEntryDTO[] = entries.map((e) => ({
       id: e.id,
       createdAt: e.createdAt.toISOString(),
       actor: {
         type: e.actorType === "STAFF" ? "staff" : e.actorType === "GUEST" ? "guest" : "system",
-        name: e.actorType === "STAFF" ? (e.actorStaff?.name ?? null) : e.actorGuestId ? guests.get(e.actorGuestId) || null : null,
+        name:
+          e.actorType === "STAFF"
+            ? (e.actorStaff?.name ?? null)
+            : e.actorGuestId
+              ? guests.get(e.actorGuestId) || null
+              : null,
       },
       action: e.action,
       entityType: e.entityType,

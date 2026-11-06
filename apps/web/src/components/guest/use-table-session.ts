@@ -108,7 +108,9 @@ export function useTableSession(token: string) {
     socket.on("cart:updated", ({ version, cart }) => check(s().applyCart(version, cart)));
     // Orders change the bill: re-read it (a cheap GET; the bill itself is computed on the server).
     const refreshBill = () =>
-      void api<{ bill: BillDTO }>("GET", "/api/session/bill").then(({ bill }) => s().setBill(bill)).catch(() => {});
+      void api<{ bill: BillDTO }>("GET", "/api/session/bill")
+        .then(({ bill }) => s().setBill(bill))
+        .catch(() => {});
     socket.on("order:created", ({ version, tickets }) => {
       check(s().applyOrdersCreated(version, tickets));
       refreshBill();
@@ -127,7 +129,9 @@ export function useTableSession(token: string) {
     // Menu edits: revalidate the menu (a cheap 304 if nothing changed for us).
     socket.on("menu:updated", () => void useMenuStore.getState().load());
     // Stock changes: update just that item, no reload.
-    socket.on("menu:stock", ({ itemId, inStock, stockVersion }) => useMenuStore.getState().applyStock(itemId, inStock, stockVersion));
+    socket.on("menu:stock", ({ itemId, inStock, stockVersion }) =>
+      useMenuStore.getState().applyStock(itemId, inStock, stockVersion),
+    );
     socket.on("session:closed", ({ reason }) => {
       s().closed(reason);
       socket.disconnect();
