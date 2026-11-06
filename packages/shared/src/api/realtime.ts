@@ -76,7 +76,7 @@ export interface ServerToClientEvents {
   /** Menu edited by a manager: clients refetch GET /api/menu. → everyone */
   "menu:updated": (p: { menuVersion: string }) => void;
 
-  /** New / changed ticket for a station. → kds:<station> + managers */
+  /** New / changed ticket for a station. → kds:<station> + managers + waiters */
   "kds:order": (p: { ticket: OrderTicketDTO }) => void;
   /** New private (1–3 star) feedback. → managers */
   "feedback:created": (p: { feedback: FeedbackDTO }) => void;

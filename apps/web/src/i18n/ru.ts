@@ -487,6 +487,7 @@ export const ru: Messages = {
     closeSession: "Закрыть сессию этого стола",
     closeConfirm: "Гости увидят, что визит завершён.",
     closed: "Стол {number} снова свободен",
+    readyTitle: "Готово: отнесите к столу",
   },
   admin: {
     title: "Управление",

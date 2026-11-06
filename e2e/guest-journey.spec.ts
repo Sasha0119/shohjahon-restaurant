@@ -57,10 +57,14 @@ test("a guest orders, the kitchen and waiter react live, the guest pays and rate
   for (const dish of ["Tashkent plov", "Cappuccino"])
     await card(dish).getByRole("button", { name: "Ready", exact: true }).click();
   await expect(round.getByText("Ready", { exact: true })).toBeVisible();
+  // The waiter is told the food is ready, live; it clears once it has been served.
+  const readyAlert = waiter.getByRole("button", { name: "Served: Table 4" });
+  await expect(readyAlert).toHaveCount(2);
   for (const dish of ["Tashkent plov", "Cappuccino"])
     await card(dish).getByRole("button", { name: "Served", exact: true }).click();
   await expect(round.getByText("Served", { exact: true })).toBeVisible();
   await expect(kds.getByText("All clear")).toBeVisible();
+  await expect(readyAlert).toHaveCount(0);
 
   // Pay the full bill by (mock) card, no tip.
   await guest.goto(`${link}/bill`);

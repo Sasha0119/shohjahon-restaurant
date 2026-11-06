@@ -142,6 +142,21 @@ export function registerOrderRoutes(on: On, db: Db, env: Env, realtime: Realtime
     res.json({ call: await handleCall(db, realtime, id, req.staff!.id, req.ip) });
   });
 
+  on("GET", "/api/waiter/ready-orders", async (_req, res) => {
+    const orders = await db.order.findMany({
+      where: { status: "READY" },
+      orderBy: { statusChangedAt: "asc" },
+      take: 200,
+      include: ticketInclude,
+    });
+    res.json({ tickets: orders.map(toTicketDTO), serverTime: new Date().toISOString() });
+  });
+
+  on("POST", "/api/waiter/orders/:orderId/served", async (req, res) => {
+    const id = parse(zId, req.params.orderId);
+    res.json({ ticket: await updateTicketStatus(db, realtime, id, "served", req.staff!.id, req.ip) });
+  });
+
   on("GET", "/api/waiter/tables", async (_req, res) => {
     const tables = await db.diningTable.findMany({
       where: { active: true },

@@ -8,7 +8,7 @@
 - **Idem.** = requires an `Idempotency-Key` header (16–128 chars). Retrying returns the first response.
 - Inputs are validated with the named Zod schema from `packages/shared/src/api/schemas.ts`.
 
-**69 routes.**
+**71 routes.**
 
 ## health
 
@@ -66,6 +66,8 @@
 |---|---|---|---|---|---|---|---|
 | GET | `/api/waiter/calls` | waiter, manager |  |  |  | 6 | Open server calls with table number and time |
 | POST | `/api/waiter/calls/:callId/handle` | waiter, manager |  |  | `call:updated` | 6 | Mark a call handled (guest sees 'on the way') |
+| GET | `/api/waiter/ready-orders` | waiter, manager |  |  |  | 6 | Tickets the kitchen has finished, waiting to be taken to the table |
+| POST | `/api/waiter/orders/:orderId/served` | waiter, manager |  |  | `order:updated` `kds:order` | 6 | Mark a ready ticket as served (audit logged) |
 | GET | `/api/waiter/tables` | waiter, manager |  |  |  | 6 | Live table status: free / occupied / ordering / waiting for bill |
 | POST | `/api/waiter/sessions/:sessionId/close` | waiter, manager |  |  | `session:closed` `table:status` | 4 | Close a session manually (audit logged) |
 | POST | `/api/waiter/sessions/:sessionId/cash` | waiter, manager | `confirmCashBody` |  | `payment:updated` `bill:updated` | 7 | Confirm a cash payment was received |

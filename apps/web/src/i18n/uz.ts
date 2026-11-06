@@ -468,6 +468,7 @@ export const uz: Messages = {
     closeSession: "Bu stol sessiyasini yopish",
     closeConfirm: "Mehmonlar tashrifi yakunlanganini koʻradi.",
     closed: "{number}-stol yana boʻsh",
+    readyTitle: "Tayyor: stolga olib boring",
   },
   admin: {
     title: "Boshqaruv",

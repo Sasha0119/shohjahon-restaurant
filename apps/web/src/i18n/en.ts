@@ -468,6 +468,7 @@ export const en = {
     closeSession: "Close this table's session",
     closeConfirm: "Guests will see that their visit has ended.",
     closed: "Table {number} is free again",
+    readyTitle: "Ready: take it to the table",
   },
   admin: {
     title: "Admin",

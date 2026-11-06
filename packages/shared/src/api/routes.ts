@@ -229,6 +229,21 @@ export const routes: RouteDef[] = [
   },
   {
     method: "GET",
+    path: "/api/waiter/ready-orders",
+    access: staff("waiter", "manager"),
+    summary: "Tickets the kitchen has finished, waiting to be taken to the table",
+    phase: 6,
+  },
+  {
+    method: "POST",
+    path: "/api/waiter/orders/:orderId/served",
+    access: staff("waiter", "manager"),
+    summary: "Mark a ready ticket as served (audit logged)",
+    emits: ["order:updated", "kds:order"],
+    phase: 6,
+  },
+  {
+    method: "GET",
     path: "/api/waiter/tables",
     access: staff("waiter", "manager"),
     summary: "Live table status: free / occupied / ordering / waiting for bill",

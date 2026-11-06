@@ -1,10 +1,12 @@
 "use client";
 
-import type { CallDTO, ReservationSummaryDTO, TableStatusDTO } from "@app/shared/api";
+import { isTicketUpdateNewer } from "@app/shared";
+import type { CallDTO, OrderTicketDTO, ReservationSummaryDTO, TableStatusDTO } from "@app/shared/api";
 import {
   Banknote,
   BellRing,
   Check,
+  ConciergeBell,
   Droplets,
   HandHelping,
   Loader2,
@@ -68,15 +70,27 @@ function Floor() {
   const sound = useSoundAlerts();
   const [tab, setTab] = useState<"calls" | "tables">("calls");
   const [calls, setCalls] = useState<CallDTO[] | null>(null);
+  const [ready, setReady] = useState<OrderTicketDTO[]>([]);
   const [tables, setTables] = useState<FloorTable[] | null>(null);
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   const [openTable, setOpenTable] = useState<FloorTable | null>(null);
   const callsRef = useRef<CallDTO[] | null>(null);
   callsRef.current = calls;
+  const readyRef = useRef(ready);
+  readyRef.current = ready;
+  /** Tickets this screen just served; a late "ready" event must not bring them back. */
+  const servedRef = useRef<Set<string>>(new Set());
 
   const loadCalls = useCallback(async () => {
     try {
       setCalls((await api<{ calls: CallDTO[] }>("GET", "/api/waiter/calls")).calls);
+    } catch {
+      /* retried on reconnect */
+    }
+  }, []);
+  const loadReady = useCallback(async () => {
+    try {
+      setReady((await api<{ tickets: OrderTicketDTO[] }>("GET", "/api/waiter/ready-orders")).tickets);
     } catch {
       /* retried on reconnect */
     }
@@ -90,8 +104,9 @@ function Floor() {
   }, []);
   useEffect(() => {
     void loadCalls();
+    void loadReady();
     void loadTables();
-  }, [loadCalls, loadTables]);
+  }, [loadCalls, loadReady, loadTables]);
 
   const tablesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshTables = () => {
@@ -121,10 +136,32 @@ function Floor() {
         if (call.status !== "open") setCalls((list) => (list ?? []).filter((c) => c.id !== call.id));
         refreshTables();
       },
+      "kds:order": ({ ticket }) => {
+        const existing = readyRef.current.find((x) => x.id === ticket.id);
+        if (existing && !isTicketUpdateNewer(existing, ticket)) return;
+        if (ticket.status !== "ready") {
+          setReady((list) => list.filter((x) => x.id !== ticket.id));
+          return;
+        }
+        if (existing || servedRef.current.has(ticket.id)) return;
+        sound.play();
+        setFresh((s) => new Set(s).add(ticket.id));
+        setTimeout(
+          () =>
+            setFresh((s) => {
+              const n = new Set(s);
+              n.delete(ticket.id);
+              return n;
+            }),
+          10_000,
+        );
+        setReady((list) => [...list, ticket]);
+      },
       "table:status": () => refreshTables(),
     },
     () => {
       void loadCalls();
+      void loadReady();
       void loadTables();
     },
   );
@@ -148,6 +185,24 @@ function Floor() {
     }
   };
 
+  const markServed = async (ticket: OrderTicketDTO) => {
+    servedRef.current.add(ticket.id);
+    setReady((list) => list.filter((x) => x.id !== ticket.id));
+    try {
+      await api("POST", `/api/waiter/orders/${ticket.id}/served`);
+      toast.success(t("waiter.handled"));
+    } catch (e) {
+      servedRef.current.delete(ticket.id);
+      // If someone else already served it, the refresh below clears it without an error.
+      if (!(e instanceof ApiClientError && (e.code === "STALE_STATUS" || e.code === "INVALID_TRANSITION"))) {
+        toast.error(translateError(e, t));
+      }
+      void loadReady();
+    }
+  };
+
+  const alertCount = (calls?.length ?? 0) + ready.length;
+
   return (
     <div className="min-h-svh">
       <StaffHeader title={t("waiter.title")} connected={connected} sound={sound} />
@@ -159,7 +214,7 @@ function Floor() {
           value={tab}
           onChange={setTab}
           options={[
-            { value: "calls", label: `${t("waiter.tabs.calls")}${calls?.length ? ` · ${calls.length}` : ""}` },
+            { value: "calls", label: `${t("waiter.tabs.calls")}${alertCount ? ` · ${alertCount}` : ""}` },
             { value: "tables", label: t("waiter.tabs.tables") },
           ]}
         />
@@ -176,9 +231,9 @@ function Floor() {
             className="sr-only lg:not-sr-only lg:mb-3 lg:flex lg:items-center lg:gap-3 lg:px-1 lg:font-sans lg:text-[13px] lg:font-semibold lg:uppercase lg:tracking-[0.2em] lg:text-primary"
           >
             {t("waiter.tabs.calls")}
-            {!!calls?.length && (
+            {alertCount > 0 && (
               <span className="grid h-6 min-w-6 place-items-center rounded-full px-2 text-xs tabular text-fg ring-1 ring-gold-line">
-                {calls.length}
+                {alertCount}
               </span>
             )}
           </h2>
@@ -187,11 +242,19 @@ function Floor() {
               <Skeleton className="h-24 rounded-card" />
               <Skeleton className="h-24 rounded-card" />
             </div>
-          ) : calls.length === 0 ? (
+          ) : alertCount === 0 ? (
             <EmptyState icon={BellRing} title={t("waiter.noCalls")} body={t("waiter.noCallsBody")} />
           ) : (
             <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:mt-0 lg:grid-cols-1">
               <>
+                {ready.map((ticket) => (
+                  <ReadyCard
+                    key={ticket.id}
+                    ticket={ticket}
+                    fresh={fresh.has(ticket.id)}
+                    onServed={() => void markServed(ticket)}
+                  />
+                ))}
                 {calls.map((c) => (
                   <CallCard key={c.id} call={c} fresh={fresh.has(c.id)} onHandle={() => void handle(c)} />
                 ))}
@@ -266,6 +329,45 @@ function Floor() {
       </div>
       <CloseTableSheet table={openTable} onClose={() => setOpenTable(null)} onClosed={() => void loadTables()} />
     </div>
+  );
+}
+
+function ReadyCard({ ticket, fresh, onServed }: { ticket: OrderTicketDTO; fresh: boolean; onServed: () => void }) {
+  const t = useT();
+  const now = useNow(15_000) ?? Date.now();
+  const table = t("kitchen.table", { number: ticket.tableNumber });
+  return (
+    <li
+      className={`enter ${cn(
+        "glass-card flex flex-wrap items-center gap-4 rounded-card p-4 outline-1 -outline-offset-1 outline-primary/60",
+        fresh && "animate-pulse-ring",
+      )}`}
+    >
+      <span className="grid size-16 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/50 ring-offset-4 ring-offset-surface">
+        <ConciergeBell className="size-7" strokeWidth={1.6} aria-hidden />
+      </span>
+      <div className="min-w-[9rem] flex-1">
+        <p className="font-display text-[1.75rem] font-semibold leading-tight">{table}</p>
+        <p className="font-semibold text-primary">{t("waiter.readyTitle")}</p>
+        <ul className="mt-1 text-[15px]">
+          {ticket.lines.map((line) => (
+            <li key={line.id}>
+              {line.quantity} × {line.name}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-1 text-sm text-fg-muted tabular">{formatRelative(Date.parse(ticket.statusChangedAt), now)}</p>
+      </div>
+      <Button
+        size="lg"
+        className="min-h-14 w-full text-base sm:w-auto lg:w-full"
+        onClick={onServed}
+        aria-label={`${t("kitchen.served")}: ${table}`}
+      >
+        <Check className="size-5" aria-hidden />
+        {t("kitchen.served")}
+      </Button>
+    </li>
   );
 }
 

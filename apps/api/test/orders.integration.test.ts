@@ -312,6 +312,26 @@ describe.skipIf(!TEST_DATABASE_URL)("cart, orders, kitchen & calls (integration)
       expect(await db.auditLog.count({ where: { action: "order.status_changed", entityId: id } })).toBe(3);
     });
 
+    it("tells waiters when a ticket is ready and lets them mark it served", async () => {
+      const waiter = await pin("waiter");
+      const id = (await order())[0]!.id;
+      await as(kitchen).patch(`/api/kds/orders/${id}/status`, { status: "preparing" });
+      const ids = async () =>
+        (await as(waiter).get("/api/waiter/ready-orders")).body.tickets.map((x: { id: string }) => x.id);
+      expect(await ids()).not.toContain(id);
+      expect((await as(waiter).post(`/api/waiter/orders/${id}/served`)).body.error.code).toBe("INVALID_TRANSITION");
+
+      rt.clear();
+      await as(kitchen).patch(`/api/kds/orders/${id}/status`, { status: "ready" });
+      expect(events("kds:order").at(-1)!.rooms).toContain("waiters");
+      expect(await ids()).toContain(id);
+
+      expect((await as(kitchen).post(`/api/waiter/orders/${id}/served`)).status).toBe(403);
+      const served = await as(waiter).post(`/api/waiter/orders/${id}/served`);
+      expect(served.body.ticket.status).toBe("served");
+      expect(await ids()).not.toContain(id);
+    });
+
     it("lets only one of two screens advance the same ticket", async () => {
       const tickets = await order();
       const id = tickets[0]!.id;

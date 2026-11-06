@@ -37,7 +37,7 @@ export function toTicketDTO(o: OrderWithTicket): OrderTicketDTO {
   };
 }
 
-/** Push a ticket to its kitchen/bar screen and to managers. */
+/** Push a ticket to its kitchen/bar screen, to managers, and to waiters (who watch for "ready"). */
 export function emitTicket(realtime: Realtime, ticket: OrderTicketDTO): void {
-  realtime.emit([rooms.kds(ticket.station), rooms.managers], "kds:order", { ticket });
+  realtime.emit([rooms.kds(ticket.station), rooms.managers, rooms.waiters], "kds:order", { ticket });
 }
