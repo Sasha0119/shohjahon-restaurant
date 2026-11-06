@@ -32,9 +32,6 @@ export default function HomePage() {
     <main>
       {/* ── Hero: full-screen photo, logo, tagline, one clear action ─────────── */}
       <section className="relative isolate flex h-svh min-h-[600px] max-h-[960px] flex-col overflow-hidden text-white">
-        <div className="hero-settle absolute inset-0 -z-10">
-          <Image src={brand.heroImage.src} alt={brand.heroImage.alt} fill priority sizes="(max-aspect-ratio: 3/2) 150vh, 100vw" className="object-cover" />
-        </div>
         <div aria-hidden className="absolute inset-0 -z-10" style={{ background: "var(--hero-tint)" }} />
         <div
           aria-hidden

@@ -39,6 +39,7 @@ describe.skipIf(!TEST_DATABASE_URL)("reservations (integration)", () => {
   const manager = () => signIn("/api/auth/login", TEST_MANAGER);
 
   const table = (number: number) => db.diningTable.findUniqueOrThrow({ where: { number } });
+  const table_ = table;
   const join = async (number: number, body: object = {}) => {
     const tb = await table(number);
     return request(app)
@@ -108,6 +109,30 @@ describe.skipIf(!TEST_DATABASE_URL)("reservations (integration)", () => {
       const first = await book({ partySize: 1 }).expect(201);
       const second = await book({ partySize: 1, time: later }).expect(201);
       expect(second.body.reservation.tableNumber).toBe(first.body.reservation.tableNumber);
+    });
+
+    it("gives a partly overlapping booking a different table", async () => {
+      const times = bookableTimes(brand.openingHours, date);
+      const first = await book({ partySize: 1, time: times[2] }).expect(201); // an hour after opening
+      const earlier = await book({ partySize: 1, time: times[0] }).expect(201); // overlaps its start
+      const later = await book({ partySize: 1, time: times[4] }).expect(201); // overlaps its end
+      expect(earlier.body.reservation.tableNumber).not.toBe(first.body.reservation.tableNumber);
+      expect(later.body.reservation.tableNumber).not.toBe(first.body.reservation.tableNumber);
+    });
+
+    it("skips tables that are too small, even when they are free", async () => {
+      const seats = await db.diningTable.aggregate({ _max: { seats: true } });
+      const res = await book({ partySize: seats._max.seats! }).expect(201);
+      const table = await table_(res.body.reservation.tableNumber);
+      expect(table.seats).toBeGreaterThanOrEqual(seats._max.seats!);
+    });
+
+    it("frees the table for the same time once a booking is cancelled", async () => {
+      const first = await book({ partySize: 1 }).expect(201);
+      const row = await db.reservation.findFirstOrThrow();
+      await request(app).post(`/api/waiter/reservations/${row.id}/cancel`).set("Origin", ORIGIN).set("Cookie", await waiter()).expect(200);
+      const again = await book({ partySize: 1 }).expect(201);
+      expect(again.body.reservation.tableNumber).toBe(first.body.reservation.tableNumber);
     });
 
     it("refuses a party no table can seat", async () => {

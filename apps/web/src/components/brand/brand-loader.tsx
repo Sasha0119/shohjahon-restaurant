@@ -1,7 +1,6 @@
 "use client";
 
 import { brand } from "@app/config";
-import Image from "next/image";
 import { Logo } from "./logo";
 
 /**
@@ -10,15 +9,10 @@ import { Logo } from "./logo";
  * server and animated in CSS, so it shows before any JavaScript has run. With
  * "reduce motion" on, the arc stays still.
  */
-export function BrandLoader({ label, heroBehind }: { label: string; /** Show the hero photo behind it, as the guest home page does. */ heroBehind?: boolean }) {
+export function BrandLoader({ label, heroBehind }: { label: string; /** The hero photo is behind it (see guest-shell.tsx): dim it, and use light text. */ heroBehind?: boolean }) {
   return (
     <main className={`relative isolate grid min-h-svh place-items-center overflow-hidden px-6${heroBehind ? " text-white" : ""}`} role="status" aria-live="polite">
-      {heroBehind && (
-        <>
-          <Image src={brand.heroImage.src} alt="" fill priority sizes="(max-aspect-ratio: 3/2) 150vh, 100vw" className="-z-20 scale-[1.14] object-cover" />
-          <div aria-hidden className="absolute inset-0 -z-10 bg-black/70" />
-        </>
-      )}
+      {heroBehind && <div aria-hidden className="absolute inset-0 -z-10 bg-black/70" />}
       <div className="flex flex-col items-center text-center">
         <div className="relative grid size-20 place-items-center">
           <svg aria-hidden viewBox="0 0 112 112" className="animate-turn absolute inset-0">
