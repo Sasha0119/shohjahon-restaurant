@@ -8,7 +8,14 @@ import type { Db } from "../src/db.ts";
 import { parseEnv } from "../src/env.ts";
 import { createRecordingRealtime } from "../src/realtime/types.ts";
 import { createQrToken } from "../src/tables/qr-token.ts";
-import { TEST_DATABASE_URL, TEST_MANAGER, TEST_PIN_STAFF, createTestDb, type TestDb } from "./helpers/test-db.ts";
+import {
+  TEST_DATABASE_URL,
+  TEST_MANAGER,
+  TEST_PIN_STAFF,
+  createTestDb,
+  type TestDb,
+  openTablePin,
+} from "./helpers/test-db.ts";
 
 const ORIGIN = "http://localhost:3000";
 const QR = "q".repeat(40);
@@ -49,7 +56,7 @@ describe.skipIf(!TEST_DATABASE_URL)("reviews & feedback log (integration)", () =
       await request(app)
         .post(`/api/tables/${createQrToken(QR, tb.id, tb.qrVersion)}/join`)
         .set("Origin", ORIGIN)
-        .send({ confirmJoin }),
+        .send(confirmJoin ? { joinPin: await openTablePin(db, tb.id, QR) } : {}),
     );
   };
   const post = (c: string, p: string, body: object = {}, key?: string) => {

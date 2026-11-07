@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { buildCsp, createNonce } from "./lib/security-headers";
+import { buildCsp, createNonce, withClientIp } from "./lib/security-headers";
 
 /**
  * Runs before every page request: creates a per-request nonce and the
@@ -7,6 +7,12 @@ import { buildCsp, createNonce } from "./lib/security-headers";
  * the nonce from the request's CSP header and stamps it on its own scripts.
  */
 export function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.next({
+      request: { headers: withClientIp(request.headers, process.env.INTERNAL_PROXY_SECRET) },
+    });
+  }
+
   const nonce = createNonce();
   const https = request.headers.get("x-forwarded-proto") === "https" || request.nextUrl.protocol === "https:";
   const csp = buildCsp({ nonce, dev: process.env.NODE_ENV === "development", https });
@@ -21,8 +27,9 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/:path*",
     {
-      // Pages only — not the proxied API, sockets, uploads or static build files.
+      // Pages — not the API (above), sockets, uploads or static build files.
       source:
         "/((?!api/|socket\\.io/|uploads/|_next/static|_next/image|favicon\\.ico|icon|apple-icon|maskable-icon|manifest\\.webmanifest).*)",
       missing: [

@@ -24,6 +24,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: STATIC_SECURITY_HEADERS }];
   },
+  // Requests to /api pass through src/proxy.ts, which by default cuts bodies off at
+  // 10 MB. Photo uploads can be up to MAX_UPLOAD_MB (at most 20).
+  experimental: { proxyClientMaxBodySize: "25mb" },
   // Self-contained server bundle for the Docker image (see apps/web/Dockerfile).
   output: "standalone",
   // Let /socket.io/ keep its trailing slash instead of being redirected.

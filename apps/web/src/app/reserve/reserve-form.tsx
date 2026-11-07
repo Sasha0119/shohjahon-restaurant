@@ -3,13 +3,18 @@
 import { brand } from "@app/config";
 import {
   RESERVATION_MIN_NOTICE_MINUTES,
+  RESERVATION_REFUND_PERCENT,
   bookableTimes,
+  bookingDeposit,
+  defaultSelection,
   isValidPhone,
+  validateSelection,
   reservationDateRange,
   reservationInstant,
 } from "@app/shared";
 import { CalendarCheck, Loader2 } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { PublicHeader } from "@/components/brand/public-header";
 import { Button } from "@/components/ui/button";
 import { useMounted } from "@/hooks/use-mounted";
@@ -17,13 +22,19 @@ import { useT } from "@/i18n";
 import { translateError } from "@/i18n/errors";
 import { ApiClientError, api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { reservationDay, reservationTimeOf } from "@/lib/format";
+import { formatPrice, reservationDay, reservationTimeOf } from "@/lib/format";
+import { BookingDishes, dishesTotal, type ChosenDish } from "./booking-dishes";
 
 interface Booked {
   tableNumber: number;
   startsAt: string;
   partySize: number;
+  dishesCents: number;
+  depositCents: number;
+  manageToken: string;
 }
+
+const newKey = () => crypto.randomUUID();
 
 const field =
   "mt-1.5 h-12 w-full rounded-2xl bg-muted px-4 ring-1 ring-inset ring-line text-[16px] placeholder:text-fg-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary";
@@ -61,9 +72,14 @@ function Form({ onBooked }: { onBooked: (b: Booked) => void }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
+  const attemptKey = useRef(newKey());
   const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
+  const [dishes, setDishes] = useState<ChosenDish[]>([]);
+  const [dishError, setDishError] = useState(false);
+  const total = dishesTotal(dishes);
+  const deposit = bookingDeposit(total);
 
   const times = useMemo(() => {
     if (date < range.min || date > range.max) return [];
@@ -83,17 +99,45 @@ function Form({ onBooked }: { onBooked: (b: Booked) => void }) {
     const badPhone = !isValidPhone(phone);
     setNameError(badName);
     setPhoneError(badPhone);
-    if (badName || badPhone) return;
+    const badDishes = dishes.length === 0 || dishes.some((d) => validateSelection(d.item, d.selection).length > 0);
+    setDishError(badDishes);
+    if (badName || badPhone || badDishes) return;
     setBusy(true);
     try {
-      const res = await api<{ reservation: Booked }>("POST", "/api/reservations", {
-        date,
-        time: chosen,
-        partySize,
-        name,
-        phone,
+      const res = await fetch("/api/reservations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": attemptKey.current },
+        body: JSON.stringify({
+          date,
+          time: chosen,
+          partySize,
+          name,
+          phone,
+          method: "card",
+          expectedDepositCents: deposit,
+          items: dishes.map((d) => ({
+            itemId: d.item.id,
+            quantity: d.quantity,
+            selection: d.selection,
+            note: d.note.trim() || undefined,
+          })),
+        }),
       });
-      onBooked(res.reservation);
+      const data = (await res.json().catch(() => null)) as {
+        reservation?: Booked;
+        error?: { code?: string; message?: string; details?: unknown };
+      } | null;
+      if (!res.ok || !data?.reservation) {
+        // A new try may be charged again; a repeat of a lost response never is.
+        attemptKey.current = newKey();
+        throw new ApiClientError(
+          res.status,
+          data?.error?.code ?? "HTTP_ERROR",
+          data?.error?.message ?? "",
+          data?.error?.details,
+        );
+      }
+      onBooked(data.reservation);
     } catch (err) {
       // The API or database is down: nothing the guest typed is wrong, so give them another way to book.
       const down = err instanceof ApiClientError && err.status >= 500;
@@ -191,6 +235,47 @@ function Form({ onBooked }: { onBooked: (b: Booked) => void }) {
           </span>
         )}
       </label>
+      <fieldset>
+        <legend className="text-sm font-semibold">{t("reserve.dishes")}</legend>
+        <p className="mb-3 mt-1 text-sm text-fg-muted">{t("reserve.dishesHelp")}</p>
+        <BookingDishes
+          chosen={dishes}
+          onAdd={(item) => {
+            setDishError(false);
+            setDishes((list) => [...list, { item, quantity: 1, selection: defaultSelection(item), note: "" }]);
+          }}
+          onChange={(itemId, next) => {
+            setDishError(false);
+            setDishes((list) =>
+              next ? list.map((d) => (d.item.id === itemId ? next : d)) : list.filter((d) => d.item.id !== itemId),
+            );
+          }}
+        />
+        {dishError && (
+          <p role="alert" className="mt-2 text-sm text-danger">
+            {t("reserve.dishesError")}
+          </p>
+        )}
+      </fieldset>
+      {dishes.length > 0 && (
+        <dl className="space-y-1 rounded-2xl bg-muted p-4 text-sm tabular">
+          <div className="flex justify-between gap-3">
+            <dt>{t("reserve.dishesTotal")}</dt>
+            <dd>{formatPrice(total)}</dd>
+          </div>
+          <div className="flex justify-between gap-3 font-semibold">
+            <dt>{t("reserve.depositNow")}</dt>
+            <dd>{formatPrice(deposit)}</dd>
+          </div>
+          <p className="pt-1 font-sans text-fg-muted">{t("reserve.restOnBill")}</p>
+          <p className="font-sans text-fg-muted">
+            {t("reserve.refundPolicy", {
+              early: RESERVATION_REFUND_PERCENT.early,
+              late: RESERVATION_REFUND_PERCENT.late,
+            })}
+          </p>
+        </dl>
+      )}
       {error && (
         <p role="alert" className="text-sm font-semibold text-danger">
           {error}
@@ -198,7 +283,7 @@ function Form({ onBooked }: { onBooked: (b: Booked) => void }) {
       )}
       <Button type="submit" size="lg" className="w-full" disabled={busy || !chosen}>
         {busy && <Loader2 className="size-5 animate-spin" aria-hidden />}
-        {t("reserve.submit")}
+        {dishes.length > 0 ? t("reserve.payAndReserve", { amount: formatPrice(deposit) }) : t("reserve.submit")}
       </Button>
     </form>
   );
@@ -218,6 +303,17 @@ function Done({ booked }: { booked: Booked }) {
         })}
       </p>
       <p className="mt-1 text-fg-muted">{t("reserve.partyCount", { count: booked.partySize })}</p>
+      <p className="mt-4 font-semibold tabular">
+        {t("reserve.depositPaid", { amount: formatPrice(booked.depositCents) })}
+      </p>
+      <p className="mt-1 text-sm text-fg-muted">{t("reserve.restOnBill")}</p>
+      <Link
+        href={`/reserve/manage/${booked.manageToken}`}
+        className="mt-5 inline-block font-semibold text-primary underline underline-offset-2"
+      >
+        {t("reserve.manageLink")}
+      </Link>
+      <p className="mt-1 text-sm text-fg-muted">{t("reserve.manageKeep")}</p>
       {brand.contact?.phone && (
         <p className="mt-5 text-sm text-fg-muted">{t("reserve.change", { phone: brand.contact.phone })}</p>
       )}

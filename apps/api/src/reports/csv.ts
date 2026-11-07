@@ -1,9 +1,10 @@
 /**
  * CSV writing (RFC 4180) that is also safe to open in spreadsheets: cells that
- * start with = + - @ (or tab/CR) are prefixed with an apostrophe, so a dish
- * name or note like "=HYPERLINK(...)" can never run as a formula.
+ * start with = + - @ (even after whitespace), or with a tab or line break, are
+ * prefixed with an apostrophe, so a dish name or note like "=HYPERLINK(...)"
+ * can never run as a formula.
  */
-const FORMULA_START = /^[=+\-@\t\r]/;
+const FORMULA_START = /^\s*[=+\-@]|^[\t\r\n]/;
 
 export function csvCell(value: unknown): string {
   if (value === null || value === undefined) return "";

@@ -30,6 +30,7 @@ const snapshot = (over: Partial<SessionSnapshotDTO> = {}): SessionSnapshotDTO =>
   },
   status: "open",
   closeReason: null,
+  joinPin: "123456",
   ...over,
 });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STATIC_SECURITY_HEADERS, buildCsp, createNonce } from "../src/lib/security-headers";
+import { STATIC_SECURITY_HEADERS, buildCsp, createNonce, withClientIp } from "../src/lib/security-headers";
 
 const directive = (csp: string, name: string) => csp.split("; ").find((d) => d.startsWith(`${name} `)) ?? "";
 
@@ -47,5 +47,23 @@ describe("static security headers", () => {
     expect(h["Referrer-Policy"]).toBe("same-origin");
     expect(h["Permissions-Policy"]).toContain("camera=()");
     expect(h["Strict-Transport-Security"]).toMatch(/max-age=\d{7,}/);
+  });
+});
+
+describe("withClientIp", () => {
+  const headers = (init: Record<string, string>) => new Headers(init);
+
+  it("names the visitor from the last forwarded address, with the secret", () => {
+    const out = withClientIp(headers({ "x-forwarded-for": "6.6.6.6, 203.0.113.9" }), "s3cret");
+    expect(out.get("x-client-ip")).toBe("203.0.113.9");
+    expect(out.get("x-internal-proxy-secret")).toBe("s3cret");
+  });
+
+  it("drops anything the visitor sent under those names", () => {
+    const sent = { "x-client-ip": "6.6.6.6", "x-internal-proxy-secret": "guess", "x-forwarded-for": "203.0.113.9" };
+    const out = withClientIp(headers(sent), undefined);
+    expect(out.get("x-client-ip")).toBeNull();
+    expect(out.get("x-internal-proxy-secret")).toBeNull();
+    expect(withClientIp(headers(sent), "s3cret").get("x-client-ip")).toBe("203.0.113.9");
   });
 });

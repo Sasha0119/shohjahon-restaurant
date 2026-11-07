@@ -10,7 +10,7 @@ import { seedMenu } from "@app/shared/seed";
 import { hashSecret } from "../src/auth/hash.ts";
 import { createPrisma } from "../src/db.ts";
 import { writeMenu } from "../src/seed-menu.ts";
-import { buildSeedPlan } from "../src/seed-plan.ts";
+import { buildSeedPlan, seedPasswordProblem } from "../src/seed-plan.ts";
 import { createQrToken, guestTableUrl } from "../src/tables/qr-token.ts";
 
 /** Local-testing PIN staff. Created only outside production when SEED_DEMO_STAFF=true. */
@@ -44,6 +44,15 @@ async function main() {
       return;
     }
 
+    // Check before writing anything: `--if-empty` skips a database that already has a
+    // menu, so a failure after the menu is written would leave it with no manager.
+    const email = process.env.SEED_MANAGER_EMAIL?.trim().toLowerCase();
+    const password = process.env.SEED_MANAGER_PASSWORD;
+    if (email && password) {
+      const problem = seedPasswordProblem(password, email, isProd);
+      if (problem) throw new Error(problem);
+    }
+
     // ── Menu ────────────────────────────────────────────────────────────────
     await writeMenu(db, plan);
 
@@ -53,11 +62,7 @@ async function main() {
     }
 
     // ── Staff ───────────────────────────────────────────────────────────────
-    const email = process.env.SEED_MANAGER_EMAIL?.trim().toLowerCase();
-    const password = process.env.SEED_MANAGER_PASSWORD;
     if (email && password) {
-      if (password.length < 8) throw new Error("SEED_MANAGER_PASSWORD must be at least 8 characters");
-      if (isProd && /change-me/i.test(password)) throw new Error("Set a real SEED_MANAGER_PASSWORD in production");
       const existing = await db.staff.findUnique({ where: { email } });
       if (!existing) {
         await db.staff.create({

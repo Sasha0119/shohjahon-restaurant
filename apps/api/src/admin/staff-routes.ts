@@ -2,11 +2,13 @@ import { resetPasswordBody, resetPinBody, staffInput, staffUpdateInput, zId } fr
 import { audit } from "../audit.ts";
 import { hashSecret } from "../auth/hash.ts";
 import { afterSuccess } from "../auth/lockout.ts";
+import { revokeStaffSessions } from "../auth/session.ts";
 import type { Db } from "../db.ts";
 import { Prisma, type Staff } from "../generated/prisma/client.ts";
 import { ApiError, errors, parse } from "../http/errors.ts";
 import type { createRegistrar } from "../http/registrar.ts";
 import { enums } from "../lib/enums.ts";
+import type { Realtime } from "../realtime/types.ts";
 
 type On = ReturnType<typeof createRegistrar>["on"];
 
@@ -21,7 +23,7 @@ const toDTO = (s: Staff, now = new Date()) => ({
   createdAt: s.createdAt.toISOString(),
 });
 
-export function registerStaffAdminRoutes(on: On, db: Db) {
+export function registerStaffAdminRoutes(on: On, db: Db, realtime: Realtime) {
   const load = async (rawId: unknown) => {
     const id = parse(zId, rawId);
     const staff = await db.staff.findUnique({ where: { id } });
@@ -81,14 +83,9 @@ export function registerStaffAdminRoutes(on: On, db: Db) {
       }
     }
 
-    const updated = await db.$transaction(async (tx) => {
+    const { updated, revoked } = await db.$transaction(async (tx) => {
       const s = await tx.staff.update({ where: { id: staff.id }, data: input });
-      if (input.active === false) {
-        await tx.staffSession.updateMany({
-          where: { staffId: s.id, revokedAt: null },
-          data: { revokedAt: new Date() },
-        });
-      }
+      const revokedIds = input.active === false ? await revokeStaffSessions(tx, s.id) : [];
       await audit(tx, {
         actor: { type: "staff", staffId: req.staff!.id },
         action: "staff.updated",
@@ -97,8 +94,9 @@ export function registerStaffAdminRoutes(on: On, db: Db) {
         data: input,
         ip: req.ip,
       });
-      return s;
+      return { updated: s, revoked: revokedIds };
     });
+    realtime.disconnectStaffSessions(revoked);
     res.json({ staff: toDTO(updated) });
   });
 
@@ -109,13 +107,10 @@ export function registerStaffAdminRoutes(on: On, db: Db) {
     data: { pinHash: string } | { passwordHash: string },
     action: string,
   ) => {
-    return db.$transaction(async (tx) => {
+    const { updated, revoked } = await db.$transaction(async (tx) => {
       const s = await tx.staff.update({ where: { id: staff.id }, data: { ...data, ...afterSuccess() } });
       // Signs the member out everywhere — except the manager's own current session when resetting their own password.
-      await tx.staffSession.updateMany({
-        where: { staffId: s.id, revokedAt: null, id: { not: req.staff!.sessionId } },
-        data: { revokedAt: new Date() },
-      });
+      const revokedIds = await revokeStaffSessions(tx, s.id, req.staff!.sessionId);
       await audit(tx, {
         actor: { type: "staff", staffId: req.staff!.id },
         action,
@@ -123,8 +118,10 @@ export function registerStaffAdminRoutes(on: On, db: Db) {
         entityId: s.id,
         ip: req.ip,
       });
-      return s;
+      return { updated: s, revoked: revokedIds };
     });
+    realtime.disconnectStaffSessions(revoked);
+    return updated;
   };
 
   on("POST", "/api/admin/staff/:staffId/reset-pin", async (req, res) => {

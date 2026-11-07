@@ -13,6 +13,7 @@
  *    the client always calls `session:sync` once.
  */
 import type {
+  BookingTicketDTO,
   BillDTO,
   CallDTO,
   CartLineDTO,
@@ -27,6 +28,8 @@ import type {
 import type { OrderStatus, Station } from "../types";
 
 // ── rooms ────────────────────────────────────────────────────────────────────
+export type BookingChange = "new" | "cook" | "removed";
+
 export const rooms = {
   /** Guests at one table + staff watching it. */
   session: (sessionId: string) => `session:${sessionId}`,
@@ -36,6 +39,8 @@ export const rooms = {
   waiters: "waiters",
   /** All logged-in managers (live dashboard). */
   managers: "managers",
+  /** The sockets of one staff login, so revoking it can drop them. */
+  staffSession: (sessionId: string) => `staff-session:${sessionId}`,
   /** Every connected socket (menu changes, stock). */
   everyone: "everyone",
 } as const;
@@ -78,6 +83,11 @@ export interface ServerToClientEvents {
 
   /** New / changed ticket for a station. → kds:<station> + managers + waiters */
   "kds:order": (p: { ticket: OrderTicketDTO }) => void;
+  /**
+   * A booking with dishes: just made ("new"), time to start cooking ("cook"), or
+   * cancelled or seated ("removed"). → kds:<station> + managers
+   */
+  "kds:booking": (p: { change: BookingChange; booking: BookingTicketDTO }) => void;
   /** New private (1–3 star) feedback. → managers */
   "feedback:created": (p: { feedback: FeedbackDTO }) => void;
   /** Table occupancy changed. → waiters + managers */
@@ -100,7 +110,7 @@ export interface ClientToServerEvents {
 /** Per-socket data the server attaches after authenticating the handshake. */
 export type SocketData =
   | { kind: "guest"; guestId: string; sessionId: string }
-  | { kind: "staff"; staffId: string; role: "manager" | "waiter" | "kitchen" };
+  | { kind: "staff"; staffId: string; role: "manager" | "waiter" | "kitchen"; sessionId: string; expiresAt: number };
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 export const SESSION_EVENTS = [

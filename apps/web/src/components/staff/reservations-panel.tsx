@@ -8,7 +8,7 @@ import { toast } from "@/components/ui/toast";
 import { useT } from "@/i18n";
 import { translateError } from "@/i18n/errors";
 import { api } from "@/lib/api";
-import { reservationLabel } from "@/lib/format";
+import { formatPrice, reservationLabel } from "@/lib/format";
 
 /**
  * Upcoming online reservations, for the waiter floor and the admin tables page.
@@ -28,6 +28,16 @@ export function ReservationsPanel({ refreshOn, className }: { refreshOn: unknown
       });
   }, []);
   useEffect(load, [load, refreshOn]);
+
+  const seat = async (id: string) => {
+    try {
+      await api("POST", `/api/waiter/reservations/${id}/seat`);
+      toast.success(t("reservations.seated"));
+    } catch (e) {
+      toast.error(translateError(e, t));
+    }
+    load();
+  };
 
   const cancel = async (id: string) => {
     try {
@@ -71,8 +81,16 @@ export function ReservationsPanel({ refreshOn, className }: { refreshOn: unknown
                     <Phone className="size-3.5" aria-hidden />
                     {r.guestPhone}
                   </a>
+                  {r.depositCents > 0 && (
+                    <span className="tabular">
+                      {t("reservations.deposit", { amount: formatPrice(r.depositCents) })}
+                    </span>
+                  )}
                 </p>
               </div>
+              <Button size="sm" variant="secondary" onClick={() => void seat(r.id)}>
+                {t("reservations.seat")}
+              </Button>
               {confirming === r.id ? (
                 <Button size="sm" variant="danger" onClick={() => void cancel(r.id)}>
                   {t("reservations.confirmCancel")}

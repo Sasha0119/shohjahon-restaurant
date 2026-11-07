@@ -31,8 +31,16 @@ async function main() {
   let app: ReturnType<typeof createApp>["app"] | undefined;
   const server = createServer((req, res) => app!(req, res));
   const { io, realtime } = createSocketServer(server, { db, env, logger });
-  app = createApp({ db, env, logger, realtime }).app;
-  const stopSweeper = startSessionSweeper({ db, realtime, logger, idleMinutes: env.SESSION_IDLE_MINUTES });
+  const created = createApp({ db, env, logger, realtime });
+  app = created.app;
+  const stopSweeper = startSessionSweeper({
+    db,
+    realtime,
+    logger,
+    idleMinutes: env.SESSION_IDLE_MINUTES,
+    provider: created.provider,
+    retentionDays: env.RESERVATION_RETENTION_DAYS,
+  });
 
   // The web server (and any reverse proxy) reuses idle connections to the API.
   // Node closes idle ones after 5 s by default; a request that lands on a

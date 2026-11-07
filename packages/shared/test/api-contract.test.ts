@@ -52,12 +52,13 @@ describe("route table", () => {
     }
   });
 
-  it("never exposes a public write route except join, webhooks, receipt email and booking", () => {
+  it("never exposes a public write route except join, webhooks, receipt email and booking (and cancelling through its signed link)", () => {
     const allowed = [
       "/api/tables/:qrToken/join",
       "/api/payments/webhook/:provider",
       "/api/receipts/:publicToken/email",
       "/api/reservations",
+      "/api/reservations/manage/:token/cancel",
     ];
     for (const r of routes.filter((r) => r.access.kind === "public" && r.method !== "GET")) {
       if (r.path.startsWith("/api/auth/")) continue;

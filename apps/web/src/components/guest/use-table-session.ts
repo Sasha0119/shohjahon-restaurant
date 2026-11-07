@@ -21,6 +21,14 @@ export function phaseForJoinError(e: unknown): JoinPhase {
       return { kind: "reserved", table: d.table ?? 0, startsAt: d.startsAt ?? "", answers: {} };
     case "TABLE_OCCUPIED":
       return { kind: "occupied", table: d.table ?? 0, guestCount: d.guestCount ?? 1 };
+    case "JOIN_PIN_WRONG":
+    case "JOIN_PIN_LOCKED":
+      return {
+        kind: "occupied",
+        table: d.table ?? 0,
+        guestCount: d.guestCount ?? 1,
+        pinError: e.code === "JOIN_PIN_LOCKED" ? "locked" : "wrong",
+      };
     case "OTHER_TABLE":
       return { kind: "otherTable", currentTable: d.currentTable ?? 0, newTable: d.newTable ?? 0 };
     case "INVALID_QR":
@@ -55,7 +63,9 @@ export function useTableSession(token: string) {
       } catch (e) {
         const phase = phaseForJoinError(e);
         // Earlier answers still count: someone switching tables shouldn't be asked to switch again.
-        store.getState().setPhase(phase.kind === "reserved" ? { ...phase, answers } : phase);
+        store
+          .getState()
+          .setPhase(phase.kind === "reserved" || phase.kind === "occupied" ? { ...phase, answers } : phase);
       }
     },
     [store, token],

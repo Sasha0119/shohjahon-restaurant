@@ -127,7 +127,11 @@ describe.skipIf(!TEST_DATABASE_URL)("staff auth & roles (integration)", () => {
       expect(right.status).toBe(423);
 
       const logs = await db.auditLog.findMany({ where: { entityId: kitchen.id }, orderBy: { createdAt: "asc" } });
-      expect(logs.map((l) => l.action)).toEqual([...Array(4).fill("staff.login_failed"), "staff.locked"]);
+      expect(logs.map((l) => l.action)).toEqual([
+        ...Array(4).fill("staff.login_failed"),
+        "staff.locked",
+        "staff.login_blocked",
+      ]);
     });
 
     it("a manager's PIN reset unlocks the account and the new PIN works", async () => {

@@ -33,6 +33,25 @@ export function buildCsp(opts: { nonce: string; dev: boolean; https: boolean }):
   return parts.join("; ");
 }
 
+/**
+ * Headers for a request forwarded to the API over the internet: names the visitor
+ * so each one gets their own rate limit, with a secret proving it comes from here.
+ * Only the last X-Forwarded-For entry is trusted: it's the one added by the host's
+ * proxy, and anything before it could be typed by the visitor. Anything the
+ * visitor sent under these two names is dropped.
+ */
+export function withClientIp(incoming: Headers, secret: string | undefined): Headers {
+  const headers = new Headers(incoming);
+  headers.delete("x-client-ip");
+  headers.delete("x-internal-proxy-secret");
+  const ip = incoming.get("x-forwarded-for")?.split(",").at(-1)?.trim();
+  if (secret && ip) {
+    headers.set("x-client-ip", ip);
+    headers.set("x-internal-proxy-secret", secret);
+  }
+  return headers;
+}
+
 /** A fresh, unguessable nonce for one response. */
 export function createNonce(): string {
   const bytes = new Uint8Array(16);

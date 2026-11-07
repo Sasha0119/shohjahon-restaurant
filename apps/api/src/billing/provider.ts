@@ -31,6 +31,8 @@ interface WebhookEvent {
 export interface PaymentProvider {
   name: string;
   charge(req: ChargeRequest): Promise<ChargeOutcome>;
+  /** Refund part of an earlier charge. Must be safe to repeat for the same payment id. Throws on failure. */
+  refund(req: { paymentId: string; providerRef: string | null; amountCents: number; currency: string }): Promise<void>;
   /** Verify and parse a webhook. Throws if the signature is invalid. */
   parseWebhook(rawBody: Buffer, headers: Record<string, string | string[] | undefined>): WebhookEvent;
 }
@@ -47,6 +49,9 @@ export function createMockProvider(webhookSecret: string): PaymentProvider {
   const outcomes = new Map<string, ChargeOutcome>();
   return {
     name: "mock",
+    async refund() {
+      // No real money moved, so there's nothing to send back: the refund is only recorded.
+    },
     async charge(req) {
       const known = outcomes.get(req.paymentId);
       if (known) return known;

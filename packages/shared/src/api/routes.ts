@@ -18,7 +18,7 @@
 export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 export type Role = "manager" | "waiter" | "kitchen";
 export type Access = { kind: "public" } | { kind: "guest" } | { kind: "staff"; roles: Role[] };
-export type RateLimit = "default" | "strict" | "auth" | "booking";
+export type RateLimit = "default" | "strict" | "auth" | "booking" | "codes";
 
 export interface RouteDef {
   method: HttpMethod;
@@ -95,7 +95,7 @@ export const routes: RouteDef[] = [
     path: "/api/tables/:qrToken/join",
     access: pub,
     summary:
-      "Scan QR: verify signed token, join the open session or start one; sets guest cookie. 409 TABLE_OCCUPIED / OTHER_TABLE / TABLE_RESERVED ask the guest to confirm",
+      "Scan QR: verify signed token, join the open session or start one; sets guest cookie. 409 OTHER_TABLE / TABLE_RESERVED ask the guest to confirm; 409 TABLE_OCCUPIED asks for the table's join PIN (403 JOIN_PIN_WRONG, 429 JOIN_PIN_LOCKED)",
     input: "joinSessionBody",
     rateLimit: "strict",
     emits: ["session:guests", "table:status"],
@@ -271,9 +271,9 @@ export const routes: RouteDef[] = [
     method: "POST",
     path: "/api/session/discount",
     access: guest,
-    summary: "Apply a discount code",
+    summary: "Apply a discount code. 429 TOO_MANY_CODE_ATTEMPTS after repeated wrong codes",
     input: "applyDiscountBody",
-    rateLimit: "strict",
+    rateLimit: "codes",
     emits: ["bill:updated"],
     phase: 7,
   },
@@ -496,7 +496,39 @@ export const routes: RouteDef[] = [
       "Book a table online: assigns the smallest free table that fits. 409 NO_TABLE_AVAILABLE, 422 RESERVATION_TIME_INVALID, 429 TOO_MANY_RESERVATIONS",
     input: "createReservationBody",
     rateLimit: "booking",
-    emits: ["table:status"],
+    emits: ["table:status", "kds:booking"],
+    phase: 9,
+  },
+  {
+    method: "GET",
+    path: "/api/reservations/manage/:token",
+    access: pub,
+    summary: "A guest's own booking, through their private link",
+    rateLimit: "strict",
+    phase: 9,
+  },
+  {
+    method: "POST",
+    path: "/api/reservations/manage/:token/cancel",
+    access: pub,
+    summary: "A guest cancels their booking: 40% of the deposit back from 2 hours before, then 20%, none once started",
+    rateLimit: "strict",
+    emits: ["table:status", "kds:booking"],
+    phase: 9,
+  },
+  {
+    method: "POST",
+    path: "/api/waiter/reservations/:reservationId/seat",
+    access: staff("waiter", "manager"),
+    summary: "The guest arrived: open the table's visit with their dishes on the bill and the deposit counted as paid",
+    emits: ["table:status", "kds:order", "kds:booking"],
+    phase: 9,
+  },
+  {
+    method: "GET",
+    path: "/api/kds/bookings",
+    access: staff("kitchen", "manager"),
+    summary: "Upcoming bookings with their dishes, soonest first (no guest name or phone)",
     phase: 9,
   },
   {

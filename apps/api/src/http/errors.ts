@@ -49,6 +49,19 @@ export const notFoundHandler: RequestHandler = (_req, _res, next) => {
   next(new ApiError(404, "NOT_FOUND", "No such endpoint."));
 };
 
+/** Database errors can quote the values in a query (a phone number, say), so log only what they are. */
+export function safeForLogs(err: unknown): unknown {
+  const e = err as { name?: unknown; code?: unknown } | null;
+  return typeof e?.name === "string" && e.name.startsWith("PrismaClient")
+    ? { name: e.name, code: typeof e.code === "string" ? e.code : undefined }
+    : err;
+}
+
+/** Hides the secret part of table, receipt and booking links. */
+export function redactLinkTokens(url: string): string {
+  return url.replace(/(\/api\/(?:tables|receipts|reservations\/manage)\/)[^/?]+/, "$1[hidden]");
+}
+
 /** Last middleware: converts anything thrown into the standard error body. Never leaks internals. */
 export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   let apiError: ApiError;
@@ -58,7 +71,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   else if (err?.type === "entity.too.large")
     apiError = new ApiError(413, "PAYLOAD_TOO_LARGE", "Request body is too large.");
   else {
-    req.log?.error({ err }, "Unhandled error");
+    req.log?.error({ err: safeForLogs(err) }, "Unhandled error");
     apiError = new ApiError(500, "INTERNAL", "Something went wrong. Please try again.");
   }
   if (res.headersSent) return;

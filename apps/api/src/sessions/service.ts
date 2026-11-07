@@ -8,6 +8,7 @@ import type { SessionCloseReason } from "../generated/prisma/enums.ts";
 import { ApiError } from "../http/errors.ts";
 import type { Realtime } from "../realtime/types.ts";
 import { verifyQrToken } from "../tables/qr-token.ts";
+import { checkJoinPin, joinPinError } from "./join-pin.ts";
 import { isIdleExpired, shouldTouch, tableStatus } from "./rules.ts";
 
 export const GUEST_COOKIE = "guest_session";
@@ -121,6 +122,7 @@ export async function closeSession(
     version: result.version,
     reason: reason.toLowerCase() as "paid" | "staff" | "expired",
   });
+  realtime.disconnectTableSession(sessionId);
   await emitTableStatus(db, realtime, result.tableId);
   return result;
 }
@@ -193,7 +195,9 @@ export interface JoinInput {
   qrToken: string;
   /** Raw guest cookie, if the browser has one. */
   guestToken?: string;
-  confirmJoin: boolean;
+  /** The PIN shown to guests already at the table. */
+  joinPin?: string;
+  ip?: string;
   confirmSwitch: boolean;
   confirmReserved?: boolean;
   now?: Date;
@@ -218,8 +222,8 @@ const invalidQr = () =>
  *  1. verify the signed token, the table and its current QR version;
  *  2. if this browser is already a guest at this table → rejoin;
  *     at another table → ask before switching (409 OTHER_TABLE);
- *  3. join the table's open session — asking first if other people already
- *     joined it (409 TABLE_OCCUPIED) — or open a new one.
+ *  3. join the table's open session — the PIN from a phone already there is
+ *     required if other people joined it (409 TABLE_OCCUPIED) — or open a new one.
  * Expired sessions are closed on the way, so an old link starts fresh.
  */
 export async function joinTable(db: Db, realtime: Realtime, cfg: SessionConfig, input: JoinInput): Promise<JoinResult> {
@@ -268,14 +272,18 @@ export async function joinTable(db: Db, realtime: Realtime, cfg: SessionConfig, 
     await closeSession(db, realtime, open.id, "EXPIRED");
     open = null;
   }
-  if (open && !input.confirmJoin) {
+  if (open) {
     const guestCount = await db.sessionGuest.count({ where: { sessionId: open.id } });
     if (guestCount > 0) {
-      throw new ApiError(409, "TABLE_OCCUPIED", "Someone at this table has already started an order.", {
-        table: table.number,
-        guestCount,
-        openedAt: open.openedAt.toISOString(),
-      });
+      if (!input.joinPin) {
+        throw new ApiError(409, "TABLE_OCCUPIED", "Someone at this table has already started an order.", {
+          table: table.number,
+          guestCount,
+          openedAt: open.openedAt.toISOString(),
+        });
+      }
+      const verdict = await checkJoinPin(db, cfg.qrSecret, open.id, input.joinPin, { ip: input.ip, now });
+      if (verdict !== "ok") throw joinPinError(verdict, { table: table.number, guestCount });
     }
   }
 
@@ -320,7 +328,7 @@ export async function joinTable(db: Db, realtime: Realtime, cfg: SessionConfig, 
   } catch (e) {
     // Two phones opened the table at the same instant: join the session the other one created.
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002" && !open) {
-      return joinTable(db, realtime, cfg, { ...input, guestToken: undefined, confirmJoin: true });
+      return joinTable(db, realtime, cfg, { ...input, guestToken: undefined });
     }
     throw e;
   }

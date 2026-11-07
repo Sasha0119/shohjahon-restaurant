@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { brand } from "@app/config";
 import { RESERVATION_MINUTES, addDays, bookableTimes, reservationInstant, zonedDate } from "@app/shared";
 import { pino } from "pino";
@@ -28,7 +29,10 @@ describe.skipIf(!TEST_DATABASE_URL)("reservations (integration)", () => {
     request(app)
       .post("/api/reservations")
       .set("Origin", ORIGIN)
+      .set("Idempotency-Key", randomUUID())
       .send({
+        method: "card",
+        items: [{ itemId: "item-flat-white", quantity: 1 }],
         date,
         time,
         partySize: 2,

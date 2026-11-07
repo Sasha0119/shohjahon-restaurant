@@ -6,6 +6,7 @@ import type { Staff } from "../generated/prisma/client.ts";
 import { errors, parse } from "../http/errors.ts";
 import type { createRegistrar } from "../http/registrar.ts";
 import { enums } from "../lib/enums.ts";
+import type { Realtime } from "../realtime/types.ts";
 import { loginWithPassword, loginWithPin } from "./login.ts";
 import { STAFF_COOKIE, createStaffSession, revokeSession, staffCookieOptions } from "./session.ts";
 
@@ -17,7 +18,7 @@ const publicStaff = (s: Pick<Staff, "id" | "name" | "role">) => ({
   role: enums.role.fromDb(s.role),
 });
 
-export function registerAuthRoutes(on: On, db: Db, env: Env) {
+export function registerAuthRoutes(on: On, db: Db, env: Env, realtime: Realtime) {
   const startSession = async (res: Response, staff: Staff, ip: string | undefined, userAgent?: string) => {
     const { token, expiresAt } = await createStaffSession(db, staff.id, {
       hours: env.STAFF_SESSION_HOURS,
@@ -52,6 +53,7 @@ export function registerAuthRoutes(on: On, db: Db, env: Env) {
   on("POST", "/api/auth/logout", async (req, res) => {
     if (!req.staff) throw errors.unauthorized();
     await revokeSession(db, req.staff.sessionId);
+    realtime.disconnectStaffSessions([req.staff.sessionId]);
     res.clearCookie(STAFF_COOKIE, staffCookieOptions(env.COOKIE_SECURE));
     res.status(204).end();
   });

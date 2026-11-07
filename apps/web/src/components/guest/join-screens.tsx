@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { BrandLoader } from "@/components/brand/brand-loader";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,55 @@ function Screen({
   );
 }
 
+/** Someone is already at this table: joining them takes the PIN shown on their phone. */
+function OccupiedScreen({
+  phase,
+  onJoin,
+}: {
+  phase: Extract<JoinPhase, { kind: "occupied" }>;
+  onJoin: (answers?: JoinAnswers) => void;
+}) {
+  const t = useT();
+  const [pin, setPin] = useState("");
+  return (
+    <Screen
+      icon={Users}
+      title={t("join.occupiedTitle", { table: phase.table })}
+      body={t("join.occupiedBody", { count: phase.guestCount })}
+    >
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (pin.length === 6) onJoin({ ...phase.answers, joinPin: pin });
+        }}
+      >
+        <label className="text-sm font-semibold" htmlFor="join-pin">
+          {t("join.occupiedPinLabel")}
+        </label>
+        <input
+          id="join-pin"
+          value={pin}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={6}
+          className="h-14 rounded-card bg-muted px-4 text-center text-2xl font-semibold tracking-[0.3em] ring-1 ring-inset ring-line focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        {phase.pinError && (
+          <p className="text-sm font-medium text-danger" role="alert">
+            {t(phase.pinError === "locked" ? "join.occupiedPinLocked" : "join.occupiedPinWrong")}
+          </p>
+        )}
+        <Button size="lg" type="submit" disabled={pin.length !== 6}>
+          {t("join.occupiedJoin")}
+        </Button>
+      </form>
+      <p className="text-sm text-fg-muted">{t("join.occupiedNotWithThem")}</p>
+    </Screen>
+  );
+}
+
 export function JoinScreen({
   phase,
   onJoin,
@@ -93,18 +142,7 @@ export function JoinScreen({
         </Screen>
       );
     case "occupied":
-      return (
-        <Screen
-          icon={Users}
-          title={t("join.occupiedTitle", { table: phase.table })}
-          body={t("join.occupiedBody", { count: phase.guestCount })}
-        >
-          <Button size="lg" onClick={() => onJoin({ confirmJoin: true })}>
-            {t("join.occupiedJoin")}
-          </Button>
-          <p className="text-sm text-fg-muted">{t("join.occupiedNotWithThem")}</p>
-        </Screen>
-      );
+      return <OccupiedScreen phase={phase} onJoin={onJoin} />;
     case "otherTable":
       return (
         <Screen

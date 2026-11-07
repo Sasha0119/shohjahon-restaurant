@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RESERVATION_MAX_PARTY, isValidPhone } from "../reservations";
+import { RESERVATION_MAX_PARTY, RESERVATION_MAX_DISHES, isValidPhone } from "../reservations";
 import { ALLERGENS, DIETARY_TAGS } from "../types";
 
 /**
@@ -66,13 +66,18 @@ export const zSelection = z
  * "occupied table" and "you're at another table" questions.
  */
 export const joinSessionBody = z.object({
-  /** "This table already has an open order — join it?" → yes */
-  confirmJoin: z.boolean().default(false),
+  /** The 6-digit PIN shown to guests already at the table; needed to join them. */
+  joinPin: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
   /** "You're seated at Table 5 — switch to Table 7?" → yes */
   confirmSwitch: z.boolean().default(false),
   /** "This table is reserved for 13:00 — continue?" → yes */
   confirmReserved: z.boolean().default(false),
 });
+
+export const zPhoneInput = z.string().trim().max(32).refine(isValidPhone);
 
 /** Date and time are the restaurant's local time, so a guest abroad still books the right hour. */
 export const createReservationBody = z.object({
@@ -80,8 +85,33 @@ export const createReservationBody = z.object({
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   partySize: z.number().int().min(1).max(RESERVATION_MAX_PARTY),
   name: z.string().trim().min(2).max(60),
-  phone: z.string().trim().refine(isValidPhone),
+  phone: zPhoneInput,
+  method: z.enum(["card", "applePay", "googlePay"]),
+  /** At least one dish, so the kitchen has it ready when the guest arrives. */
+  items: z
+    .array(
+      z.object({
+        itemId: zId,
+        quantity: zQuantity,
+        selection: zSelection.default({}),
+        note: zNote.optional(),
+      }),
+    )
+    .min(1)
+    .max(RESERVATION_MAX_DISHES),
+  /** The deposit the guest was shown. If the menu changed, they're asked to check again. */
+  expectedDepositCents: zCents.optional(),
 });
+export type CreateReservationBody = z.infer<typeof createReservationBody>;
+
+export const zBookingLink = z
+  .string()
+  .max(200)
+  .regex(/^[\w-]+\.[\w-]+$/);
+
+// ── socket events ────────────────────────────────────────────────────────────
+export const sessionSyncPayload = z.object({ version: z.int() });
+export const kdsSubscribePayload = z.object({ stations: z.array(zStation).max(2) });
 
 export const updateGuestBody = z.object({ nickname: zNickname });
 

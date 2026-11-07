@@ -192,6 +192,9 @@ function TableCard({ table, onOpen }: { table: AdminTableDTO; onOpen: () => void
               <p className="mt-0.5 truncate text-fg-muted">
                 {t("admin.tables.since", { time: formatRelative(Date.parse(table.session.openedAt), now) })}
               </p>
+              <p className="mt-0.5 truncate text-fg-muted">
+                {t("admin.tables.joinPin", { pin: table.session.joinPin })}
+              </p>
             </>
           ) : (
             <p className="text-fg-muted">—</p>

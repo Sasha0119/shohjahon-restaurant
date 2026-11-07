@@ -33,12 +33,30 @@ async function attempt(
 ): Promise<Staff> {
   const now = ctx.now ?? new Date();
   const hash = staff?.[field];
+  const method = field === "pinHash" ? "pin" : "password";
   if (!staff || !staff.active || !hash) {
     await burnTime(plain);
+    // Never store what was typed: a mistyped email can be someone's password.
+    await audit(db, {
+      actor: { type: "system" },
+      action: "staff.login_failed",
+      entityType: "staff",
+      entityId: staff?.id ?? "unknown",
+      data: { method },
+      ip: ctx.ip,
+    });
     throw invalid();
   }
   if (isLocked(staff, now)) {
     await burnTime(plain);
+    await audit(db, {
+      actor: { type: "system" },
+      action: "staff.login_blocked",
+      entityType: "staff",
+      entityId: staff.id,
+      data: { method },
+      ip: ctx.ip,
+    });
     throw errors.locked(staff.lockedUntil!);
   }
 
@@ -52,7 +70,7 @@ async function attempt(
       action: "staff.login",
       entityType: "staff",
       entityId: staff.id,
-      data: { method: field === "pinHash" ? "pin" : "password" },
+      data: { method },
       ip: ctx.ip,
     });
     return updated;

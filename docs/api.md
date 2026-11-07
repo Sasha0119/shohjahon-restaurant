@@ -8,7 +8,7 @@
 - **Idem.** = requires an `Idempotency-Key` header (16–128 chars). Retrying returns the first response.
 - Inputs are validated with the named Zod schema from `packages/shared/src/api/schemas.ts`.
 
-**71 routes.**
+**75 routes.**
 
 ## health
 
@@ -30,7 +30,7 @@
 
 | Method | Path | Access | Input | Idem. | Emits | Phase | Description |
 |---|---|---|---|---|---|---|---|
-| POST | `/api/tables/:qrToken/join` | public | `joinSessionBody` |  | `session:guests` `table:status` | 4 | Scan QR: verify signed token, join the open session or start one; sets guest cookie. 409 TABLE_OCCUPIED / OTHER_TABLE / TABLE_RESERVED ask the guest to confirm _(rate limit: strict)_ |
+| POST | `/api/tables/:qrToken/join` | public | `joinSessionBody` |  | `session:guests` `table:status` | 4 | Scan QR: verify signed token, join the open session or start one; sets guest cookie. 409 OTHER_TABLE / TABLE_RESERVED ask the guest to confirm; 409 TABLE_OCCUPIED asks for the table's join PIN (403 JOIN_PIN_WRONG, 429 JOIN_PIN_LOCKED) _(rate limit: strict)_ |
 | GET | `/api/session` | guest |  |  |  | 4 | Full session snapshot (table, guests, cart, orders, bill, version) |
 | PATCH | `/api/session/me` | guest | `updateGuestBody` |  | `session:guests` | 4 | Set my nickname |
 | POST | `/api/session/cart` | guest | `addCartItemBody` |  | `cart:updated` | 6 | Add an item to the shared cart |
@@ -40,7 +40,7 @@
 | POST | `/api/session/orders/:orderId/cancel` | guest |  |  | `order:updated` `kds:order` | 6 | Cancel a round while it is still RECEIVED |
 | POST | `/api/session/calls` | guest | `createCallBody` |  | `call:created` | 6 | Call server (water / assistance / bill), with per-table cooldown _(rate limit: strict)_ |
 | GET | `/api/session/bill` | guest | `billQuery` |  |  | 7 | Live bill: subtotal, discounts, service, tax, tip preview, paid, balance |
-| POST | `/api/session/discount` | guest | `applyDiscountBody` |  | `bill:updated` | 7 | Apply a discount code _(rate limit: strict)_ |
+| POST | `/api/session/discount` | guest | `applyDiscountBody` |  | `bill:updated` | 7 | Apply a discount code. 429 TOO_MANY_CODE_ATTEMPTS after repeated wrong codes _(rate limit: codes)_ |
 | DELETE | `/api/session/discount` | guest |  |  | `bill:updated` | 7 | Remove the discount code |
 | POST | `/api/session/payments` | guest | `createPaymentBody` | ✓ | `payment:updated` `bill:updated` `call:created` | 7 | Pay full / even / by item / custom. Cash alerts the waiter _(rate limit: strict)_ |
 | GET | `/api/session/payments/:paymentId` | guest |  |  |  | 7 | Payment status (for redirects / 3-D Secure returns) |
@@ -59,6 +59,7 @@
 |---|---|---|---|---|---|---|---|
 | GET | `/api/kds/orders` | kitchen, manager | `kdsQuery` |  |  | 6 | Active tickets, oldest first, optional station filter |
 | PATCH | `/api/kds/orders/:orderId/status` | kitchen, manager | `updateOrderStatusBody` |  | `order:updated` `kds:order` | 6 | Advance status one step (audit logged) |
+| GET | `/api/kds/bookings` | kitchen, manager |  |  |  | 9 | Upcoming bookings with their dishes, soonest first (no guest name or phone) |
 
 ## waiter
 
@@ -71,6 +72,7 @@
 | GET | `/api/waiter/tables` | waiter, manager |  |  |  | 6 | Live table status: free / occupied / ordering / waiting for bill |
 | POST | `/api/waiter/sessions/:sessionId/close` | waiter, manager |  |  | `session:closed` `table:status` | 4 | Close a session manually (audit logged) |
 | POST | `/api/waiter/sessions/:sessionId/cash` | waiter, manager | `confirmCashBody` |  | `payment:updated` `bill:updated` | 7 | Confirm a cash payment was received |
+| POST | `/api/waiter/reservations/:reservationId/seat` | waiter, manager |  |  | `table:status` `kds:order` `kds:booking` | 9 | The guest arrived: open the table's visit with their dishes on the bill and the deposit counted as paid |
 | GET | `/api/waiter/reservations` | waiter, manager |  |  |  | 9 | Upcoming reservations with the guest's name and phone |
 | POST | `/api/waiter/reservations/:reservationId/cancel` | waiter, manager |  |  | `table:status` | 9 | Cancel a reservation and release its table |
 
@@ -142,7 +144,9 @@
 
 | Method | Path | Access | Input | Idem. | Emits | Phase | Description |
 |---|---|---|---|---|---|---|---|
-| POST | `/api/reservations` | public | `createReservationBody` |  | `table:status` | 9 | Book a table online: assigns the smallest free table that fits. 409 NO_TABLE_AVAILABLE, 422 RESERVATION_TIME_INVALID, 429 TOO_MANY_RESERVATIONS _(rate limit: booking)_ |
+| POST | `/api/reservations` | public | `createReservationBody` |  | `table:status` `kds:booking` | 9 | Book a table online: assigns the smallest free table that fits. 409 NO_TABLE_AVAILABLE, 422 RESERVATION_TIME_INVALID, 429 TOO_MANY_RESERVATIONS _(rate limit: booking)_ |
+| GET | `/api/reservations/manage/:token` | public |  |  |  | 9 | A guest's own booking, through their private link _(rate limit: strict)_ |
+| POST | `/api/reservations/manage/:token/cancel` | public |  |  | `table:status` `kds:booking` | 9 | A guest cancels their booking: 40% of the deposit back from 2 hours before, then 20%, none once started _(rate limit: strict)_ |
 
 ## admin/tables
 

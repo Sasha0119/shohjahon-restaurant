@@ -18,13 +18,19 @@ import type {
 import type { OrderStatus, Station } from "@app/shared";
 import { create } from "zustand";
 
-export type JoinAnswers = { confirmJoin?: boolean; confirmSwitch?: boolean; confirmReserved?: boolean };
+export type JoinAnswers = { joinPin?: string; confirmSwitch?: boolean; confirmReserved?: boolean };
 
 export type JoinPhase =
   | { kind: "joining" }
   | { kind: "reserved"; table: number; startsAt: string; answers: JoinAnswers }
   | { kind: "ready" }
-  | { kind: "occupied"; table: number; guestCount: number }
+  | {
+      kind: "occupied";
+      table: number;
+      guestCount: number;
+      answers?: JoinAnswers;
+      pinError?: "wrong" | "locked";
+    }
   | { kind: "otherTable"; currentTable: number; newTable: number }
   | { kind: "invalid" }
   | { kind: "replaced" }

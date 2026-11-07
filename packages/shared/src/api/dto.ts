@@ -105,6 +105,8 @@ export interface SessionSnapshotDTO {
   bill: BillDTO;
   status: "open" | "closed";
   closeReason: SessionCloseReasonDTO | null;
+  /** What others must enter to join this table. Null once the visit has closed. */
+  joinPin: string | null;
 }
 
 /** Digital receipt (GET /api/receipts/:publicToken). Frozen at payment time. */
@@ -302,7 +304,8 @@ export interface AdminTableDTO {
   status: TableStatusDTO;
   /** Signed guest link encoded in the printed QR code. */
   url: string;
-  session: { id: string; guestCount: number; openedAt: string; lastActivityAt: string } | null;
+  /** joinPin: for a guest who can't get it from the phones at the table. Managers only. */
+  session: { id: string; guestCount: number; openedAt: string; lastActivityAt: string; joinPin: string } | null;
   /** The next reservation, if it starts within 24 hours or has just started. */
   reservation: ReservationSummaryDTO | null;
 }
@@ -319,6 +322,32 @@ export interface ReservationDTO extends ReservationSummaryDTO {
   tableId: string;
   tableNumber: number;
   guestPhone: string;
+  depositCents: number;
+}
+
+/** A booking on the kitchen screen. No guest name or phone. */
+export interface BookingTicketDTO {
+  id: string;
+  tableNumber: number;
+  partySize: number;
+  startsAt: string;
+  /** When to start cooking, so it's ready on arrival. */
+  cookAt: string;
+  lines: (OrderLineDTO & { station: "kitchen" | "bar" })[];
+}
+
+/** What the guest sees through their private booking link. */
+export interface ManagedBookingDTO {
+  tableNumber: number;
+  partySize: number;
+  startsAt: string;
+  status: "active" | "seated" | "cancelled";
+  lines: { id: string; name: string; quantity: number; unitPriceCents: number }[];
+  dishesCents: number;
+  depositCents: number;
+  refundCents: number;
+  /** What cancelling now would refund; null once the booked time has passed. */
+  refundIfCancelledCents: number | null;
 }
 
 /** Standard error body for every non-2xx response. */

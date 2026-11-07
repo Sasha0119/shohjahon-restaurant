@@ -19,6 +19,9 @@ export interface ImageStore {
 /** Names we hand out: 32 hex chars + ".webp". Anything else is never looked up. */
 const IMAGE_NAME = /^[0-9a-f]{32}\.webp$/;
 
+/** What sharp reports for the accepted formats; AVIF is "heif". SVG, GIF, TIFF, PDF… are refused. */
+const ACCEPTED_FORMATS = new Set(["jpeg", "png", "webp", "heif"]);
+
 const IMAGE_LIMITS = {
   maxEdge: 1600,
   minEdge: 200,
@@ -38,6 +41,7 @@ async function processImage(input: Buffer): Promise<{ data: Buffer; width: numbe
     pipeline = sharp(input, { limitInputPixels: IMAGE_LIMITS.maxInputPixels, failOn: "error" });
     const meta = await pipeline.metadata();
     if (!meta.width || !meta.height) throw new Error("no dimensions");
+    if (!ACCEPTED_FORMATS.has(meta.format)) throw new Error("format not accepted");
     if (Math.min(meta.width, meta.height) < IMAGE_LIMITS.minEdge) {
       throw new ApiError(
         422,

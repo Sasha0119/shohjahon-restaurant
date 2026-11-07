@@ -188,6 +188,7 @@ model MenuItem {
 
   @@index([categoryId, sortOrder])
   @@map("menu_items")
+  reservationItems ReservationItem[]
 }
 
 model ModifierGroup {
@@ -291,8 +292,24 @@ model DiningTable {
 }
 
 enum ReservationStatus {
+  /// Holds its table while the deposit is being paid.
+  PENDING
   ACTIVE
+  /// The guest arrived; their dishes and deposit moved to the table's visit.
+  SEATED
   CANCELLED
+}
+
+enum DepositStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum RefundStatus {
+  NONE
+  PENDING
+  DONE
 }
 
 /// A table booked online. It holds the table from startsAt for two hours (see packages/shared/src/reservations.ts).
@@ -307,11 +324,61 @@ model Reservation {
   status      ReservationStatus @default(ACTIVE)
   createdAt   DateTime          @default(now()) @map("created_at")
   cancelledAt DateTime?         @map("cancelled_at")
+  seatedAt    DateTime?         @map("seated_at")
+  /// When the kitchen was told to start cooking.
+  cookAlertedAt DateTime?       @map("cook_alerted_at")
+
+  items   ReservationItem[]
+  deposit ReservationDeposit?
 
   @@index([tableId, status, startsAt])
   @@index([status, startsAt])
   @@index([guestPhone, status])
   @@map("reservations")
+}
+
+/// A dish chosen when booking, with its price and name as they were then.
+model ReservationItem {
+  id             String      @id @default(cuid())
+  reservationId  String      @map("reservation_id")
+  itemId         String      @map("item_id")
+  name           String
+  unitPriceCents Int         @map("unit_price_cents")
+  quantity       Int
+  note           String?
+  station        Station
+  /// [{ optionId, groupName, optionName, priceDeltaCents }]
+  modifiers      Json        @default("[]")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  item        MenuItem    @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([reservationId])
+  @@index([itemId])
+  @@map("reservation_items")
+}
+
+/// The money paid for a booking. Kept when old bookings are deleted, and holds no personal data.
+model ReservationDeposit {
+  id            String        @id @default(cuid())
+  reservationId String?       @unique @map("reservation_id")
+  amountCents   Int           @map("amount_cents")
+  method        PaymentMethod
+  status        DepositStatus @default(PENDING)
+  provider      String
+  providerRef   String?       @map("provider_ref")
+  failureReason String?       @map("failure_reason")
+  refundCents   Int           @default(0) @map("refund_cents")
+  refundStatus  RefundStatus  @default(NONE) @map("refund_status")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  paidAt        DateTime?     @map("paid_at")
+  refundedAt    DateTime?     @map("refunded_at")
+
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+
+  @@index([refundStatus])
+  @@map("reservation_deposits")
 }
 
 enum SessionStatus {

@@ -43,6 +43,7 @@ EXPOSE 4000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.API_PORT||4000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 # Apply pending migrations, then start. (Migrations are additive and safe to re-run.)
+# RUN_MIGRATIONS=false: another service runs them, because this one has a limited database login.
 # SEED_IF_EMPTY=true also loads the menu, tables and manager into a fresh database
 # (for hosts without a shell, such as Render's free plan).
-CMD ["sh", "-c", "npx prisma migrate deploy && if [ \"$SEED_IF_EMPTY\" = \"true\" ]; then npx tsx prisma/seed.ts --if-empty; fi && exec npx tsx src/server.ts"]
+CMD ["sh", "-c", "if [ \"$RUN_MIGRATIONS\" != \"false\" ]; then npx prisma migrate deploy; fi && if [ \"$SEED_IF_EMPTY\" = \"true\" ]; then npx tsx prisma/seed.ts --if-empty; fi && exec npx tsx src/server.ts"]

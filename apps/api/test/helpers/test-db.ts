@@ -1,3 +1,4 @@
+import { joinPinFor } from "../../src/sessions/join-pin.ts";
 /**
  * Integration-test databases.
  *
@@ -24,6 +25,12 @@ export const TEST_PIN_STAFF = {
   waiter: { id: "staff-demo-waiter", pin: "1234" },
   kitchen: { id: "staff-demo-kitchen", pin: "4321" },
 };
+
+/** The PIN a friend needs to join the open visit at this table (shown on the first guest's phone). */
+export async function openTablePin(db: Db, tableId: string, qrSecret: string): Promise<string> {
+  const open = await db.tableSession.findFirstOrThrow({ where: { tableId, status: "OPEN" }, select: { id: true } });
+  return joinPinFor(qrSecret, open.id);
+}
 
 function adminUrl(url: string): string {
   const u = new URL(url);

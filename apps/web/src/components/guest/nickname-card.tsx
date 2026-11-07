@@ -15,6 +15,7 @@ export function NicknameCard() {
   const t = useT();
   const me = useSessionStore((s) => s.snapshot?.me);
   const guests = useSessionStore((s) => s.snapshot?.guests ?? []);
+  const joinPin = useSessionStore((s) => s.snapshot?.joinPin);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -117,6 +118,15 @@ export function NicknameCard() {
               .filter((g) => g.id !== me.id)
               .map((g) => g.nickname || t("common.guest"))
               .join(", ")}
+          </span>
+        </div>
+      )}
+
+      {joinPin && (
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-3">
+          <span className="text-sm text-fg-muted">{t("join.pinHint")}</span>
+          <span className="font-semibold tracking-[0.2em]" data-testid="table-join-pin">
+            {joinPin}
           </span>
         </div>
       )}

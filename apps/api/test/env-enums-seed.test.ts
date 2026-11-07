@@ -1,9 +1,10 @@
+import { randomBytes } from "node:crypto";
 import { seedMenu } from "@app/shared/seed";
 import { describe, expect, it } from "vitest";
-import { EnvError, parseEnv } from "../src/env.ts";
+import { EnvError, isWeakDatabaseUrl, isWeakSecret, parseEnv } from "../src/env.ts";
 import { Allergen, CallType, DietaryTag, PaymentMethod } from "../src/generated/prisma/enums.ts";
 import { enums, fromDbCamel, fromDbKebab, toDbEnum } from "../src/lib/enums.ts";
-import { buildSeedPlan } from "../src/seed-plan.ts";
+import { buildSeedPlan, seedPasswordProblem } from "../src/seed-plan.ts";
 
 const base = {
   DATABASE_URL: "postgresql://u:p@localhost:5432/db",
@@ -11,6 +12,17 @@ const base = {
   PUBLIC_WEB_URL: "http://localhost:3000",
   QR_TOKEN_SECRET: "a".repeat(40),
   COOKIE_SECRET: "b".repeat(40),
+};
+
+const safeProd = {
+  ...base,
+  NODE_ENV: "production",
+  COOKIE_SECURE: "true",
+  PUBLIC_WEB_URL: "https://order.example.org",
+  CORS_ORIGINS: "https://order.example.org",
+  DATABASE_URL: "postgresql://u:Xk29vLq7pTz4@db:5432/x",
+  QR_TOKEN_SECRET: "Zt8Kq2mVx9Lp4Rn7Wc3Hb6Yd1Fg5Js0Aa",
+  COOKIE_SECRET: "Mv3Xc8Qw1Ez6Rt9Yu2Io5Pa7Sd4Fg0HjK",
 };
 
 describe("parseEnv", () => {
@@ -76,9 +88,42 @@ describe("parseEnv", () => {
     expect(err).toContain("COOKIE_SECURE");
     expect(err).toContain("PUBLIC_WEB_URL");
 
-    expect(() =>
-      parseEnv({ ...base, NODE_ENV: "production", COOKIE_SECURE: "true", PUBLIC_WEB_URL: "https://order.example.org" }),
-    ).not.toThrow();
+    expect(() => parseEnv(safeProd)).not.toThrow();
+  });
+
+  it("refuses weak production secrets, database passwords and long sessions", () => {
+    const problems = (over: Record<string, string>) => {
+      try {
+        parseEnv({ ...safeProd, ...over });
+        return "";
+      } catch (e) {
+        return (e as EnvError).problems.join("\n");
+      }
+    };
+    expect(problems({ COOKIE_SECRET: "c".repeat(40) })).toContain("COOKIE_SECRET: Too weak");
+    expect(problems({ QR_TOKEN_SECRET: "abcdefghijkl".repeat(4) })).toContain("QR_TOKEN_SECRET: Too weak");
+    expect(problems({ DATABASE_URL: "postgresql://u:postgres@db:5432/x" })).toContain("DATABASE_URL");
+    expect(problems({ DATABASE_URL: "postgresql://u@db:5432/x" })).toContain("DATABASE_URL");
+    expect(problems({ STAFF_SESSION_HOURS: "25" })).toContain("STAFF_SESSION_HOURS");
+    expect(problems({ STAFF_SESSION_HOURS: "24" })).toBe("");
+  });
+
+  it("accepts generated secrets (base64 and hex)", () => {
+    for (let i = 0; i < 200; i++) {
+      expect(isWeakSecret(randomBytes(48).toString("base64"))).toBe(false);
+      expect(isWeakSecret(randomBytes(16).toString("hex"))).toBe(false);
+    }
+    expect(isWeakDatabaseUrl(`postgresql://u:${encodeURIComponent("p@ss/w0rd-long")}@db:5432/x`)).toBe(false);
+  });
+
+  it("checks the first manager's password strictly only in production", () => {
+    const email = "owner@example.org";
+    expect(seedPasswordProblem("short12", email, false)).toMatch(/at least 8/);
+    expect(seedPasswordProblem("ninechars", email, false)).toBeNull();
+    expect(seedPasswordProblem("ninechars", email, true)).toMatch(/at least 10/);
+    expect(seedPasswordProblem("change-me-please", email, true)).toMatch(/stronger/);
+    expect(seedPasswordProblem("owner-is-my-name", email, true)).toMatch(/stronger/);
+    expect(seedPasswordProblem("t7#Kp2vLq9xZ", email, true)).toBeNull();
   });
 
   it("the shipped .env.example is valid for development", async () => {

@@ -9,6 +9,7 @@ import { errors, parse } from "../http/errors.ts";
 import type { createRegistrar } from "../http/registrar.ts";
 import type { Realtime } from "../realtime/types.ts";
 import { tableStatus } from "../sessions/rules.ts";
+import { joinPinFor } from "../sessions/join-pin.ts";
 import { closeSession, emitTableStatus } from "../sessions/service.ts";
 import { reservationSummary, upcomingReservationInclude } from "../reservations/routes.ts";
 import { createQrToken, guestTableUrl } from "./qr-token.ts";
@@ -57,6 +58,7 @@ export function registerTableAdminRoutes(on: On, db: Db, env: Env, realtime: Rea
           ? {
               id: s.id,
               guestCount: s._count.guests,
+              joinPin: joinPinFor(env.QR_TOKEN_SECRET, s.id),
               openedAt: s.openedAt.toISOString(),
               lastActivityAt: s.lastActivityAt.toISOString(),
             }

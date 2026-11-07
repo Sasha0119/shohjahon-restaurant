@@ -1,3 +1,4 @@
+import { joinPinFor } from "../src/sessions/join-pin.ts";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { pino } from "pino";
@@ -131,14 +132,15 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
     expect(res.body.snapshot.sessionId).toBe(sessionId);
   });
 
-  it("a second phone is asked before joining an occupied table, then shares the session live", async () => {
+  it("a second phone needs the table's PIN to join an occupied table, then shares the session live", async () => {
     const socketA = await connect(phoneA);
     const first = await join(await tableToken(1));
     expect(first.status).toBe(409);
     expect(first.body.error).toMatchObject({ code: "TABLE_OCCUPIED", details: { table: 1, guestCount: 1 } });
 
     const guestsEvent = waitFor(socketA, "session:guests");
-    const res = await join(await tableToken(1), "", { confirmJoin: true });
+    expect((await join(await tableToken(1), "", { confirmJoin: true })).status).toBe(409);
+    const res = await join(await tableToken(1), "", { joinPin: joinPinFor(QR_SECRET, sessionId) });
     expect(res.status).toBe(201);
     expect(res.body.snapshot.sessionId).toBe(sessionId);
     expect(res.body.snapshot.guests).toHaveLength(2);
@@ -256,13 +258,13 @@ describe.skipIf(!TEST_DATABASE_URL)("table sessions & realtime (integration)", (
     expect((await db.tableSession.findUniqueOrThrow({ where: { id: busyId } })).status).toBe("OPEN");
   });
 
-  it("simultaneous first scans still create exactly one session", async () => {
+  it("simultaneous first scans still create exactly one session, and the others need its PIN", async () => {
     const token = await tableToken(8);
-    const results = await Promise.all(Array.from({ length: 6 }, () => join(token, "", { confirmJoin: true })));
-    expect(results.every((r) => r.status === 201)).toBe(true);
-    const ids = new Set(results.map((r) => r.body.snapshot.sessionId));
-    expect(ids.size).toBe(1);
-    expect(await db.sessionGuest.count({ where: { sessionId: [...ids][0] } })).toBe(6);
+    const results = await Promise.all(Array.from({ length: 6 }, () => join(token)));
+    const opened = results.filter((r) => r.status === 201);
+    expect(opened).toHaveLength(1);
+    expect(results.filter((r) => r.status === 409).every((r) => r.body.error.code === "TABLE_OCCUPIED")).toBe(true);
+    expect(await db.sessionGuest.count({ where: { sessionId: opened[0]!.body.snapshot.sessionId } })).toBe(1);
   });
 
   it("works over HTTP long-polling too (the fallback behind proxies)", async () => {

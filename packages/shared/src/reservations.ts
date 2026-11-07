@@ -14,6 +14,34 @@ export const RESERVATION_LAST_BOOKING_MINUTES = 60;
 export const RESERVATION_MAX_PER_PHONE = 3;
 export const RESERVATION_MAX_PARTY = 20;
 
+/** The guest who books pays this share of the dishes up front; the rest goes on the table's bill. */
+export const RESERVATION_DEPOSIT_PERCENT = 50;
+/** The kitchen is told to start cooking this long before the guest arrives. */
+export const RESERVATION_COOK_ALERT_MINUTES = 30;
+/** Staff can seat a booking this long before its time, for a guest who comes early. */
+export const RESERVATION_SEAT_EARLY_MINUTES = 120;
+/** Cancelling at least this long before the booking gets the bigger refund. */
+export const RESERVATION_FREE_CANCEL_MINUTES = 120;
+export const RESERVATION_REFUND_PERCENT = { early: 40, late: 20 } as const;
+export const RESERVATION_MAX_DISHES = 30;
+
+/** The deposit for a dish total, rounded up to a whole minor unit. */
+export function bookingDeposit(dishesCents: number): number {
+  return Math.ceil((dishesCents * RESERVATION_DEPOSIT_PERCENT) / 100);
+}
+
+/**
+ * What a cancelling guest gets back, as a share of the deposit they paid.
+ * Exactly the cut-off counts as early. From the booked time on there is no refund.
+ */
+export function bookingRefund(depositCents: number, startsAt: Date, now: Date): number {
+  const msLeft = startsAt.getTime() - now.getTime();
+  if (msLeft <= 0) return 0;
+  const { early, late } = RESERVATION_REFUND_PERCENT;
+  const percent = msLeft >= RESERVATION_FREE_CANCEL_MINUTES * 60_000 ? early : late;
+  return Math.floor((depositCents * percent) / 100);
+}
+
 const hhmm = (minute: number) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
 

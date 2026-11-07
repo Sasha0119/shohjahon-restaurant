@@ -36,6 +36,9 @@ services:
         generateValue: true
       - key: COOKIE_SECRET
         generateValue: true
+      # Lets the web service tell the API who the visitor is, for per-visitor rate limits.
+      - key: INTERNAL_PROXY_SECRET
+        generateValue: true
       - key: PAYMENT_PROVIDER
         value: mock
       - key: SEED_IF_EMPTY
@@ -66,3 +69,8 @@ services:
       # Baked in at build time (Render passes env vars to the Docker build).
       - key: API_INTERNAL_URL
         value: https://shohjahon-restaurant-api-78mj.onrender.com
+      - key: INTERNAL_PROXY_SECRET
+        fromService:
+          type: web
+          name: shohjahon-restaurant-api
+          envVarKey: INTERNAL_PROXY_SECRET

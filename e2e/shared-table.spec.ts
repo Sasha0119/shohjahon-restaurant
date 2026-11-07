@@ -16,6 +16,9 @@ test("two phones share one cart, split the bill, and the waiter confirms cash", 
 
   // The second phone joins the same table and sees the shared cart.
   await b.goto(`${link}/menu`);
+  await a.goto(link);
+  const joinPin = await a.getByTestId("table-join-pin").innerText();
+  await b.getByLabel(/6-digit table PIN/).fill(joinPin);
   await b.getByRole("button", { name: "Join this table" }).click();
   await expect(b.getByRole("link", { name: /View cart: 1 item/ })).toBeVisible();
   await addToCart(b, "Cappuccino");

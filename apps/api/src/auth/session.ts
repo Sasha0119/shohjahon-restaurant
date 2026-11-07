@@ -11,6 +11,7 @@ export interface AuthedStaff {
   name: string;
   role: "manager" | "waiter" | "kitchen";
   sessionId: string;
+  expiresAt: Date;
 }
 
 export function staffCookieOptions(secure: boolean, maxAgeMs?: number): CookieOptions {
@@ -64,7 +65,22 @@ export async function resolveStaffSession(
     name: session.staff.name,
     role: enums.role.fromDb(session.staff.role as StaffRole),
     sessionId: session.id,
+    expiresAt: session.expiresAt,
   };
+}
+
+/** Revoke a staff member's logins (except one, if given) and return the ids that were revoked. */
+export async function revokeStaffSessions(
+  db: Pick<Db, "staffSession">,
+  staffId: string,
+  exceptSessionId?: string,
+): Promise<string[]> {
+  const revoked = await db.staffSession.updateManyAndReturn({
+    where: { staffId, revokedAt: null, ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}) },
+    data: { revokedAt: new Date() },
+    select: { id: true },
+  });
+  return revoked.map((s) => s.id);
 }
 
 export async function revokeSession(db: Db, sessionId: string): Promise<void> {

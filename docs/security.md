@@ -15,11 +15,14 @@ Every item below is covered by automated tests (unit, integration, or end-to-end
   declares each route's access, and the registrar applies it). The web app's gates only hide screens.
 - Socket.io connections are authenticated the same way and placed in role/table rooms. A guest
   socket never receives another table's events.
-- Table QR tokens can be rotated per table (Admin → Tables), which invalidates the old printout.
+- Table QR tokens can be rotated per table (Admin → Tables), which invalidates the old printout. They don't expire, because they're printed. Instead, joining an occupied table needs that visit's 6-digit PIN, shown on seated guests' phones and to managers (`apps/api/src/sessions/join-pin.ts`). A guest's access ends when the visit closes.
+- Closing a visit, signing out, removing staff or resetting a PIN or password cuts live sockets immediately, including ones that try to recover a dropped connection.
+- Socket.io refuses other websites' origins, limits new connections per address, and validates every event.
 
 ## Brute force & abuse
 
-- **Per-IP rate limits**: 600 requests/min overall, 30/min on sensitive actions, 10/min on logins.
+- **Per-IP rate limits**: 600 requests/min overall, 30/min on sensitive actions, 10/min on logins and discount codes, 10/hour on bookings. Where the web server reaches the API over the internet, it names the visitor using `INTERNAL_PROXY_SECRET`.
+- **Per-visit limits**: 10 wrong join PINs or 5 wrong discount codes in 15 minutes stop further tries.
 - **Per-account lockout** (`apps/api/src/auth/lockout.ts`): after 5 wrong PINs or passwords the account
   is locked for 15 minutes, and each further failure doubles the lock (up to 24 h).
 - Login errors never reveal whether the account exists.
@@ -28,7 +31,7 @@ Every item below is covered by automated tests (unit, integration, or end-to-end
 ## Sessions & cookies
 
 - Cookies are `HttpOnly`, `SameSite=Lax`, signed, and `Secure` in production (the API won't start otherwise).
-- Staff sessions are stored server-side and can be revoked. Signing out deletes the session.
+- Staff sessions are stored server-side and can be revoked, and last at most 24 hours in production. Signing out revokes the session.
 - **CSRF**: every state-changing request must come from an allowed `Origin` and be JSON, so a
   plain HTML form on another site can't post. Payment webhooks are exempt; they're verified by signature.
 
@@ -59,7 +62,7 @@ The API sends its own strict headers (`helmet`, CSP `default-src 'none'`), and C
 - CSV exports neutralise spreadsheet formulas (`=`, `+`, `-`, `@`) in dish names and notes.
 - The **audit log** records sign-ins, staff, menu, table, discount, order, call, payment and
   review changes, with the actor and IP. It can't be edited from the app.
-- Logs redact cookies and `Authorization` headers.
+- Logs redact cookies, `Authorization` headers and table, receipt and booking links. Bookings (name and phone) are deleted after `RESERVATION_RETENTION_DAYS`. The database refuses edits and deletes on the audit log.
 
 ## Secrets
 

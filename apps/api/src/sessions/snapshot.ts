@@ -4,6 +4,7 @@ import type { Db } from "../db.ts";
 import { enums } from "../lib/enums.ts";
 import { ticketInclude, toTicketDTO } from "../orders/tickets.ts";
 import { computeSessionBill } from "../billing/bill.ts";
+import { joinPinFor } from "./join-pin.ts";
 
 /** Selection JSON from the DB, defensively narrowed. */
 export function readSelection(json: unknown): ModifierSelection {
@@ -80,7 +81,12 @@ async function buildTickets(db: Db, sessionId: string): Promise<OrderTicketDTO[]
 }
 
 /** Everything one guest's phone needs to render the table's state. */
-export async function buildSnapshot(db: Db, sessionId: string, guestId: string): Promise<SessionSnapshotDTO> {
+export async function buildSnapshot(
+  db: Db,
+  sessionId: string,
+  guestId: string,
+  qrSecret: string,
+): Promise<SessionSnapshotDTO> {
   const session = await db.tableSession.findUniqueOrThrow({
     where: { id: sessionId },
     include: {
@@ -115,5 +121,6 @@ export async function buildSnapshot(db: Db, sessionId: string, guestId: string):
     bill,
     status: session.status === "OPEN" ? "open" : "closed",
     closeReason: session.closeReason ? (session.closeReason.toLowerCase() as "paid" | "staff" | "expired") : null,
+    joinPin: session.status === "OPEN" ? joinPinFor(qrSecret, sessionId) : null,
   };
 }

@@ -7,6 +7,17 @@ import { toMinutes, type Menu, type TextTranslations } from "@app/shared";
 import type { Allergen, DietaryTag, Station, Weekday } from "./generated/prisma/enums.ts";
 import { enums, toDbEnum } from "./lib/enums.ts";
 
+/** Why this first-manager password can't be used, or null if it can. */
+export function seedPasswordProblem(password: string, email: string, isProd: boolean): string | null {
+  if (!isProd) return password.length < 8 ? "SEED_MANAGER_PASSWORD must be at least 8 characters" : null;
+  if (password.length < 10) return "SEED_MANAGER_PASSWORD must be at least 10 characters in production";
+  const weak =
+    /change-?me|password|qwerty|admin|123456|example|placeholder/i.test(password) ||
+    new Set(password).size < 5 ||
+    password.toLowerCase().includes(email.split("@")[0] ?? email);
+  return weak ? "Set a stronger SEED_MANAGER_PASSWORD in production" : null;
+}
+
 export interface SeedPlan {
   categories: {
     id: string;

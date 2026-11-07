@@ -27,7 +27,8 @@ export function registerSessionRoutes(on: On, db: Db, env: Env, realtime: Realti
     const result = await joinTable(db, realtime, cfg, {
       qrToken: String(req.params.qrToken),
       guestToken: req.cookies?.[GUEST_COOKIE],
-      confirmJoin: body.confirmJoin,
+      joinPin: body.joinPin,
+      ip: req.ip,
       confirmSwitch: body.confirmSwitch,
       confirmReserved: body.confirmReserved,
     });
@@ -36,13 +37,13 @@ export function registerSessionRoutes(on: On, db: Db, env: Env, realtime: Realti
     }
     res.status(result.rejoined ? 200 : 201).json({
       rejoined: result.rejoined,
-      snapshot: await buildSnapshot(db, result.sessionId, result.guestId),
+      snapshot: await buildSnapshot(db, result.sessionId, result.guestId, cfg.qrSecret),
     });
   });
 
   on("GET", "/api/session", async (req, res) => {
     const g = req.guest!;
-    res.json({ snapshot: await buildSnapshot(db, g.sessionId, g.id) });
+    res.json({ snapshot: await buildSnapshot(db, g.sessionId, g.id, cfg.qrSecret) });
   });
 
   on("PATCH", "/api/session/me", async (req, res) => {

@@ -7,7 +7,8 @@ import { registerAuthRoutes } from "./auth/routes.ts";
 import { STAFF_COOKIE, resolveStaffSession } from "./auth/session.ts";
 import type { Db } from "./db.ts";
 import type { Env } from "./env.ts";
-import { errorHandler, notFoundHandler } from "./http/errors.ts";
+import { clientIpFromWebServer } from "./http/client-ip.ts";
+import { errorHandler, notFoundHandler, redactLinkTokens } from "./http/errors.ts";
 import { createRegistrar } from "./http/registrar.ts";
 import { corsMiddleware, createRateLimiters, originGuard, securityHeaders } from "./http/security.ts";
 import type { Realtime } from "./realtime/types.ts";
@@ -57,10 +58,13 @@ export function createApp({
 
   const limiters = createRateLimiters({ disabled: disableRateLimits });
 
+  app.use(clientIpFromWebServer(env.INTERNAL_PROXY_SECRET));
   app.use(
     pinoHttp({
       logger,
       redact: ["req.headers.cookie", "res.headers['set-cookie']", "req.headers.authorization"],
+      // Table, receipt and booking links work like passwords, so they stay out of the logs.
+      serializers: { req: (r: { url?: string }) => ({ ...r, url: r.url && redactLinkTokens(r.url) }) },
       customLogLevel: (_req, res, err) =>
         err || res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info",
       autoLogging: { ignore: (req) => req.url === "/api/health" },
@@ -102,11 +106,11 @@ export function createApp({
     else res.status(503).json({ status: "degraded", db: "unreachable" });
   });
 
-  registerAuthRoutes(on, db, env);
-  registerStaffAdminRoutes(on, db);
+  registerAuthRoutes(on, db, env, realtime);
+  registerStaffAdminRoutes(on, db, realtime);
   registerSessionRoutes(on, db, env, realtime);
   registerTableAdminRoutes(on, db, env, realtime);
-  registerReservationRoutes(on, db, realtime);
+  registerReservationRoutes(on, db, env, realtime, provider);
   registerMenuRoutes(on, db, realtime);
   registerOrderRoutes(on, db, env, realtime);
   registerReviewRoutes(on, db, realtime);
@@ -150,7 +154,7 @@ export function createApp({
   app.use(notFoundHandler);
   app.use(errorHandler);
 
-  return { app, mounted };
+  return { app, mounted, provider };
 }
 
 /** Up to ~10 s of retries, enough for a sleeping Neon database to wake. */

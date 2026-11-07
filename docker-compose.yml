@@ -2,7 +2,7 @@
 #
 #   cp .env.docker.example .env      # then fill in every value
 #   docker compose up -d --build
-#   docker compose run --rm api npx tsx prisma/seed.ts   # first time only: manager account + demo menu
+#   docker compose run --rm migrate npx tsx prisma/seed.ts   # first time only: manager account + demo menu
 #
 # See docs/deployment.md for the full guide.
 
@@ -15,8 +15,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-restaurant}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./deploy/db-app-role.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -24,26 +26,69 @@ services:
       retries: 20
     # Not published to the host: only the API can reach it.
 
+  # Runs migrations with the database owner's login, then exits. Also runs the seed.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: "no"
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-restaurant}?schema=public
+      PUBLIC_WEB_URL: https://${DOMAIN:?set DOMAIN in .env}
+    command: ["npx", "prisma", "migrate", "deploy"]
+    healthcheck:
+      disable: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Runs with the limited database login. Gets only the settings it needs, so the
+  # owner's password and the seed password never reach it.
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
-    env_file: .env
     environment:
       NODE_ENV: production
       API_PORT: "4000"
       TRUST_PROXY: "true"
       COOKIE_SECURE: "true"
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-restaurant}?schema=public
+      RUN_MIGRATIONS: "false"
+      DATABASE_URL: postgresql://restaurant_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/${POSTGRES_DB:-restaurant}?schema=public
       CORS_ORIGINS: https://${DOMAIN:?set DOMAIN in .env}
       PUBLIC_WEB_URL: https://${DOMAIN}
       UPLOAD_DIR: /app/apps/api/uploads
+      QR_TOKEN_SECRET: ${QR_TOKEN_SECRET:?set QR_TOKEN_SECRET in .env}
+      COOKIE_SECRET: ${COOKIE_SECRET:?set COOKIE_SECRET in .env}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SESSION_IDLE_MINUTES: ${SESSION_IDLE_MINUTES:-120}
+      STAFF_SESSION_HOURS: ${STAFF_SESSION_HOURS:-12}
+      CALL_COOLDOWN_SECONDS: ${CALL_COOLDOWN_SECONDS:-60}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-5}
+      RESERVATION_RETENTION_DAYS: ${RESERVATION_RETENTION_DAYS:-90}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-mock}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      SMTP_URL: ${SMTP_URL:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
     volumes:
       - uploads:/app/apps/api/uploads
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   web:
     build:
@@ -52,6 +97,10 @@ services:
       args:
         API_INTERNAL_URL: http://api:4000
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     depends_on:
       api:
         condition: service_healthy
@@ -70,6 +119,13 @@ services:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       - web
       - api

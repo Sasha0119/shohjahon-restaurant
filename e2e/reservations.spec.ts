@@ -18,17 +18,18 @@ test("an online booking reaches staff live, and warns whoever scans that table's
   const { page: visitor } = await guestPage(browser, errors);
   await visitor.goto("/reserve");
   const tomorrow = await visitor
-    .getByLabel("Date")
+    .getByLabel("Date", { exact: true })
     .getAttribute("min")
     .then((min) => {
       const d = new Date(`${min}T00:00:00Z`);
       d.setUTCDate(d.getUTCDate() + 1);
       return d.toISOString().slice(0, 10);
     });
-  await visitor.getByLabel("Date").fill(tomorrow);
+  await visitor.getByLabel("Date", { exact: true }).fill(tomorrow);
   await visitor.getByLabel("Your name").fill(NAME);
   await visitor.getByLabel("Phone number").fill("+998 90 123 45 67");
-  await visitor.getByRole("button", { name: "Reserve", exact: true }).click();
+  await visitor.getByRole("button", { name: "Add Cappuccino" }).click();
+  await visitor.getByRole("button", { name: /^Pay .* and reserve$/ }).click();
   await expect(visitor.getByRole("heading", { name: "Your table is reserved" })).toBeVisible();
   await expect(visitor.getByText(/^Table \d+ · /)).toBeVisible();
   await visitor.screenshot({ path: info.outputPath("visitor-booked.png") });

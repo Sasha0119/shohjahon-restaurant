@@ -33,9 +33,10 @@ Edit `.env` and fill in **every** value:
 | `DOMAIN` | `order.your-restaurant.com` (no `https://`) |
 | `ACME_EMAIL` | your email, for certificate expiry notices |
 | `POSTGRES_PASSWORD` | `openssl rand -hex 32` |
+| `APP_DB_PASSWORD` | `openssl rand -hex 32` (the limited login the API runs as) |
 | `QR_TOKEN_SECRET` | `openssl rand -hex 32` |
 | `COOKIE_SECRET` | `openssl rand -hex 32` (different from the one above) |
-| `SEED_MANAGER_EMAIL` / `SEED_MANAGER_PASSWORD` | the first manager login (password ≥ 8 characters) |
+| `SEED_MANAGER_EMAIL` / `SEED_MANAGER_PASSWORD` | the first manager login (password ≥ 10 characters) |
 
 The API refuses to start in production if a secret is missing, too short, still the
 example value, or if `COOKIE_SECURE`/`https` aren't set. The error lists every problem at once.
@@ -47,12 +48,12 @@ docker compose up -d --build
 docker compose ps            # wait until api and web show "healthy"
 ```
 
-The API applies database migrations automatically every time it starts.
+The `migrate` service applies database migrations with the owner's login every time the stack starts, then exits (`docker compose ps -a` shows it as "Exited (0)"). The API itself runs with a limited login. **Upgrading an older install:** add `APP_DB_PASSWORD` to `.env`, start only the database, and run `docker compose exec db sh /docker-entrypoint-initdb.d/10-app-role.sh` once.
 
 Create the manager account and the starter menu (**first time only**; safe to re-run):
 
 ```bash
-docker compose run --rm api npx tsx prisma/seed.ts
+docker compose run --rm migrate npx tsx prisma/seed.ts
 ```
 
 Then:

@@ -2,11 +2,12 @@
 
 import { brand } from "@app/config";
 import { isTicketUpdateNewer, ticketUrgency, type OrderStatus, type Station } from "@app/shared";
-import type { MenuDTO, OrderTicketDTO } from "@app/shared/api";
+import type { BookingTicketDTO, MenuDTO, OrderTicketDTO } from "@app/shared/api";
 import { ArrowRight, Boxes, CheckCheck, ChefHat, Clock, Loader2, MessageSquareText } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Switch } from "@/components/admin/form";
 import { StaffGate } from "@/components/staff/staff-session";
+import { KitchenBookings } from "@/components/staff/kitchen-bookings";
 import { StaffHeader, useSoundAlerts } from "@/components/staff/staff-header";
 import { Button } from "@/components/ui/button";
 import { Segmented, Skeleton } from "@/components/ui/misc";
@@ -20,7 +21,7 @@ import { useI18n, useT } from "@/i18n";
 import { translateError } from "@/i18n/errors";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { formatCountdown } from "@/lib/format";
+import { formatCountdown, reservationLabel } from "@/lib/format";
 import { setInStock, stockStore, useInStock, useStockErrorToast } from "@/lib/stock";
 
 const ROLES = ["kitchen", "manager"] as const;
@@ -51,6 +52,14 @@ function KitchenDisplay() {
   const servedRef = useRef<Set<string>>(new Set());
   ticketsRef.current = tickets;
   const [stockVersion, setStockVersion] = useState(0);
+  const [bookings, setBookings] = useState<BookingTicketDTO[]>([]);
+  const loadBookings = useCallback(() => {
+    api<{ bookings: BookingTicketDTO[] }>("GET", "/api/kds/bookings")
+      .then((r) => setBookings(r.bookings))
+      .catch(() => {
+        /* keep what we have; the next reconnect reloads */
+      });
+  }, []);
 
   // Remember the chosen station on this screen.
   useEffect(() => {
@@ -119,6 +128,17 @@ function KitchenDisplay() {
           return [...others, ticket].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
         });
       },
+      "kds:booking": ({ change, booking }) => {
+        const mine = booking.lines.some((l) => stationsRef.current.includes(l.station));
+        if (mine && change !== "removed") {
+          sound.play();
+          const table = booking.tableNumber;
+          if (change === "new")
+            toast.info(t("kitchen.bookingNew", { table, time: reservationLabel(booking.startsAt) }));
+          else toast.info(t("kitchen.bookingCook", { table }));
+        }
+        loadBookings();
+      },
       // Stock: update just that item (no menu reload). Menu edits: reload the stock list.
       "menu:stock": ({ itemId, inStock, stockVersion }) =>
         stockStore.getState().applyServer(itemId, inStock, stockVersion),
@@ -131,7 +151,10 @@ function KitchenDisplay() {
         void s
           .emitWithAck("kds:subscribe", { stations: stationsRef.current })
           .catch(() => {})
-          .finally(() => void load());
+          .finally(() => {
+            void load();
+            loadBookings();
+          });
       },
     },
   );
@@ -191,6 +214,8 @@ function KitchenDisplay() {
           {t("kitchen.stock")}
         </Button>
       </StaffHeader>
+
+      <KitchenBookings bookings={bookings} stations={stations} />
 
       {/* Phones: columns stacked. md+ (tablet portrait and up): three columns side by side. */}
       <main className="grid gap-4 p-4 md:grid-cols-3 md:gap-3 md:p-3 lg:min-h-0 lg:flex-1 lg:gap-4 lg:p-4">
